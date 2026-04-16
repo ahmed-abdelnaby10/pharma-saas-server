@@ -1,10 +1,8 @@
-import { z } from "zod";
+import { PreferredLanguage } from "@prisma/client";
 
-export const createTenantSchema = z.object({
-  nameEn: z.string().min(2).max(120),
-  nameAr: z.string().min(2).max(120),
-  preferredLanguage: z.enum(["en", "ar"]),
-  planId: z.string().min(1),
-});
-
-export type CreateTenantDto = z.infer<typeof createTenantSchema>;
+export type CreateTenantDto = {
+  nameEn: string;
+  nameAr: string;
+  preferredLanguage: PreferredLanguage;
+  planId: string;
+};

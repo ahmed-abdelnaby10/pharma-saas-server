@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "Platform — Tenants",
+    "_postman_id": "platform-tenants-v1",
+    "description": "Platform admin endpoints for managing pharmacy SaaS tenants. All requests require a platform admin bearer token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "platformToken",
+      "value": "<replace_with_platform_admin_access_token>",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "<replace_with_tenant_id>",
+      "type": "string"
+    },
+    {
+      "key": "planId",
+      "value": "<replace_with_plan_id>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Al Shifa Pharmacy\",\n  \"nameAr\": \"صيدلية الشفاء\",\n  \"preferredLanguage\": \"ar\",\n  \"planId\": \"{{planId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Create a new tenant. Runs a transaction that creates:\n1. The Tenant record\n2. Default TenantSettings\n3. A Subscription in 'trialing' status based on the plan's trialDays\n\nRequires an active plan ID."
+      },
+      "response": [
+        {
+          "name": "201 Created — tenant created",
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Tenant created successfully\",\n  \"data\": {\n    \"id\": \"clxyz123\",\n    \"nameEn\": \"Al Shifa Pharmacy\",\n    \"nameAr\": \"صيدلية الشفاء\",\n    \"preferredLanguage\": \"ar\",\n    \"status\": \"active\",\n    \"isTrialActive\": true,\n    \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\",\n    \"createdAt\": \"2026-04-16T10:00:00.000Z\",\n    \"updatedAt\": \"2026-04-16T10:00:00.000Z\",\n    \"settings\": {\n      \"organizationName\": null,\n      \"taxId\": null,\n      \"phone\": null,\n      \"email\": null,\n      \"vatPercentage\": \"0\",\n      \"defaultLanguage\": \"ar\",\n      \"lowStockAlerts\": true,\n      \"expiryAlerts\": true,\n      \"purchaseOrderUpdates\": true\n    },\n    \"subscription\": {\n      \"id\": \"clsub456\",\n      \"status\": \"trialing\",\n      \"startsAt\": \"2026-04-16T10:00:00.000Z\",\n      \"endsAt\": null,\n      \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\",\n      \"plan\": {\n        \"id\": \"clplan789\",\n        \"code\": \"starter-monthly\",\n        \"name\": \"Starter Monthly\",\n        \"billingInterval\": \"monthly\",\n        \"price\": \"199.00\",\n        \"currency\": \"EGP\",\n        \"trialDays\": 14\n      }\n    }\n  },\n  \"requestId\": \"uuid\"\n}"
+        },
+        {
+          "name": "400 Validation Error — missing planId",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"details\": [\n    { \"path\": \"planId\", \"message\": \"Required\" }\n  ]\n}"
+        },
+        {
+          "name": "404 Not Found — plan does not exist",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Plan not found\",\n  \"errorCode\": \"NOT_FOUND\"\n}"
+        },
+        {
+          "name": "409 Conflict — plan is inactive",
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Plan is inactive\",\n  \"errorCode\": \"CONFLICT\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant — Arabic language response",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "ar"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Nile Pharmacy\",\n  \"nameAr\": \"صيدلية النيل\",\n  \"preferredLanguage\": \"ar\",\n  \"planId\": \"{{planId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Same as create but with Accept-Language: ar — response message will be in Arabic."
+      },
+      "response": []
+    },
+    {
+      "name": "List Tenants",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"],
+          "query": []
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          }
+        ],
+        "description": "List all tenants, ordered by creation date descending. Includes latest subscription and settings for each tenant."
+      },
+      "response": []
+    },
+    {
+      "name": "List Tenants — filter by status",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants?status=active",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"],
+          "query": [
+            { "key": "status", "value": "active" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          }
+        ],
+        "description": "List only active tenants."
+      },
+      "response": []
+    },
+    {
+      "name": "List Tenants — search by name",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants?search=shifa",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"],
+          "query": [
+            { "key": "search", "value": "shifa" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          }
+        ],
+        "description": "Case-insensitive search against nameEn or nameAr."
+      },
+      "response": []
+    },
+    {
+      "name": "List Tenants — combined filters",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants?status=suspended&search=pharmacy",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants"],
+          "query": [
+            { "key": "status", "value": "suspended" },
+            { "key": "search", "value": "pharmacy" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          }
+        ],
+        "description": "Filter by status and search simultaneously."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Tenant by ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          }
+        ],
+        "description": "Retrieve a single tenant by its CUID. Includes settings and latest subscription."
+      },
+      "response": [
+        {
+          "name": "404 Not Found",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Tenant not found\",\n  \"errorCode\": \"NOT_FOUND\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Tenant — rename",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Al Shifa Central Pharmacy\",\n  \"nameAr\": \"صيدلية الشفاء المركزية\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Rename a tenant. Only provided fields are updated."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Tenant — suspend",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"suspended\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Suspend a tenant by setting status to 'suspended'."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Tenant — reactivate",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Reactivate a suspended or inactive tenant."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Tenant — change language",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"preferredLanguage\": \"en\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Update the tenant's preferred language."
+      },
+      "response": []
+    }
+  ]
+}
