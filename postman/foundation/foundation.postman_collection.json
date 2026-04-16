@@ -1,0 +1,124 @@
+{
+  "info": {
+    "name": "Foundation",
+    "_postman_id": "7d782b4d-bc4b-48fe-867e-2ef1a7e52f00",
+    "description": "Phase 0 foundation slices for bootstrap, i18n, and shared auth primitives.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          },
+          {
+            "key": "x-request-id",
+            "value": "foundation-health-check",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Returns the base health payload for the app bootstrap slice."
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check Arabic",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Language",
+            "value": "ar",
+            "type": "text"
+          },
+          {
+            "key": "x-request-id",
+            "value": "foundation-health-ar",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Verifies Arabic success message resolution."
+      },
+      "response": []
+    },
+    {
+      "name": "Missing Route Arabic",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Language",
+            "value": "ar-EG",
+            "type": "text"
+          },
+          {
+            "key": "x-request-id",
+            "value": "foundation-missing-ar",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/missing",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "platform", "missing"]
+        },
+        "description": "Verifies localized 404 error responses and regional language tag parsing."
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check With Bearer Header Example",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Header convention example for future protected routes. Health itself remains public in this slice."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "platformAccessToken",
+      "value": "replace-me"
+    },
+    {
+      "key": "tenantAccessToken",
+      "value": "replace-me"
+    }
+  ]
+}

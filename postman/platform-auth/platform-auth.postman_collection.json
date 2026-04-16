@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "Platform Auth",
+    "_postman_id": "c0cc6499-fbd8-4f61-a9fc-9b4385ab69f6",
+    "description": "Platform admin authentication endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Platform Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Secret123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "platform",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Logs in a platform admin and returns an access token."
+      },
+      "response": []
+    },
+    {
+      "name": "Platform Admin Login Arabic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "ar",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Secret123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "platform",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Same endpoint with Arabic response messages."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

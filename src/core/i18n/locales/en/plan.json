@@ -1,0 +1,7 @@
+{
+  "plan.created": "Plan created successfully",
+  "plan.updated": "Plan updated successfully",
+  "plan.not_found": "Plan not found",
+  "plan.inactive": "Plan is inactive",
+  "plan.code_already_exists": "Plan code already exists"
+}

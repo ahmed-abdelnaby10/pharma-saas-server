@@ -1,0 +1,15 @@
+{
+  "info": {
+    "name": "SaaS Core",
+    "_postman_id": "f45cd1b6-e5b1-4a16-8f7f-ae9915649fd7",
+    "description": "Phase 1 schema slice. No HTTP endpoints are introduced yet; this collection exists to keep the module collection in place for upcoming tenants, plans, and subscriptions endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

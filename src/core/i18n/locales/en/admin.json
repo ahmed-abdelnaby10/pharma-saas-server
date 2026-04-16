@@ -1,0 +1,6 @@
+{
+  "admin.login_success": "Admin login successful",
+  "admin.platform_scope_required": "Platform admin context is required",
+  "admin.not_found": "Admin not found",
+  "admin.invite_sent": "Admin invite sent successfully"
+}

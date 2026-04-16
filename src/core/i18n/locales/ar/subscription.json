@@ -1,0 +1,6 @@
+{
+  "subscription.created": "تم إنشاء الاشتراك بنجاح",
+  "subscription.changed": "تم تغيير الاشتراك بنجاح",
+  "subscription.operation_failed": "فشلت عملية الاشتراك",
+  "subscription.not_found": "الاشتراك غير موجود"
+}

@@ -1,0 +1,6 @@
+{
+  "subscription.created": "Subscription created successfully",
+  "subscription.changed": "Subscription changed successfully",
+  "subscription.operation_failed": "Subscription operation failed",
+  "subscription.not_found": "Subscription not found"
+}

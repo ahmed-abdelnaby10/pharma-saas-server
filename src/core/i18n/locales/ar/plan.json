@@ -1,0 +1,7 @@
+{
+  "plan.created": "تم إنشاء الخطة بنجاح",
+  "plan.updated": "تم تحديث الخطة بنجاح",
+  "plan.not_found": "الخطة غير موجودة",
+  "plan.inactive": "الخطة غير مفعلة",
+  "plan.code_already_exists": "كود الخطة موجود بالفعل"
+}

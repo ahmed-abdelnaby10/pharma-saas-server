@@ -1,0 +1,7 @@
+{
+  "tenant.created": "تم إنشاء المستأجر بنجاح",
+  "tenant.updated": "تم تحديث المستأجر بنجاح",
+  "tenant.context_required": "سياق المستأجر مطلوب",
+  "tenant.context_invalid": "سياق المستأجر غير صالح",
+  "tenant.not_found": "المستأجر غير موجود"
+}

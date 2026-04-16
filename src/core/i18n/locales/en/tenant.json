@@ -1,0 +1,7 @@
+{
+  "tenant.created": "Tenant created successfully",
+  "tenant.updated": "Tenant updated successfully",
+  "tenant.context_required": "Tenant context is required",
+  "tenant.context_invalid": "Tenant context is invalid",
+  "tenant.not_found": "Tenant not found"
+}

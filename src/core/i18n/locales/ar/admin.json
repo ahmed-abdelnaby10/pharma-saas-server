@@ -1,0 +1,6 @@
+{
+  "admin.login_success": "تم تسجيل دخول المسؤول بنجاح",
+  "admin.platform_scope_required": "سياق مسؤول المنصة مطلوب",
+  "admin.not_found": "المسؤول غير موجود",
+  "admin.invite_sent": "تم إرسال دعوة المسؤول بنجاح"
+}

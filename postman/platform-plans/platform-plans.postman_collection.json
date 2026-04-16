@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "Platform Plans",
+    "_postman_id": "efa18f96-9fea-474d-a122-c393ae8c7699",
+    "description": "Platform plans CRUD endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformAccessToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"starter_monthly\",\n  \"name\": \"Starter Monthly\",\n  \"description\": \"Starter plan for small pharmacies\",\n  \"billingInterval\": \"monthly\",\n  \"price\": 299,\n  \"currency\": \"EGP\",\n  \"trialDays\": 14,\n  \"isActive\": true,\n  \"features\": [\n    {\n      \"featureKey\": \"catalog.medicines\",\n      \"enabled\": true\n    },\n    {\n      \"featureKey\": \"branches.max\",\n      \"enabled\": true,\n      \"limitValue\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/plans",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "platform", "plans"]
+        },
+        "description": "Creates a new plan with feature definitions."
+      },
+      "response": []
+    },
+    {
+      "name": "List Plans",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformAccessToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/plans?isActive=true&billingInterval=monthly&search=starter",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "platform", "plans"],
+          "query": [
+            {
+              "key": "isActive",
+              "value": "true"
+            },
+            {
+              "key": "billingInterval",
+              "value": "monthly"
+            },
+            {
+              "key": "search",
+              "value": "starter"
+            }
+          ]
+        },
+        "description": "Lists plans with optional filters."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Plan",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformAccessToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/plans/{{planId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "platform", "plans", "{{planId}}"]
+        },
+        "description": "Fetches a single plan by id."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Plan",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{platformAccessToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "ar",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Starter Monthly Plus\",\n  \"price\": 349,\n  \"features\": [\n    {\n      \"featureKey\": \"catalog.medicines\",\n      \"enabled\": true\n    },\n    {\n      \"featureKey\": \"branches.max\",\n      \"enabled\": true,\n      \"limitValue\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/platform/plans/{{planId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "platform", "plans", "{{planId}}"]
+        },
+        "description": "Updates a plan and replaces features if provided."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "platformAccessToken",
+      "value": "replace-me"
+    },
+    {
+      "key": "planId",
+      "value": "replace-me"
+    }
+  ]
+}

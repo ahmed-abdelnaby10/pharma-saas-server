@@ -1,0 +1,14 @@
+{
+  "common.ok": "OK",
+  "common.created": "Created successfully",
+  "common.updated": "Updated successfully",
+  "common.deleted": "Deleted successfully",
+  "common.bad_request": "Bad request",
+  "common.validation_error": "Validation failed",
+  "common.unauthorized": "Unauthorized",
+  "common.forbidden": "Forbidden",
+  "common.not_found": "Resource not found",
+  "common.conflict": "Conflict",
+  "common.route_not_found": "Route not found",
+  "common.internal_server_error": "Internal server error"
+}

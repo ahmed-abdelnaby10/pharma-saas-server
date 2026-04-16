@@ -1,0 +1,14 @@
+{
+  "common.ok": "تم بنجاح",
+  "common.created": "تم الإنشاء بنجاح",
+  "common.updated": "تم التحديث بنجاح",
+  "common.deleted": "تم الحذف بنجاح",
+  "common.bad_request": "الطلب غير صالح",
+  "common.validation_error": "فشل التحقق من البيانات",
+  "common.unauthorized": "غير مصرح",
+  "common.forbidden": "ممنوع",
+  "common.not_found": "العنصر غير موجود",
+  "common.conflict": "يوجد تعارض في البيانات",
+  "common.route_not_found": "المسار غير موجود",
+  "common.internal_server_error": "حدث خطأ داخلي في الخادم"
+}
