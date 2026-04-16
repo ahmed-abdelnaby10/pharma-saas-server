@@ -1,0 +1,9 @@
+{
+  "branch.created": "تم إنشاء الفرع بنجاح",
+  "branch.updated": "تم تحديث الفرع بنجاح",
+  "branch.deactivated": "تم تعطيل الفرع بنجاح",
+  "branch.not_found": "الفرع غير موجود",
+  "branch.name_conflict": "يوجد فرع بهذا الاسم بالفعل",
+  "branch.limit_exceeded": "تم الوصول إلى الحد الأقصى للفروع في خطتك الحالية",
+  "branch.already_inactive": "الفرع غير نشط بالفعل"
+}

@@ -61,6 +61,7 @@ model Tenant {
   settings      TenantSettings?
   users         TenantUser[]
   subscriptions Subscription[]
+  branches      Branch[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -141,6 +142,26 @@ model Subscription {
   @@index([tenantId, createdAt])
   @@index([planId])
   @@index([trialEndsAt])
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  tenantId  String
+  nameEn    String
+  nameAr    String
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, nameEn])
+  @@unique([tenantId, nameAr])
+  @@index([tenantId, isActive])
+  @@index([tenantId, isDefault])
 }
 
 model TenantUser {

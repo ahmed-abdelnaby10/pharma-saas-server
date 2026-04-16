@@ -1,10 +1,20 @@
-import { SubscriptionStatus } from "@prisma/client";
+import { Prisma, SubscriptionStatus } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { QuerySubscriptionsDto } from "../dto/query-subscription.dto";
 import {
   subscriptionInclude,
   SubscriptionWithRelations,
 } from "../mapper/subscriptions.mapper";
+
+const subscriptionWithPlanFeaturesInclude = {
+  plan: {
+    include: { features: true },
+  },
+} satisfies Prisma.SubscriptionInclude;
+
+export type SubscriptionWithPlanFeatures = Prisma.SubscriptionGetPayload<{
+  include: typeof subscriptionWithPlanFeaturesInclude;
+}>;
 
 // Non-terminal statuses — subscription is still in effect
 const ACTIVE_STATUSES: SubscriptionStatus[] = [
@@ -151,6 +161,23 @@ export class SubscriptionsRepository {
       }
 
       return subscription;
+    });
+  }
+
+  /**
+   * Returns the current active subscription with plan features included.
+   * Used for plan-limit enforcement in tenant modules.
+   */
+  async findCurrentWithPlanFeaturesByTenant(
+    tenantId: string,
+  ): Promise<SubscriptionWithPlanFeatures | null> {
+    return prisma.subscription.findFirst({
+      where: {
+        tenantId,
+        status: { in: ACTIVE_STATUSES },
+      },
+      include: subscriptionWithPlanFeaturesInclude,
+      orderBy: { createdAt: "desc" },
     });
   }
 }

@@ -12,6 +12,7 @@ import enPlan from "./locales/en/plan.json";
 import enSubscription from "./locales/en/subscription.json";
 import enTenant from "./locales/en/tenant.json";
 import enUser from "./locales/en/user.json";
+import enBranch from "./locales/en/branch.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -19,6 +20,7 @@ import arPlan from "./locales/ar/plan.json";
 import arSubscription from "./locales/ar/subscription.json";
 import arTenant from "./locales/ar/tenant.json";
 import arUser from "./locales/ar/user.json";
+import arBranch from "./locales/ar/branch.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -31,6 +33,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enPlan,
     ...enAdmin,
     ...enUser,
+    ...enBranch,
   },
   ar: {
     ...arCommon,
@@ -40,6 +43,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arPlan,
     ...arAdmin,
     ...arUser,
+    ...arBranch,
   },
 };
 

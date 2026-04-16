@@ -1,0 +1,9 @@
+{
+  "branch.created": "Branch created successfully",
+  "branch.updated": "Branch updated successfully",
+  "branch.deactivated": "Branch deactivated successfully",
+  "branch.not_found": "Branch not found",
+  "branch.name_conflict": "A branch with this name already exists",
+  "branch.limit_exceeded": "Branch limit reached for your current plan",
+  "branch.already_inactive": "Branch is already inactive"
+}
