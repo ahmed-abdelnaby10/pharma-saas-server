@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "Platform — Subscriptions",
+    "_postman_id": "platform-subscriptions-v1",
+    "description": "Platform admin endpoints for managing tenant subscriptions. All requests require a platform admin bearer token. Routes are nested under /tenants/:tenantId/subscriptions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "platformToken",
+      "value": "<replace_with_platform_admin_access_token>",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "<replace_with_tenant_id>",
+      "type": "string"
+    },
+    {
+      "key": "planId",
+      "value": "<replace_with_plan_id>",
+      "type": "string"
+    },
+    {
+      "key": "newPlanId",
+      "value": "<replace_with_new_plan_id>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Subscription",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"{{planId}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Create a subscription for a tenant. Fails if the tenant already has a non-terminal subscription (trialing/active/past_due).\n\nStatus logic:\n- If tenant.isTrialActive = true AND tenant.trialEndsAt is in the future → status = trialing\n- Otherwise → status = active"
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Subscription created successfully\",\n  \"data\": {\n    \"id\": \"clsub001\",\n    \"tenantId\": \"cltenant001\",\n    \"status\": \"trialing\",\n    \"startsAt\": \"2026-04-16T10:00:00.000Z\",\n    \"endsAt\": null,\n    \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\",\n    \"canceledAt\": null,\n    \"createdAt\": \"2026-04-16T10:00:00.000Z\",\n    \"updatedAt\": \"2026-04-16T10:00:00.000Z\",\n    \"plan\": {\n      \"id\": \"clplan001\",\n      \"code\": \"starter-monthly\",\n      \"name\": \"Starter Monthly\",\n      \"billingInterval\": \"monthly\",\n      \"price\": \"199.00\",\n      \"currency\": \"EGP\",\n      \"trialDays\": 14\n    },\n    \"tenant\": {\n      \"id\": \"cltenant001\",\n      \"nameEn\": \"Al Shifa Pharmacy\",\n      \"nameAr\": \"صيدلية الشفاء\",\n      \"status\": \"active\",\n      \"isTrialActive\": true,\n      \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\"\n    }\n  }\n}"
+        },
+        {
+          "name": "409 Already has active subscription",
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Tenant already has an active subscription\",\n  \"errorCode\": \"CONFLICT\"\n}"
+        },
+        {
+          "name": "409 Plan is inactive",
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Plan is inactive\",\n  \"errorCode\": \"CONFLICT\"\n}"
+        },
+        {
+          "name": "404 Tenant not found",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Tenant not found\",\n  \"errorCode\": \"NOT_FOUND\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Subscription — active status (trial expired)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"{{planId}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Same request body but for a tenant whose trial has already expired. The resulting subscription will have status = active."
+      },
+      "response": []
+    },
+    {
+      "name": "List Subscriptions",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "description": "List all subscriptions for a tenant, ordered by createdAt descending. Full subscription history."
+      },
+      "response": []
+    },
+    {
+      "name": "List Subscriptions — filter by status (trialing)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions?status=trialing",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions"],
+          "query": [{ "key": "status", "value": "trialing" }]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "description": "List only trialing subscriptions."
+      },
+      "response": []
+    },
+    {
+      "name": "List Subscriptions — filter by status (canceled)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions?status=canceled",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions"],
+          "query": [{ "key": "status", "value": "canceled" }]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "description": "List canceled subscriptions to view history."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Current Subscription",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions/current",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions", "current"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "description": "Returns the most recent subscription with a non-terminal status (trialing | active | past_due). Returns 404 if the tenant has no active subscription."
+      },
+      "response": [
+        {
+          "name": "200 OK — current trialing subscription",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"clsub001\",\n    \"tenantId\": \"cltenant001\",\n    \"status\": \"trialing\",\n    \"startsAt\": \"2026-04-16T10:00:00.000Z\",\n    \"endsAt\": null,\n    \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\",\n    \"canceledAt\": null,\n    \"createdAt\": \"2026-04-16T10:00:00.000Z\",\n    \"updatedAt\": \"2026-04-16T10:00:00.000Z\",\n    \"plan\": {\n      \"id\": \"clplan001\",\n      \"code\": \"starter-monthly\",\n      \"name\": \"Starter Monthly\",\n      \"billingInterval\": \"monthly\",\n      \"price\": \"199.00\",\n      \"currency\": \"EGP\",\n      \"trialDays\": 14\n    },\n    \"tenant\": {\n      \"id\": \"cltenant001\",\n      \"nameEn\": \"Al Shifa Pharmacy\",\n      \"nameAr\": \"صيدلية الشفاء\",\n      \"status\": \"active\",\n      \"isTrialActive\": true,\n      \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\"\n    }\n  }\n}"
+        },
+        {
+          "name": "404 No active subscription",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"No active subscription found\",\n  \"errorCode\": \"NOT_FOUND\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Change Plan",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions/current/change-plan",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions", "current", "change-plan"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"{{newPlanId}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Change the tenant's subscription plan. Runs in a transaction:\n1. Cancel the current subscription\n2. Create a new one with the new plan\n\nTrial carry-over: if the tenant is still in trial, the new subscription inherits the trial status and trialEndsAt."
+      },
+      "response": [
+        {
+          "name": "200 OK — plan changed (active)",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Subscription changed successfully\",\n  \"data\": {\n    \"id\": \"clsub002\",\n    \"tenantId\": \"cltenant001\",\n    \"status\": \"active\",\n    \"startsAt\": \"2026-04-20T10:00:00.000Z\",\n    \"endsAt\": null,\n    \"trialEndsAt\": null,\n    \"canceledAt\": null,\n    \"plan\": {\n      \"id\": \"clplan002\",\n      \"code\": \"pro-monthly\",\n      \"name\": \"Pro Monthly\",\n      \"billingInterval\": \"monthly\",\n      \"price\": \"499.00\",\n      \"currency\": \"EGP\",\n      \"trialDays\": 0\n    },\n    \"tenant\": {\n      \"id\": \"cltenant001\",\n      \"nameEn\": \"Al Shifa Pharmacy\",\n      \"nameAr\": \"صيدلية الشفاء\",\n      \"status\": \"active\",\n      \"isTrialActive\": false,\n      \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\"\n    }\n  }\n}"
+        },
+        {
+          "name": "409 Already on this plan",
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Tenant is already on this plan\",\n  \"errorCode\": \"CONFLICT\"\n}"
+        },
+        {
+          "name": "404 No active subscription to change",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"No active subscription found\",\n  \"errorCode\": \"NOT_FOUND\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Cancel Subscription",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions/current/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions", "current", "cancel"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "description": "Cancel the tenant's current subscription. Runs in a transaction:\n1. Set status = canceled, canceledAt = now, endsAt = now\n2. If the subscription was trialing, also sets tenant.isTrialActive = false\n\nNo request body needed."
+      },
+      "response": [
+        {
+          "name": "200 OK — canceled",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Subscription canceled successfully\",\n  \"data\": {\n    \"id\": \"clsub001\",\n    \"tenantId\": \"cltenant001\",\n    \"status\": \"canceled\",\n    \"startsAt\": \"2026-04-16T10:00:00.000Z\",\n    \"endsAt\": \"2026-04-20T10:00:00.000Z\",\n    \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\",\n    \"canceledAt\": \"2026-04-20T10:00:00.000Z\",\n    \"plan\": {\n      \"id\": \"clplan001\",\n      \"code\": \"starter-monthly\",\n      \"name\": \"Starter Monthly\",\n      \"billingInterval\": \"monthly\",\n      \"price\": \"199.00\",\n      \"currency\": \"EGP\",\n      \"trialDays\": 14\n    },\n    \"tenant\": {\n      \"id\": \"cltenant001\",\n      \"nameEn\": \"Al Shifa Pharmacy\",\n      \"nameAr\": \"صيدلية الشفاء\",\n      \"status\": \"active\",\n      \"isTrialActive\": false,\n      \"trialEndsAt\": \"2026-04-30T10:00:00.000Z\"\n    }\n  }\n}"
+        },
+        {
+          "name": "409 No active subscription to cancel",
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"No active subscription to cancel\",\n  \"errorCode\": \"SUBSCRIPTION_ERROR\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Cancel Subscription — Arabic response",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscriptions/current/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "tenants", "{{tenantId}}", "subscriptions", "current", "cancel"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Accept-Language", "value": "ar" }
+        ],
+        "description": "Same cancel but with Accept-Language: ar. Success message will be in Arabic."
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,6 +1,9 @@
 {
   "subscription.created": "تم إنشاء الاشتراك بنجاح",
   "subscription.changed": "تم تغيير الاشتراك بنجاح",
+  "subscription.canceled": "تم إلغاء الاشتراك بنجاح",
   "subscription.operation_failed": "فشلت عملية الاشتراك",
-  "subscription.not_found": "الاشتراك غير موجود"
+  "subscription.not_found": "الاشتراك غير موجود",
+  "subscription.already_active": "المستأجر لديه اشتراك نشط بالفعل",
+  "subscription.same_plan": "المستأجر مشترك بالفعل في هذه الخطة"
 }
