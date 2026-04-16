@@ -1,6 +1,9 @@
 {
   "subscription.created": "Subscription created successfully",
   "subscription.changed": "Subscription changed successfully",
+  "subscription.canceled": "Subscription canceled successfully",
   "subscription.operation_failed": "Subscription operation failed",
-  "subscription.not_found": "Subscription not found"
+  "subscription.not_found": "Subscription not found",
+  "subscription.already_active": "Tenant already has an active subscription",
+  "subscription.same_plan": "Tenant is already on this plan"
 }
