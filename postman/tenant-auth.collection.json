@@ -1,0 +1,166 @@
+{
+  "info": {
+    "name": "Tenant — Auth",
+    "_postman_id": "tenant-auth-v1",
+    "description": "Tenant user authentication endpoints. Separate from platform admin auth. Login requires tenantId because email uniqueness is per-tenant.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "<replace_with_tenant_id>",
+      "type": "string"
+    },
+    {
+      "key": "tenantToken",
+      "value": "<replace_with_tenant_access_token>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/tenant/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "auth", "login"]
+        },
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Authenticate a tenant user. Email is unique per-tenant, so tenantId is required.\n\nLanguage resolution in issued JWT:\n1. TenantUser.preferredLanguage (if set)\n2. Tenant.preferredLanguage (fallback)\n\nReturns accessToken + user profile."
+      },
+      "response": [
+        {
+          "name": "200 OK — login successful (ar user)",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"clusr001\",\n      \"email\": \"user@example.com\",\n      \"fullName\": \"Ahmed Mohamed\",\n      \"tenantId\": \"cltenant001\",\n      \"preferredLanguage\": \"ar\"\n    }\n  },\n  \"requestId\": \"uuid\"\n}"
+        },
+        {
+          "name": "200 OK — login successful (en user, tenant ar fallback)",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"clusr002\",\n      \"email\": \"another@example.com\",\n      \"fullName\": \"Sara Ali\",\n      \"tenantId\": \"cltenant001\",\n      \"preferredLanguage\": \"en\"\n    }\n  }\n}"
+        },
+        {
+          "name": "401 Invalid credentials",
+          "status": "Unauthorized",
+          "code": 401,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid credentials\",\n  \"errorCode\": \"UNAUTHORIZED\"\n}"
+        },
+        {
+          "name": "403 Tenant suspended",
+          "status": "Forbidden",
+          "code": 403,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"This account is currently suspended. Please contact support.\",\n  \"errorCode\": \"FORBIDDEN\"\n}"
+        },
+        {
+          "name": "422 Validation error — missing fields",
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"details\": {\n    \"fieldErrors\": {\n      \"tenantId\": [\"Required\"],\n      \"email\": [\"Invalid email\"]\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Login — Arabic response",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/tenant/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "auth", "login"]
+        },
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "ar" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Same login with Accept-Language: ar — error messages will be returned in Arabic."
+      },
+      "response": []
+    },
+    {
+      "name": "Login — wrong password",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/tenant/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "auth", "login"]
+        },
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"email\": \"user@example.com\",\n  \"password\": \"wrongpassword\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Expected: 401 with generic 'Invalid credentials' message."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Current User (me)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/tenant/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "auth", "me"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "description": "Returns the auth context decoded from the tenant JWT. No DB query — token-only response.\n\nroleCodes and permissions are empty until Phase 2 RBAC is implemented."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"userId\": \"clusr001\",\n    \"tenantId\": \"cltenant001\",\n    \"preferredLanguage\": \"ar\",\n    \"roleCodes\": [],\n    \"permissions\": []\n  },\n  \"requestId\": \"uuid\"\n}"
+        },
+        {
+          "name": "401 Missing token",
+          "status": "Unauthorized",
+          "code": 401,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Authorization token is required\",\n  \"errorCode\": \"UNAUTHORIZED\"\n}"
+        },
+        {
+          "name": "403 Platform admin token used on tenant endpoint",
+          "status": "Forbidden",
+          "code": 403,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Tenant context is required\",\n  \"errorCode\": \"FORBIDDEN\"\n}"
+        }
+      ]
+    }
+  ]
+}
