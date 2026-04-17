@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "Tenant — Users",
+    "_postman_id": "users-v1",
+    "description": "User management endpoints for tenant admins. All requests require a valid tenant JWT. Passwords are hashed server-side and never returned.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/tenant",
+      "type": "string"
+    },
+    {
+      "key": "tenantToken",
+      "value": "<replace_with_tenant_access_token>",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "<replace_with_user_id>",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "<replace_with_branch_id>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "List all users in the tenant."
+      }
+    },
+    {
+      "name": "List Users (active only)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/users?isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"],
+          "query": [
+            { "key": "isActive", "value": "true" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Filter active users only."
+      }
+    },
+    {
+      "name": "List Users by Branch",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/users?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Filter users assigned to a specific branch."
+      }
+    },
+    {
+      "name": "Get User",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Fetch a single user by ID."
+      }
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"pharmacist@example.com\",\n  \"password\": \"StrongPass1!\",\n  \"fullName\": \"Ahmed Ali\",\n  \"branchId\": \"{{branchId}}\",\n  \"preferredLanguage\": \"ar\"\n}"
+        },
+        "description": "Create a new tenant user. Password is hashed server-side."
+      }
+    },
+    {
+      "name": "Create User (minimal, no branch)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"StrongPass1!\",\n  \"fullName\": \"Sara Hassan\"\n}"
+        },
+        "description": "Create user without branch assignment or language preference."
+      }
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Ahmed Ali Updated\",\n  \"preferredLanguage\": \"en\"\n}"
+        },
+        "description": "Update user fields. At least one field required."
+      }
+    },
+    {
+      "name": "Update User — Change Password",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"NewStrongPass2!\"\n}"
+        },
+        "description": "Change password only. Re-hashed on save."
+      }
+    },
+    {
+      "name": "Update User — Unassign Branch",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": null\n}"
+        },
+        "description": "Remove branch assignment from a user by setting branchId to null."
+      }
+    },
+    {
+      "name": "Deactivate User",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Soft-deactivate a user. Sets isActive=false. User can no longer log in."
+      }
+    }
+  ]
+}

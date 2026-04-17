@@ -156,7 +156,8 @@ model Branch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  TenantUser[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -167,6 +168,7 @@ model Branch {
 model TenantUser {
   id                String             @id @default(cuid())
   tenantId          String
+  branchId          String?
   email             String
   passwordHash      String
   fullName          String
@@ -175,8 +177,10 @@ model TenantUser {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
+  @@index([tenantId, branchId])
 }
