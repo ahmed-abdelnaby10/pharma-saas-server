@@ -1,0 +1,12 @@
+{
+  "role.created": "تم إنشاء الدور بنجاح",
+  "role.updated": "تم تحديث الدور بنجاح",
+  "role.deactivated": "تم تعطيل الدور بنجاح",
+  "role.not_found": "الدور غير موجود",
+  "role.code_conflict": "يوجد دور بهذا الرمز بالفعل",
+  "role.already_inactive": "الدور غير نشط بالفعل",
+  "role.permissions_assigned": "تم منح الصلاحيات للدور",
+  "role.permissions_removed": "تم سحب الصلاحيات من الدور",
+  "role.assigned_to_user": "تم تعيين الأدوار للمستخدم",
+  "role.removed_from_user": "تم سحب الأدوار من المستخدم"
+}

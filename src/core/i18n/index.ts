@@ -13,6 +13,7 @@ import enSubscription from "./locales/en/subscription.json";
 import enTenant from "./locales/en/tenant.json";
 import enUser from "./locales/en/user.json";
 import enBranch from "./locales/en/branch.json";
+import enRole from "./locales/en/role.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -21,6 +22,7 @@ import arSubscription from "./locales/ar/subscription.json";
 import arTenant from "./locales/ar/tenant.json";
 import arUser from "./locales/ar/user.json";
 import arBranch from "./locales/ar/branch.json";
+import arRole from "./locales/ar/role.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -34,6 +36,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enAdmin,
     ...enUser,
     ...enBranch,
+    ...enRole,
   },
   ar: {
     ...arCommon,
@@ -44,6 +47,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arAdmin,
     ...arUser,
     ...arBranch,
+    ...arRole,
   },
 };
 
