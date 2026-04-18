@@ -5,6 +5,7 @@ import { usersRoutes } from "../modules/tenant/users";
 import { permissionsRoutes } from "../modules/tenant/permissions";
 import { rolesRoutes } from "../modules/tenant/roles";
 import { userRolesRoutes } from "../modules/tenant/roles";
+import { settingsRoutes } from "../modules/tenant/settings";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/users", usersRoutes);
 router.use("/users/:userId/roles", userRolesRoutes);
 router.use("/permissions", permissionsRoutes);
 router.use("/roles", rolesRoutes);
+router.use("/settings", settingsRoutes);
 
 export const tenantRoutes = router;
