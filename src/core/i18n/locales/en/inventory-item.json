@@ -1,0 +1,8 @@
+{
+  "inventory.created": "Inventory item registered successfully",
+  "inventory.updated": "Inventory item updated successfully",
+  "inventory.deactivated": "Inventory item deactivated successfully",
+  "inventory.not_found": "Inventory item not found",
+  "inventory.duplicate": "This catalog item is already registered in the branch inventory",
+  "inventory.already_inactive": "Inventory item is already inactive"
+}

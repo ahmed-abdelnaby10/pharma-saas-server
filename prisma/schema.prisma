@@ -62,8 +62,9 @@ model Tenant {
   users         TenantUser[]
   subscriptions Subscription[]
   branches      Branch[]
-  roles         Role[]
-  suppliers     Supplier[]
+  roles          Role[]
+  suppliers      Supplier[]
+  inventoryItems InventoryItem[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -158,8 +159,9 @@ model Branch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  users  TenantUser[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users          TenantUser[]
+  inventoryItems InventoryItem[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -265,6 +267,8 @@ model CatalogItem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  inventoryItems InventoryItem[]
+
   @@index([isActive])
   @@index([category])
   @@index([barcode])
@@ -290,4 +294,26 @@ model Supplier {
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
   @@index([tenantId, isActive])
+}
+
+model InventoryItem {
+  id             String   @id @default(cuid())
+  tenantId       String
+  branchId       String
+  catalogItemId  String
+  quantityOnHand Decimal  @default(0) @db.Decimal(12, 3)
+  reorderLevel   Decimal? @db.Decimal(12, 3)
+  sellingPrice   Decimal? @db.Decimal(12, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, catalogItemId])
+  @@index([tenantId, branchId])
+  @@index([tenantId, isActive])
+  @@index([catalogItemId])
 }

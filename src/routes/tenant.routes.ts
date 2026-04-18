@@ -8,6 +8,7 @@ import { userRolesRoutes } from "../modules/tenant/roles";
 import { settingsRoutes } from "../modules/tenant/settings";
 import { tenantCatalogRoutes } from "../modules/tenant/catalog";
 import { suppliersRoutes } from "../modules/tenant/suppliers";
+import { inventoryRoutes } from "../modules/tenant/inventory";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/roles", rolesRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/catalog", tenantCatalogRoutes);
 router.use("/suppliers", suppliersRoutes);
+router.use("/inventory", inventoryRoutes);
 
 export const tenantRoutes = router;
