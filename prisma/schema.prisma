@@ -246,3 +246,26 @@ model UserRole {
   @@index([userId])
   @@index([roleId])
 }
+
+model CatalogItem {
+  id            String   @id @default(cuid())
+  nameEn        String
+  nameAr        String
+  genericNameEn String?
+  genericNameAr String?
+  barcode       String?  @unique
+  sku           String?  @unique
+  category      String?
+  unitOfMeasure String
+  dosageForm    String?
+  strength      String?
+  manufacturer  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+  @@index([barcode])
+  @@index([sku])
+}
