@@ -1,4 +1,9 @@
 {
   "user.not_found": "User not found",
-  "user.tenant_suspended": "This account is currently suspended. Please contact support."
+  "user.tenant_suspended": "This account is currently suspended. Please contact support.",
+  "user.created": "User created successfully",
+  "user.updated": "User updated successfully",
+  "user.deactivated": "User deactivated successfully",
+  "user.email_conflict": "A user with this email already exists",
+  "user.already_inactive": "User is already inactive"
 }

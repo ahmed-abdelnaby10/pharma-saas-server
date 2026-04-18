@@ -1,0 +1,12 @@
+{
+  "role.created": "Role created successfully",
+  "role.updated": "Role updated successfully",
+  "role.deactivated": "Role deactivated successfully",
+  "role.not_found": "Role not found",
+  "role.code_conflict": "A role with this code already exists",
+  "role.already_inactive": "Role is already inactive",
+  "role.permissions_assigned": "Permissions assigned to role",
+  "role.permissions_removed": "Permissions removed from role",
+  "role.assigned_to_user": "Roles assigned to user",
+  "role.removed_from_user": "Roles removed from user"
+}

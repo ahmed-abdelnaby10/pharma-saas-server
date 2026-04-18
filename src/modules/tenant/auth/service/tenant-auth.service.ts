@@ -3,6 +3,7 @@ import { signAccessToken } from "../../../../core/security/jwt";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
 import { Language } from "../../../../shared/types/locale.types";
+import { rolesRepository } from "../../roles/repository/roles.repository";
 import { TenantLoginDto } from "../dto/tenant-login.dto";
 import {
   tenantAuthRepository,
@@ -74,12 +75,16 @@ export class TenantAuthService {
       (record.preferredLanguage as Language | null) ??
       (record.tenant.preferredLanguage as Language);
 
+    // Resolve roles and permissions for JWT
+    const { roleCodes, permissions } =
+      await rolesRepository.resolveUserRolesAndPermissions(record.id);
+
     const accessToken = signAccessToken({
       scope: "tenant",
       userId: record.id,
       tenantId: record.tenantId,
-      roleCodes: [],
-      permissions: [],
+      roleCodes,
+      permissions,
       preferredLanguage,
     });
 

@@ -1,0 +1,206 @@
+{
+  "info": {
+    "name": "Tenant — Branches",
+    "_postman_id": "branches-v1",
+    "description": "Branch management endpoints for tenant users. All requests require a valid tenant JWT. Branch creation enforces the max_branches plan feature limit.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/tenant",
+      "type": "string"
+    },
+    {
+      "key": "tenantToken",
+      "value": "<replace_with_tenant_access_token>",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "<replace_with_branch_id>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Branches",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "List all branches for the authenticated tenant. Optional isActive filter."
+      }
+    },
+    {
+      "name": "List Branches (active only)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/branches?isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches"],
+          "query": [
+            { "key": "isActive", "value": "true" }
+          ]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "List active branches only."
+      }
+    },
+    {
+      "name": "Get Branch",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/branches/{{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches", "{{branchId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Fetch a single branch by ID."
+      }
+    },
+    {
+      "name": "Create Branch",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Main Branch\",\n  \"nameAr\": \"الفرع الرئيسي\",\n  \"address\": \"123 King Fahd Road, Riyadh\",\n  \"phone\": \"+966512345678\",\n  \"isDefault\": true\n}"
+        },
+        "description": "Create a new branch. Enforces max_branches plan limit. If isDefault=true, existing default is unset atomically."
+      }
+    },
+    {
+      "name": "Create Branch (non-default, minimal)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/branches",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"North Branch\",\n  \"nameAr\": \"الفرع الشمالي\"\n}"
+        },
+        "description": "Minimal create — no address, phone, or isDefault. Defaults to isDefault=false."
+      }
+    },
+    {
+      "name": "Update Branch",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/branches/{{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches", "{{branchId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Main Branch — Updated\",\n  \"address\": \"456 Olaya Street, Riyadh\"\n}"
+        },
+        "description": "Update branch fields. At least one field required."
+      }
+    },
+    {
+      "name": "Set Branch as Default",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/branches/{{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches", "{{branchId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isDefault\": true\n}"
+        },
+        "description": "Promote a branch to default. Clears existing default atomically."
+      }
+    },
+    {
+      "name": "Deactivate Branch",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/branches/{{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["branches", "{{branchId}}"]
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantToken}}"
+          }
+        ],
+        "description": "Soft-deactivate a branch. Sets isActive=false and isDefault=false. Irreversible via API (no reactivate endpoint yet)."
+      }
+    }
+  ]
+}
