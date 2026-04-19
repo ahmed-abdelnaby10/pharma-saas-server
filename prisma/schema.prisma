@@ -35,6 +35,15 @@ enum BillingInterval {
   yearly
 }
 
+enum StockMovementType {
+  INBOUND
+  OUTBOUND
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  RETURN_IN
+  RETURN_OUT
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -62,10 +71,11 @@ model Tenant {
   users         TenantUser[]
   subscriptions Subscription[]
   branches      Branch[]
-  roles           Role[]
-  suppliers       Supplier[]
-  inventoryItems  InventoryItem[]
+  roles            Role[]
+  suppliers        Supplier[]
+  inventoryItems   InventoryItem[]
   inventoryBatches InventoryBatch[]
+  stockMovements   StockMovement[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -310,10 +320,11 @@ model InventoryItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  branch      Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  catalogItem CatalogItem      @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
-  batches     InventoryBatch[]
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  catalogItem    CatalogItem      @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  batches        InventoryBatch[]
+  stockMovements StockMovement[]
 
   @@unique([branchId, catalogItemId])
   @@index([tenantId, branchId])
@@ -336,13 +347,41 @@ model InventoryBatch {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
-  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventoryItem  InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[]
 
   @@unique([inventoryItemId, batchNumber])
   @@index([tenantId, branchId])
   @@index([inventoryItemId, isActive])
   @@index([expiryDate])
   @@index([supplierId])
+}
+
+model StockMovement {
+  id              String            @id @default(cuid())
+  tenantId        String
+  branchId        String
+  inventoryItemId String
+  batchId         String?
+  movementType    StockMovementType
+  quantity        Decimal           @db.Decimal(12, 3)
+  quantityBefore  Decimal           @db.Decimal(12, 3)
+  quantityAfter   Decimal           @db.Decimal(12, 3)
+  referenceType   String?
+  referenceId     String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  batch         InventoryBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, branchId])
+  @@index([inventoryItemId])
+  @@index([batchId])
+  @@index([movementType])
+  @@index([createdAt])
+  @@index([referenceType, referenceId])
 }

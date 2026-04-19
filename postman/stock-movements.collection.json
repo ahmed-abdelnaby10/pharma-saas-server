@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Stock Movements",
+    "_postman_id": "stock-movements-collection-v1",
+    "description": "Append-only stock movement audit log — list and create manual adjustments.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "tenantAccessToken",
+      "value": "<tenant_jwt>",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "<branch_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "inventoryItemId",
+      "value": "<inventory_item_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "batchId",
+      "value": "<batch_cuid>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Movements",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" }
+          ]
+        },
+        "description": "List all stock movements for a branch, newest first. branchId is required."
+      },
+      "response": []
+    },
+    {
+      "name": "List Movements — By Item",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements?branchId={{branchId}}&inventoryItemId={{inventoryItemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "inventoryItemId", "value": "{{inventoryItemId}}" }
+          ]
+        },
+        "description": "Filter movements for a specific inventory item."
+      },
+      "response": []
+    },
+    {
+      "name": "List Movements — By Type",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements?branchId={{branchId}}&movementType=ADJUSTMENT_IN",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "movementType", "value": "ADJUSTMENT_IN" }
+          ]
+        },
+        "description": "Filter by movement type."
+      },
+      "response": []
+    },
+    {
+      "name": "List Movements — Date Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements?branchId={{branchId}}&from=2026-04-01T00:00:00.000Z&to=2026-04-30T23:59:59.000Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00.000Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59.000Z" }
+          ]
+        },
+        "description": "Filter movements within a date range."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Movement — Adjustment In",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_IN\",\n  \"quantity\": 50,\n  \"referenceType\": \"manual\",\n  \"notes\": \"Stock count correction — found extra units\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"]
+        },
+        "description": "Manual positive adjustment — adds 50 units to item stock."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Movement — Adjustment Out",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_OUT\",\n  \"quantity\": 10,\n  \"referenceType\": \"manual\",\n  \"notes\": \"Damaged/expired units removed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"]
+        },
+        "description": "Manual negative adjustment — removes 10 units from stock."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Movement — Adjustment In (Batch-Level)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"batchId\": \"{{batchId}}\",\n  \"movementType\": \"ADJUSTMENT_IN\",\n  \"quantity\": 25,\n  \"notes\": \"Batch recount correction\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"]
+        },
+        "description": "Batch-level adjustment — updates both batch and item quantities."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Movement — Return In",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"batchId\": \"{{batchId}}\",\n  \"movementType\": \"RETURN_IN\",\n  \"quantity\": 5,\n  \"referenceType\": \"sale\",\n  \"referenceId\": \"<sale_id>\",\n  \"notes\": \"Customer return — sealed, resalable\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"]
+        },
+        "description": "Customer return received back into stock."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Movement — Return Out (to Supplier)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"RETURN_OUT\",\n  \"quantity\": 30,\n  \"referenceType\": \"supplier_return\",\n  \"notes\": \"Returned to supplier — near-expiry batch\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/stock-movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "stock-movements"]
+        },
+        "description": "Stock returned to supplier — reduces item quantity."
+      },
+      "response": []
+    }
+  ]
+}

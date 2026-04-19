@@ -1,0 +1,5 @@
+{
+  "stock_movement.created": "Stock movement recorded successfully",
+  "stock.insufficient_quantity": "Insufficient stock quantity for this movement",
+  "stock.insufficient_batch_quantity": "Insufficient batch quantity for this movement"
+}
