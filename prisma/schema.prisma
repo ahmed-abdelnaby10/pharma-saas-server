@@ -52,6 +52,11 @@ enum PurchaseOrderStatus {
   CANCELLED
 }
 
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -85,6 +90,7 @@ model Tenant {
   inventoryBatches InventoryBatch[]
   stockMovements   StockMovement[]
   purchaseOrders   PurchaseOrder[]
+  shifts           Shift[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -183,6 +189,7 @@ model Branch {
   users          TenantUser[]
   inventoryItems InventoryItem[]
   purchaseOrders PurchaseOrder[]
+  shifts         Shift[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -205,6 +212,7 @@ model TenantUser {
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
   userRoles UserRole[]
+  shifts    Shift[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -438,4 +446,27 @@ model PurchaseOrderItem {
   @@unique([purchaseOrderId, inventoryItemId])
   @@index([purchaseOrderId])
   @@index([inventoryItemId])
+}
+
+model Shift {
+  id             String      @id @default(cuid())
+  tenantId       String
+  branchId       String
+  userId         String
+  status         ShiftStatus @default(OPEN)
+  openingBalance Decimal     @db.Decimal(12, 2)
+  closingBalance Decimal?    @db.Decimal(12, 2)
+  notes          String?
+  openedAt       DateTime    @default(now())
+  closedAt       DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch Branch     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  user   TenantUser @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, branchId, status])
+  @@index([tenantId, branchId])
+  @@index([userId])
 }

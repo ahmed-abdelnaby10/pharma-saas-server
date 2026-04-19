@@ -1,0 +1,8 @@
+{
+  "shift.opened": "Shift opened successfully",
+  "shift.closed": "Shift closed successfully",
+  "shift.not_found": "Shift not found",
+  "shift.no_active": "No open shift at this branch",
+  "shift.already_open": "A shift is already open at this branch",
+  "shift.already_closed": "Shift is already closed"
+}
