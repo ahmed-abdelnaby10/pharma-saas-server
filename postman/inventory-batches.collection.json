@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "Inventory Batches",
+    "_postman_id": "inventory-batches-collection-v1",
+    "description": "Batch-level inventory tracking endpoints (lot numbers, expiry dates, quantities) nested under inventory items.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "tenantAccessToken",
+      "value": "<tenant_jwt>",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "<inventory_item_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "batchId",
+      "value": "<batch_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "supplierId",
+      "value": "<supplier_cuid>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Batches",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches"]
+        },
+        "description": "List all batches for an inventory item ordered by expiry date (FEFO)."
+      },
+      "response": []
+    },
+    {
+      "name": "List Batches — Active Only",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches?isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches"],
+          "query": [
+            { "key": "isActive", "value": "true" }
+          ]
+        },
+        "description": "List only active batches."
+      },
+      "response": []
+    },
+    {
+      "name": "List Batches — Expiring Soon (30 days)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches?expiringSoonDays=30",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches"],
+          "query": [
+            { "key": "expiringSoonDays", "value": "30" }
+          ]
+        },
+        "description": "Return active batches expiring within 30 days."
+      },
+      "response": []
+    },
+    {
+      "name": "Register Batch",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"batchNumber\": \"LOT-2026-001\",\n  \"expiryDate\": \"2027-06-30T00:00:00.000Z\",\n  \"quantityReceived\": 500,\n  \"costPrice\": 3.75,\n  \"supplierId\": \"{{supplierId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches"]
+        },
+        "description": "Register a new batch. Atomically increments InventoryItem.quantityOnHand by quantityReceived."
+      },
+      "response": []
+    },
+    {
+      "name": "Register Batch — Minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"batchNumber\": \"LOT-2026-002\",\n  \"expiryDate\": \"2028-01-01T00:00:00.000Z\",\n  \"quantityReceived\": 200\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches"]
+        },
+        "description": "Register a batch with only required fields."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Batch",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches/{{batchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches", "{{batchId}}"]
+        },
+        "description": "Retrieve a single batch by ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Batch — Cost & Supplier",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"costPrice\": 4.10,\n  \"supplierId\": \"{{supplierId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches/{{batchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches", "{{batchId}}"]
+        },
+        "description": "Update cost price and supplier reference."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Batch — Correct Expiry Date",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expiryDate\": \"2027-12-31T00:00:00.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches/{{batchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches", "{{batchId}}"]
+        },
+        "description": "Correct an expiry date entry error."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Batch — Clear Supplier",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"supplierId\": null,\n  \"costPrice\": null\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches/{{batchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches", "{{batchId}}"]
+        },
+        "description": "Clear supplier reference and cost price."
+      },
+      "response": []
+    },
+    {
+      "name": "Deactivate Batch",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}/batches/{{batchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}", "batches", "{{batchId}}"]
+        },
+        "description": "Soft-deactivate a batch. Does not adjust InventoryItem.quantityOnHand — use Stock Movements for quantity reconciliation."
+      },
+      "response": []
+    }
+  ]
+}

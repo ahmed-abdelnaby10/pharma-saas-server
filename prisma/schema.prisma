@@ -62,9 +62,10 @@ model Tenant {
   users         TenantUser[]
   subscriptions Subscription[]
   branches      Branch[]
-  roles          Role[]
-  suppliers      Supplier[]
-  inventoryItems InventoryItem[]
+  roles           Role[]
+  suppliers       Supplier[]
+  inventoryItems  InventoryItem[]
+  inventoryBatches InventoryBatch[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -289,7 +290,8 @@ model Supplier {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batches  InventoryBatch[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -308,12 +310,39 @@ model InventoryItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch      Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem      @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  batches     InventoryBatch[]
 
   @@unique([branchId, catalogItemId])
   @@index([tenantId, branchId])
   @@index([tenantId, isActive])
   @@index([catalogItemId])
+}
+
+model InventoryBatch {
+  id               String   @id @default(cuid())
+  tenantId         String
+  branchId         String
+  inventoryItemId  String
+  supplierId       String?
+  batchNumber      String
+  expiryDate       DateTime
+  quantityReceived Decimal  @db.Decimal(12, 3)
+  quantityOnHand   Decimal  @db.Decimal(12, 3)
+  costPrice        Decimal? @db.Decimal(12, 2)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@unique([inventoryItemId, batchNumber])
+  @@index([tenantId, branchId])
+  @@index([inventoryItemId, isActive])
+  @@index([expiryDate])
+  @@index([supplierId])
 }
