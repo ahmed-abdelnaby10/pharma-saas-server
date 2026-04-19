@@ -13,6 +13,7 @@ import { inventoryBatchesRoutes } from "../modules/tenant/inventory-batches";
 import { stockMovementsRoutes } from "../modules/tenant/stock-movements";
 import { purchasingRoutes } from "../modules/tenant/purchasing";
 import { shiftsRoutes } from "../modules/tenant/shifts";
+import { posRoutes } from "../modules/tenant/pos";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/inventory/:itemId/batches", inventoryBatchesRoutes);
 router.use("/stock-movements", stockMovementsRoutes);
 router.use("/purchasing", purchasingRoutes);
 router.use("/shifts", shiftsRoutes);
+router.use("/pos", posRoutes);
 
 export const tenantRoutes = router;

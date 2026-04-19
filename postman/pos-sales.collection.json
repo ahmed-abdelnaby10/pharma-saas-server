@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "POS — Sales",
+    "_postman_id": "pos-sales-collection-v1",
+    "description": "Point-of-sale sale creation and retrieval. Requires an open shift.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" },
+    { "key": "shiftId", "value": "<shift_cuid>", "type": "string" },
+    { "key": "inventoryItemId", "value": "<inventory_item_cuid>", "type": "string" },
+    { "key": "saleId", "value": "<sale_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "List Sales",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "List all sales at a branch, newest first."
+      }
+    },
+    {
+      "name": "List Sales — By Shift",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos?branchId={{branchId}}&shiftId={{shiftId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "shiftId", "value": "{{shiftId}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Sales — Date Range",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos?branchId={{branchId}}&from=2026-04-19T00:00:00Z&to=2026-04-19T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-19T00:00:00Z" },
+            { "key": "to", "value": "2026-04-19T23:59:59Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Sale — Cash",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 60.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 150.00,\n  \"notes\": \"Customer paid cash, change given\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "Create a cash sale. paymentAmount must cover the computed total (subtotal + VAT)."
+      }
+    },
+    {
+      "name": "Create Sale — Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 1,\n      \"unitPrice\": 45.00\n    }\n  ],\n  \"paymentMethod\": \"CARD\",\n  \"paymentAmount\": 51.75,\n  \"paymentReference\": \"TXN-9284761\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        }
+      }
+    },
+    {
+      "name": "Create Sale — Insurance",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 3,\n      \"unitPrice\": 25.00\n    }\n  ],\n  \"paymentMethod\": \"INSURANCE\",\n  \"paymentAmount\": 86.25,\n  \"paymentReference\": \"INS-CLAIM-00492\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        }
+      }
+    },
+    {
+      "name": "Create Sale — Multi-Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 30.00\n    },\n    {\n      \"inventoryItemId\": \"<second_item_cuid>\",\n      \"quantity\": 1,\n      \"unitPrice\": 80.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 200.00\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "Multi-item sale. Each item is fulfilled via FEFO batch selection independently."
+      }
+    },
+    {
+      "name": "Get Sale",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}"]
+        },
+        "description": "Retrieve a single sale by ID, including all line items and the payment record."
+      }
+    }
+  ]
+}
