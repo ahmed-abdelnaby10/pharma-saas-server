@@ -1,0 +1,181 @@
+{
+  "info": {
+    "name": "Purchasing",
+    "_postman_id": "purchasing-collection-v1",
+    "description": "Purchase order management with full receive flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" },
+    { "key": "supplierId", "value": "<supplier_cuid>", "type": "string" },
+    { "key": "inventoryItemId", "value": "<inventory_item_cuid>", "type": "string" },
+    { "key": "orderId", "value": "<order_cuid>", "type": "string" },
+    { "key": "poItemId", "value": "<po_item_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "List Orders",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/purchasing/orders?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        }
+      }
+    },
+    {
+      "name": "List Orders — By Status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/purchasing/orders?branchId={{branchId}}&status=ORDERED",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }, { "key": "status", "value": "ORDERED" }]
+        }
+      }
+    },
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"supplierId\": \"{{supplierId}}\",\n  \"notes\": \"Monthly stock replenishment\",\n  \"expectedAt\": \"2026-05-01T00:00:00.000Z\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders"] }
+      }
+    },
+    {
+      "name": "Create Order — Custom Number",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"orderNumber\": \"PO-2026-0042\",\n  \"supplierId\": \"{{supplierId}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders"] }
+      }
+    },
+    {
+      "name": "Get Order",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}"] }
+      }
+    },
+    {
+      "name": "Update Order — Notes & Expected Date",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Updated: urgent order\",\n  \"expectedAt\": \"2026-04-25T00:00:00.000Z\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}"] }
+      }
+    },
+    {
+      "name": "Confirm Order (DRAFT → ORDERED)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"ORDERED\"\n}" },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}"] }
+      }
+    },
+    {
+      "name": "Cancel Order",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}"] }
+      }
+    },
+    {
+      "name": "Add Line Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"quantityOrdered\": 500,\n  \"unitCost\": 3.50\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}/items", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}", "items"] }
+      }
+    },
+    {
+      "name": "Update Line Item",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"quantityOrdered\": 600,\n  \"unitCost\": 3.25\n}" },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}/items/{{poItemId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}", "items", "{{poItemId}}"] }
+      }
+    },
+    {
+      "name": "Remove Line Item",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}/items/{{poItemId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}", "items", "{{poItemId}}"] }
+      }
+    },
+    {
+      "name": "Receive Items — Full",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"purchaseOrderItemId\": \"{{poItemId}}\",\n      \"quantityReceived\": 500,\n      \"batchNumber\": \"LOT-2026-001\",\n      \"expiryDate\": \"2027-06-30T00:00:00.000Z\",\n      \"unitCost\": 3.50\n    }\n  ]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}/receive", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}", "receive"] }
+      }
+    },
+    {
+      "name": "Receive Items — Partial",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"purchaseOrderItemId\": \"{{poItemId}}\",\n      \"quantityReceived\": 200,\n      \"batchNumber\": \"LOT-2026-002\",\n      \"expiryDate\": \"2027-12-31T00:00:00.000Z\"\n    }\n  ]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/purchasing/orders/{{orderId}}/receive", "host": ["{{baseUrl}}"], "path": ["tenant", "purchasing", "orders", "{{orderId}}", "receive"] }
+      }
+    }
+  ]
+}

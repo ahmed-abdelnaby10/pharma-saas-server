@@ -1,0 +1,17 @@
+{
+  "purchase_order.created": "Purchase order created successfully",
+  "purchase_order.updated": "Purchase order updated successfully",
+  "purchase_order.cancelled": "Purchase order cancelled successfully",
+  "purchase_order.received": "Items received successfully",
+  "purchase_order.item_added": "Item added to order",
+  "purchase_order.item_updated": "Order item updated",
+  "purchase_order.item_removed": "Order item removed",
+  "purchase_order.not_found": "Purchase order not found",
+  "purchase_order.item_not_found": "Order line item not found",
+  "purchase_order.duplicate_number": "A purchase order with this number already exists",
+  "purchase_order.not_editable": "Only DRAFT or ORDERED orders can be edited",
+  "purchase_order.not_draft": "This action is only allowed on DRAFT orders",
+  "purchase_order.not_receivable": "Only ORDERED or PARTIALLY_RECEIVED orders can be received",
+  "purchase_order.not_cancellable": "Cannot cancel a received or already cancelled order",
+  "purchase_order.item_duplicate": "This inventory item is already on this order"
+}

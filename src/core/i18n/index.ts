@@ -20,6 +20,7 @@ import enSupplier from "./locales/en/supplier.json";
 import enInventoryItem from "./locales/en/inventory-item.json";
 import enInventoryBatch from "./locales/en/inventory-batch.json";
 import enStockMovement from "./locales/en/stock-movement.json";
+import enPurchaseOrder from "./locales/en/purchase-order.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -35,6 +36,7 @@ import arSupplier from "./locales/ar/supplier.json";
 import arInventoryItem from "./locales/ar/inventory-item.json";
 import arInventoryBatch from "./locales/ar/inventory-batch.json";
 import arStockMovement from "./locales/ar/stock-movement.json";
+import arPurchaseOrder from "./locales/ar/purchase-order.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -55,6 +57,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enInventoryItem,
     ...enInventoryBatch,
     ...enStockMovement,
+    ...enPurchaseOrder,
   },
   ar: {
     ...arCommon,
@@ -72,6 +75,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arInventoryItem,
     ...arInventoryBatch,
     ...arStockMovement,
+    ...arPurchaseOrder,
   },
 };
 
