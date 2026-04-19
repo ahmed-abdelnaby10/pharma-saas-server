@@ -1,0 +1,9 @@
+{
+  "catalog.created": "Catalog item created successfully",
+  "catalog.updated": "Catalog item updated successfully",
+  "catalog.deactivated": "Catalog item deactivated successfully",
+  "catalog.not_found": "Catalog item not found",
+  "catalog.barcode_conflict": "A catalog item with this barcode already exists",
+  "catalog.sku_conflict": "A catalog item with this SKU already exists",
+  "catalog.already_inactive": "Catalog item is already inactive"
+}

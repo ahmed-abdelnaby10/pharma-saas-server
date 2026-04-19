@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "Tenant — Settings",
+    "_postman_id": "settings-v1",
+    "description": "Tenant self-service settings. One settings record per tenant, created automatically at provisioning. All routes require a tenant JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/tenant",
+      "type": "string"
+    },
+    {
+      "key": "tenantToken",
+      "value": "<replace_with_tenant_access_token>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Settings",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "description": "Retrieve the current tenant's settings record."
+      }
+    },
+    {
+      "name": "Update Settings — org info",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organizationName\": \"Al Shifa Pharmacy\",\n  \"taxId\": \"300123456789\",\n  \"phone\": \"+966512345678\",\n  \"email\": \"info@alshifa.sa\"\n}"
+        },
+        "description": "Update organisation contact details."
+      }
+    },
+    {
+      "name": "Update Settings — VAT and language",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vatPercentage\": 15,\n  \"defaultLanguage\": \"ar\"\n}"
+        },
+        "description": "Set VAT rate (stored as Decimal, returned as string) and default language."
+      }
+    },
+    {
+      "name": "Update Settings — alerts",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lowStockAlerts\": true,\n  \"expiryAlerts\": true,\n  \"purchaseOrderUpdates\": false\n}"
+        },
+        "description": "Toggle alert notification flags."
+      }
+    },
+    {
+      "name": "Update Settings — receipt",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"receiptHeader\": \"Welcome to Al Shifa Pharmacy\",\n  \"receiptFooter\": \"Thank you for your visit. Stay healthy!\"\n}"
+        },
+        "description": "Set receipt header and footer text for POS receipts."
+      }
+    },
+    {
+      "name": "Update Settings — clear nullable field",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/settings",
+          "host": ["{{baseUrl}}"],
+          "path": ["settings"]
+        },
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"receiptFooter\": null\n}"
+        },
+        "description": "Pass null to explicitly clear a nullable string field."
+      }
+    }
+  ]
+}

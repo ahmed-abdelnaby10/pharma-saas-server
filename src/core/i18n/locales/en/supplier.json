@@ -1,0 +1,8 @@
+{
+  "supplier.created": "Supplier created successfully",
+  "supplier.updated": "Supplier updated successfully",
+  "supplier.deactivated": "Supplier deactivated successfully",
+  "supplier.not_found": "Supplier not found",
+  "supplier.name_conflict": "A supplier with this name already exists",
+  "supplier.already_inactive": "Supplier is already inactive"
+}

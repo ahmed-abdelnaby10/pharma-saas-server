@@ -1,0 +1,272 @@
+{
+  "info": {
+    "name": "Suppliers",
+    "_postman_id": "suppliers-collection-v1",
+    "description": "Tenant-scoped supplier management endpoints for the Pharmacy SaaS platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "tenantAccessToken",
+      "value": "<tenant_jwt>",
+      "type": "string"
+    },
+    {
+      "key": "supplierId",
+      "value": "<supplier_cuid>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Suppliers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers"],
+          "query": []
+        },
+        "description": "List all suppliers for the authenticated tenant. Supports optional filtering by isActive and search."
+      },
+      "response": []
+    },
+    {
+      "name": "List Suppliers — Filter Active",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers?isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers"],
+          "query": [
+            { "key": "isActive", "value": "true" }
+          ]
+        },
+        "description": "List only active suppliers."
+      },
+      "response": []
+    },
+    {
+      "name": "List Suppliers — Search",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers?search=medico",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers"],
+          "query": [
+            { "key": "search", "value": "medico" }
+          ]
+        },
+        "description": "Search suppliers by name (EN/AR) or contact name."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Supplier",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "en"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"MediCo Pharma\",\n  \"nameAr\": \"ميديكو فارما\",\n  \"phone\": \"+966500000000\",\n  \"email\": \"contact@medico.sa\",\n  \"address\": \"Riyadh, KSA\",\n  \"taxId\": \"300000000000003\",\n  \"contactName\": \"Ali Hassan\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers"]
+        },
+        "description": "Create a new supplier. nameEn and nameAr must be unique within the tenant."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Supplier — Minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"Quick Supplies Co\",\n  \"nameAr\": \"شركة التوريدات السريعة\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers"]
+        },
+        "description": "Create a supplier with only the required fields (nameEn and nameAr)."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Supplier",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers/{{supplierId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers", "{{supplierId}}"]
+        },
+        "description": "Retrieve a single supplier by ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Supplier",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+966511111111\",\n  \"email\": \"newemail@medico.sa\",\n  \"contactName\": \"Sara Ahmed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers/{{supplierId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers", "{{supplierId}}"]
+        },
+        "description": "Partially update supplier details. Only provided fields are changed."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Supplier — Clear Optional Fields",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": null,\n  \"email\": null,\n  \"address\": null,\n  \"taxId\": null,\n  \"contactName\": null\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers/{{supplierId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers", "{{supplierId}}"]
+        },
+        "description": "Clear all optional fields by passing null values."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Supplier — Rename",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nameEn\": \"MediCo Pharma International\",\n  \"nameAr\": \"ميديكو فارما الدولية\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers/{{supplierId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers", "{{supplierId}}"]
+        },
+        "description": "Rename a supplier. Returns 409 if the new name conflicts with another supplier."
+      },
+      "response": []
+    },
+    {
+      "name": "Deactivate Supplier",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tenantAccessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/suppliers/{{supplierId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "suppliers", "{{supplierId}}"]
+        },
+        "description": "Soft-delete a supplier by setting isActive = false. Returns 409 if already inactive."
+      },
+      "response": []
+    }
+  ]
+}

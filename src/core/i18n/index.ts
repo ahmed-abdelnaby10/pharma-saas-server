@@ -14,6 +14,15 @@ import enTenant from "./locales/en/tenant.json";
 import enUser from "./locales/en/user.json";
 import enBranch from "./locales/en/branch.json";
 import enRole from "./locales/en/role.json";
+import enSettings from "./locales/en/settings.json";
+import enCatalog from "./locales/en/catalog.json";
+import enSupplier from "./locales/en/supplier.json";
+import enInventoryItem from "./locales/en/inventory-item.json";
+import enInventoryBatch from "./locales/en/inventory-batch.json";
+import enStockMovement from "./locales/en/stock-movement.json";
+import enPurchaseOrder from "./locales/en/purchase-order.json";
+import enShift from "./locales/en/shift.json";
+import enSale from "./locales/en/sale.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -23,6 +32,15 @@ import arTenant from "./locales/ar/tenant.json";
 import arUser from "./locales/ar/user.json";
 import arBranch from "./locales/ar/branch.json";
 import arRole from "./locales/ar/role.json";
+import arSettings from "./locales/ar/settings.json";
+import arCatalog from "./locales/ar/catalog.json";
+import arSupplier from "./locales/ar/supplier.json";
+import arInventoryItem from "./locales/ar/inventory-item.json";
+import arInventoryBatch from "./locales/ar/inventory-batch.json";
+import arStockMovement from "./locales/ar/stock-movement.json";
+import arPurchaseOrder from "./locales/ar/purchase-order.json";
+import arShift from "./locales/ar/shift.json";
+import arSale from "./locales/ar/sale.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -37,6 +55,15 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enUser,
     ...enBranch,
     ...enRole,
+    ...enSettings,
+    ...enCatalog,
+    ...enSupplier,
+    ...enInventoryItem,
+    ...enInventoryBatch,
+    ...enStockMovement,
+    ...enPurchaseOrder,
+    ...enShift,
+    ...enSale,
   },
   ar: {
     ...arCommon,
@@ -48,6 +75,15 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arUser,
     ...arBranch,
     ...arRole,
+    ...arSettings,
+    ...arCatalog,
+    ...arSupplier,
+    ...arInventoryItem,
+    ...arInventoryBatch,
+    ...arStockMovement,
+    ...arPurchaseOrder,
+    ...arShift,
+    ...arSale,
   },
 };
 

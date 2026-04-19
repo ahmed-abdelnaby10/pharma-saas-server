@@ -1,0 +1,8 @@
+{
+  "inventory.created": "تم تسجيل عنصر المخزون بنجاح",
+  "inventory.updated": "تم تحديث عنصر المخزون بنجاح",
+  "inventory.deactivated": "تم تعطيل عنصر المخزون بنجاح",
+  "inventory.not_found": "عنصر المخزون غير موجود",
+  "inventory.duplicate": "هذا المنتج مسجل بالفعل في مخزون الفرع",
+  "inventory.already_inactive": "عنصر المخزون غير نشط بالفعل"
+}

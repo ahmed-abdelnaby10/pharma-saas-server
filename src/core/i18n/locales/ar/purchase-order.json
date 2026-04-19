@@ -1,0 +1,17 @@
+{
+  "purchase_order.created": "تم إنشاء أمر الشراء بنجاح",
+  "purchase_order.updated": "تم تحديث أمر الشراء بنجاح",
+  "purchase_order.cancelled": "تم إلغاء أمر الشراء بنجاح",
+  "purchase_order.received": "تم استلام البضاعة بنجاح",
+  "purchase_order.item_added": "تم إضافة الصنف إلى الأمر",
+  "purchase_order.item_updated": "تم تحديث صنف الأمر",
+  "purchase_order.item_removed": "تم إزالة صنف الأمر",
+  "purchase_order.not_found": "أمر الشراء غير موجود",
+  "purchase_order.item_not_found": "صنف الأمر غير موجود",
+  "purchase_order.duplicate_number": "يوجد أمر شراء بهذا الرقم بالفعل",
+  "purchase_order.not_editable": "لا يمكن تعديل إلا الأوامر في حالة مسودة أو مُرسلة",
+  "purchase_order.not_draft": "هذا الإجراء مسموح به فقط على الأوامر في حالة مسودة",
+  "purchase_order.not_receivable": "لا يمكن استلام إلا الأوامر في حالة مُرسلة أو مستلمة جزئياً",
+  "purchase_order.not_cancellable": "لا يمكن إلغاء أمر مستلم أو ملغى بالفعل",
+  "purchase_order.item_duplicate": "هذا المنتج موجود بالفعل في الأمر"
+}

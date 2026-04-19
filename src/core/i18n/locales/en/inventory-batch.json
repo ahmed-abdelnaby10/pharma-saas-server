@@ -1,0 +1,8 @@
+{
+  "inventory_batch.created": "Batch registered successfully",
+  "inventory_batch.updated": "Batch updated successfully",
+  "inventory_batch.deactivated": "Batch deactivated successfully",
+  "inventory_batch.not_found": "Batch not found",
+  "inventory_batch.duplicate": "A batch with this batch number already exists for this item",
+  "inventory_batch.already_inactive": "Batch is already inactive"
+}

@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "Shifts",
+    "_postman_id": "shifts-collection-v1",
+    "description": "Cashier shift open/close lifecycle for branch POS sessions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" },
+    { "key": "shiftId", "value": "<shift_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "List Shifts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/shifts?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "shifts"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "List all shifts for a branch, newest first."
+      }
+    },
+    {
+      "name": "List Shifts — Open Only",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/shifts?branchId={{branchId}}&status=OPEN",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "shifts"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "status", "value": "OPEN" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Active Shift",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/shifts/active?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "shifts", "active"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "Get the currently open shift for a branch. Returns 404 if none open."
+      }
+    },
+    {
+      "name": "Open Shift",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"openingBalance\": 500,\n  \"notes\": \"Morning shift — petty cash float loaded\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/shifts", "host": ["{{baseUrl}}"], "path": ["tenant", "shifts"] },
+        "description": "Open a new shift. JWT user becomes the cashier. Returns 409 if branch already has an open shift."
+      }
+    },
+    {
+      "name": "Open Shift — No Float",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"openingBalance\": 0\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenant/shifts", "host": ["{{baseUrl}}"], "path": ["tenant", "shifts"] }
+      }
+    },
+    {
+      "name": "Get Shift",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/shifts/{{shiftId}}",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "shifts", "{{shiftId}}"]
+        }
+      }
+    },
+    {
+      "name": "Close Shift",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"closingBalance\": 1250.75,\n  \"notes\": \"Cash counted and reconciled with supervisor\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/shifts/{{shiftId}}/close",
+          "host": ["{{baseUrl}}"], "path": ["tenant", "shifts", "{{shiftId}}", "close"]
+        },
+        "description": "Close an open shift. Returns 409 if already closed."
+      }
+    }
+  ]
+}

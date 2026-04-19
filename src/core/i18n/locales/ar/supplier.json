@@ -1,0 +1,8 @@
+{
+  "supplier.created": "تم إنشاء المورد بنجاح",
+  "supplier.updated": "تم تحديث المورد بنجاح",
+  "supplier.deactivated": "تم تعطيل المورد بنجاح",
+  "supplier.not_found": "المورد غير موجود",
+  "supplier.name_conflict": "يوجد مورد بهذا الاسم بالفعل",
+  "supplier.already_inactive": "المورد غير نشط بالفعل"
+}

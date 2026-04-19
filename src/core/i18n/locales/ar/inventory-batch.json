@@ -1,0 +1,8 @@
+{
+  "inventory_batch.created": "تم تسجيل الدفعة بنجاح",
+  "inventory_batch.updated": "تم تحديث الدفعة بنجاح",
+  "inventory_batch.deactivated": "تم تعطيل الدفعة بنجاح",
+  "inventory_batch.not_found": "الدفعة غير موجودة",
+  "inventory_batch.duplicate": "يوجد دفعة بهذا الرقم بالفعل لهذا المنتج",
+  "inventory_batch.already_inactive": "الدفعة غير نشطة بالفعل"
+}

@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "Global Catalog",
+    "_postman_id": "catalog-v1",
+    "description": "Platform-managed pharmaceutical product catalog. Platform admins manage items; tenant users read them.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1", "type": "string" },
+    { "key": "platformToken", "value": "<replace_with_platform_admin_token>", "type": "string" },
+    { "key": "tenantToken", "value": "<replace_with_tenant_access_token>", "type": "string" },
+    { "key": "itemId", "value": "<replace_with_catalog_item_id>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Platform Admin",
+      "item": [
+        {
+          "name": "List Catalog Items",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "description": "List all catalog items. Supports search, category, isActive filters."
+          }
+        },
+        {
+          "name": "List — search by name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog?search=paracetamol",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog"],
+              "query": [{ "key": "search", "value": "paracetamol" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        },
+        {
+          "name": "List — inactive items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog?isActive=false",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog"],
+              "query": [{ "key": "isActive", "value": "false" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        },
+        {
+          "name": "Get Catalog Item",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        },
+        {
+          "name": "Create Catalog Item — tablet",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Paracetamol 500mg Tablets\",\n  \"nameAr\": \"باراسيتامول 500 مجم أقراص\",\n  \"genericNameEn\": \"Paracetamol\",\n  \"genericNameAr\": \"باراسيتامول\",\n  \"barcode\": \"6281034057042\",\n  \"sku\": \"PCM-500-TAB\",\n  \"category\": \"Analgesics\",\n  \"unitOfMeasure\": \"tablet\",\n  \"dosageForm\": \"tablet\",\n  \"strength\": \"500mg\",\n  \"manufacturer\": \"Gulf Pharma\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Catalog Item — syrup",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Amoxicillin 250mg/5ml Syrup\",\n  \"nameAr\": \"أموكسيسيلين 250 مجم/5 مل شراب\",\n  \"genericNameEn\": \"Amoxicillin\",\n  \"genericNameAr\": \"أموكسيسيلين\",\n  \"category\": \"Antibiotics\",\n  \"unitOfMeasure\": \"bottle\",\n  \"dosageForm\": \"syrup\",\n  \"strength\": \"250mg/5ml\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Catalog Item",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manufacturer\": \"Al Jazeera Pharma\",\n  \"strength\": \"500mg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Deactivate Catalog Item",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant (read-only)",
+      "item": [
+        {
+          "name": "List Catalog Items",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+          }
+        },
+        {
+          "name": "Search Catalog",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tenant/catalog?search=amox&category=Antibiotics",
+              "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"],
+              "query": [
+                { "key": "search", "value": "amox" },
+                { "key": "category", "value": "Antibiotics" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+          }
+        },
+        {
+          "name": "Get Catalog Item",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "{{itemId}}"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}

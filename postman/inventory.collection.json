@@ -1,0 +1,255 @@
+{
+  "info": {
+    "name": "Inventory",
+    "_postman_id": "inventory-collection-v1",
+    "description": "Branch-scoped inventory management endpoints for the Pharmacy SaaS platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "tenantAccessToken",
+      "value": "<tenant_jwt>",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "<branch_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "catalogItemId",
+      "value": "<catalog_item_cuid>",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "<inventory_item_cuid>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Inventory Items",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" }
+          ]
+        },
+        "description": "List all inventory items for a branch. branchId is required."
+      },
+      "response": []
+    },
+    {
+      "name": "List Inventory Items — Active Only",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory?branchId={{branchId}}&isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "isActive", "value": "true" }
+          ]
+        },
+        "description": "List only active inventory items for a branch."
+      },
+      "response": []
+    },
+    {
+      "name": "List Inventory Items — Low Stock",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory?branchId={{branchId}}&lowStock=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "lowStock", "value": "true" }
+          ]
+        },
+        "description": "List items where quantityOnHand <= reorderLevel and reorderLevel is set."
+      },
+      "response": []
+    },
+    {
+      "name": "List Inventory Items — Search",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory?branchId={{branchId}}&search=paracetamol",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "search", "value": "paracetamol" }
+          ]
+        },
+        "description": "Search inventory by catalog item name, barcode, or SKU."
+      },
+      "response": []
+    },
+    {
+      "name": "Register Inventory Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"catalogItemId\": \"{{catalogItemId}}\",\n  \"reorderLevel\": 20,\n  \"sellingPrice\": 5.50\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"]
+        },
+        "description": "Register a catalog item in a branch's inventory. quantityOnHand starts at 0."
+      },
+      "response": []
+    },
+    {
+      "name": "Register Inventory Item — Minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"catalogItemId\": \"{{catalogItemId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory"]
+        },
+        "description": "Register with only required fields. Price and reorder level can be set later."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Inventory Item",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}"]
+        },
+        "description": "Retrieve a single inventory item by ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Inventory Item — Price & Reorder",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sellingPrice\": 6.25,\n  \"reorderLevel\": 15\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}"]
+        },
+        "description": "Update selling price and reorder level."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Inventory Item — Clear Price",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sellingPrice\": null,\n  \"reorderLevel\": null\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}"]
+        },
+        "description": "Clear selling price and reorder level by passing null."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Inventory Item — Toggle Active",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isActive\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}"]
+        },
+        "description": "Deactivate an inventory item via PATCH."
+      },
+      "response": []
+    },
+    {
+      "name": "Deactivate Inventory Item",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/inventory/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "inventory", "{{itemId}}"]
+        },
+        "description": "Soft-deactivate an inventory item. Returns 409 if already inactive."
+      },
+      "response": []
+    }
+  ]
+}

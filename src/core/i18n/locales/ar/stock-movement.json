@@ -1,0 +1,5 @@
+{
+  "stock_movement.created": "تم تسجيل حركة المخزون بنجاح",
+  "stock.insufficient_quantity": "الكمية في المخزون غير كافية لهذه الحركة",
+  "stock.insufficient_batch_quantity": "كمية الدفعة غير كافية لهذه الحركة"
+}
