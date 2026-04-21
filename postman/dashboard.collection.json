@@ -1,0 +1,29 @@
+{
+  "info": {
+    "name": "Dashboard",
+    "_postman_id": "dashboard-collection-v1",
+    "description": "Branch-level KPI summary: today's sales, active shift, low-stock and expiry counts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Get Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/dashboard?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "dashboard"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "Returns branch KPIs in one round trip: today revenue + sale count, month-to-date revenue + sale count, active shift snapshot (null if none open), low-stock item count, and expiring-soon batch count (30-day window). All sub-queries run in parallel."
+      }
+    }
+  ]
+}
