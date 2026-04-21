@@ -1,11 +1,30 @@
 import { Prisma, SaleStatus } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { QuerySalesDto } from "../dto/query-sales.dto";
-import { SaleRecord } from "../mapper/pos.mapper";
+import { SaleRecord, ReceiptRecord } from "../mapper/pos.mapper";
 
 const saleInclude = {
   items: true,
   payments: true,
+} satisfies Prisma.SaleInclude;
+
+const receiptInclude = {
+  items: {
+    include: {
+      inventoryItem: {
+        include: {
+          catalogItem: { select: { nameEn: true, nameAr: true, unitOfMeasure: true } },
+        },
+      },
+    },
+  },
+  payments: true,
+  shift: {
+    include: {
+      user: { select: { id: true, fullName: true } },
+    },
+  },
+  branch: { select: { id: true, nameEn: true, nameAr: true, address: true, phone: true } },
 } satisfies Prisma.SaleInclude;
 
 export class PosRepository {
@@ -96,6 +115,41 @@ export class PosRepository {
         },
       },
       include: saleInclude,
+    });
+  }
+
+  async findReceiptById(tenantId: string, saleId: string): Promise<ReceiptRecord | null> {
+    return prisma.sale.findFirst({
+      where: { id: saleId, tenantId },
+      include: receiptInclude,
+    }) as Promise<ReceiptRecord | null>;
+  }
+
+  /** Cancel a sale in a transaction — sets status to CANCELLED. */
+  async cancelInTransaction(
+    tx: Prisma.TransactionClient,
+    saleId: string,
+    notes?: string | null,
+  ): Promise<SaleRecord> {
+    return tx.sale.update({
+      where: { id: saleId },
+      data: {
+        status: "CANCELLED",
+        ...(notes !== undefined ? { notes } : {}),
+      },
+      include: saleInclude,
+    });
+  }
+
+  /** Fetch OUTBOUND stock movements created for a given sale (to reverse them on return). */
+  async findSaleMovements(tenantId: string, saleId: string) {
+    return prisma.stockMovement.findMany({
+      where: {
+        tenantId,
+        referenceType: "sale",
+        referenceId: saleId,
+        movementType: "OUTBOUND",
+      },
     });
   }
 

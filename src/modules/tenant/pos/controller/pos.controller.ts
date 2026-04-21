@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
-import { parseCreateSale, parseQuerySales, parseSaleIdParam } from "../validators/pos.validator";
-import { mapSaleResponse } from "../mapper/pos.mapper";
+import { parseCreateSale, parseQuerySales, parseSaleIdParam, parseReturnSale } from "../validators/pos.validator";
+import { mapSaleResponse, mapReceiptResponse } from "../mapper/pos.mapper";
 import { posService, PosService } from "../service/pos.service";
 
 export class PosController {
@@ -32,6 +32,37 @@ export class PosController {
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",
+        mapSaleResponse(sale),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  receipt = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const saleId = parseSaleIdParam(req.params);
+    const { sale, branding } = await this.service.getReceipt(auth.tenantId, saleId, req.t!);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        mapReceiptResponse(sale, branding),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  return = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const saleId = parseSaleIdParam(req.params);
+    const payload = parseReturnSale(req.body);
+    const sale = await this.service.returnSale(auth.tenantId, saleId, payload, req.t!);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("sale.cancelled") || "Sale cancelled",
         mapSaleResponse(sale),
         undefined,
         req.requestId,

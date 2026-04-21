@@ -151,6 +151,58 @@
         },
         "description": "Retrieve a single sale by ID, including all line items and the payment record."
       }
+    },
+    {
+      "name": "Return Sale",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Customer returned — wrong product dispensed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}/return",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}", "return"]
+        },
+        "description": "Cancel a completed sale. Restores inventory to original batches via RETURN_IN stock movements. Returns 409 if already cancelled."
+      }
+    },
+    {
+      "name": "Return Sale — No Notes",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}/return",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}", "return"]
+        }
+      }
+    },
+    {
+      "name": "Get Receipt",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}/receipt",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}", "receipt"]
+        },
+        "description": "Returns a print-ready receipt payload. Includes tenant branding (organizationName, taxId, receiptHeader, receiptFooter), branch details, cashier name, product names from the global catalog, VAT breakdown, and payment details."
+      }
     }
   ]
 }

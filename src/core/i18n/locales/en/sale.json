@@ -4,5 +4,6 @@
   "sale.not_found": "Sale not found",
   "sale.shift_not_open": "No open shift at this branch — open a shift before processing sales",
   "sale.insufficient_stock": "Insufficient stock to fulfill one or more items",
-  "sale.payment_shortfall": "Payment amount does not cover the total"
+  "sale.payment_shortfall": "Payment amount does not cover the total",
+  "sale.already_cancelled": "Sale has already been cancelled"
 }

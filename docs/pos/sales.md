@@ -125,6 +125,92 @@ Retrieve a single sale by ID, including items and payments.
 
 ---
 
+### `GET /tenant/pos/:saleId/receipt`
+
+Return a print-ready receipt payload for a sale. Combines the sale data with tenant branding (from `TenantSettings`), branch details, and product names (from `CatalogItem` via `InventoryItem`). Intended as the data source for receipt printing at the POS terminal.
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "organizationName": "Al-Shifa Pharmacy",
+    "taxId": "300000000000003",
+    "receiptHeader": "Thank you for choosing Al-Shifa!",
+    "receiptFooter": "Returns accepted within 7 days with receipt.",
+    "branch": {
+      "id": "cuid",
+      "nameEn": "Main Branch",
+      "nameAr": "الفرع الرئيسي",
+      "address": "King Fahd Road, Riyadh",
+      "phone": "+966-11-000-0000"
+    },
+    "cashier": { "id": "cuid", "fullName": "Ahmed Ali" },
+    "id": "cuid",
+    "saleNumber": "SALE-LPZ4R7KQ",
+    "status": "COMPLETED",
+    "subtotal": "120.00",
+    "vatPercentage": "15.00",
+    "vatAmount": "18.00",
+    "total": "138.00",
+    "notes": null,
+    "items": [
+      {
+        "id": "cuid",
+        "inventoryItemId": "cuid",
+        "nameEn": "Paracetamol 500mg",
+        "nameAr": "باراسيتامول 500 مجم",
+        "unitOfMeasure": "tablet",
+        "quantity": "2.000",
+        "unitPrice": "60.00",
+        "subtotal": "120.00"
+      }
+    ],
+    "payments": [
+      {
+        "id": "cuid",
+        "paymentMethod": "CASH",
+        "amount": "150.00",
+        "reference": null,
+        "createdAt": "2026-04-19T10:00:00.000Z"
+      }
+    ],
+    "issuedAt": "2026-04-19T10:00:00.000Z"
+  }
+}
+```
+
+**Errors**
+
+| Code | Condition |
+|------|-----------|
+| `404 Not Found` | `sale.not_found` |
+
+---
+
+### `POST /tenant/pos/:saleId/return`
+
+Cancel a completed sale and reverse all inventory changes. Restores stock to the batches that were originally consumed (identified via `StockMovement` records with `referenceType: "sale"`), creates `RETURN_IN` stock movements, and transitions the sale status to `CANCELLED`.
+
+**Request Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `notes` | `string \| null` | No | Reason for return |
+
+**Response `200`** — updated sale object with `status: "CANCELLED"`.
+
+**Errors**
+
+| Code | Condition |
+|------|-----------|
+| `404 Not Found` | `sale.not_found` |
+| `409 Conflict` | `sale.already_cancelled` — sale is already cancelled |
+
+---
+
 ## Permissions
 
 All endpoints require a valid tenant JWT. `tenantId` is taken from the JWT — never from the request body.
@@ -167,6 +253,12 @@ The entire sale creation (Sale record, SaleItem records, Payment record, Invento
 - `InventoryBatch.quantityOnHand` decremented per batch consumed.
 - `InventoryItem.quantityOnHand` decremented per line item.
 - One `StockMovement` (type: `OUTBOUND`) created per batch consumed, with `referenceType: "sale"` and `referenceId: <saleId>`.
+
+**On return (`POST /:saleId/return`):**
+- `InventoryBatch.quantityOnHand` incremented for each batch that was originally consumed.
+- `InventoryItem.quantityOnHand` incremented per line item.
+- One `StockMovement` (type: `RETURN_IN`) created per batch, with `referenceType: "sale_return"` and `referenceId: <saleId>`.
+- Sale `status` set to `CANCELLED`.
 
 ---
 

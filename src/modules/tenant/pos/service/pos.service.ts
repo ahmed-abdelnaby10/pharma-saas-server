@@ -1,14 +1,16 @@
-import { Prisma, ShiftStatus, StockMovementType } from "@prisma/client";
+import { Prisma, SaleStatus, ShiftStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { Translator } from "../../../../shared/types/locale.types";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
+import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { posRepository } from "../repository/pos.repository";
 import { settingsRepository } from "../../settings/repository/settings.repository";
 import { stockMovementsRepository } from "../../stock-movements/repository/stock-movements.repository";
 import { CreateSaleDto } from "../dto/create-sale.dto";
 import { QuerySalesDto } from "../dto/query-sales.dto";
-import { SaleRecord } from "../mapper/pos.mapper";
+import { ReturnSaleDto } from "../dto/return-sale.dto";
+import { SaleRecord, ReceiptRecord, TenantBranding } from "../mapper/pos.mapper";
 
 function generateSaleNumber(): string {
   return "SALE-" + Date.now().toString(36).toUpperCase();
@@ -29,6 +31,90 @@ export class PosService {
       throw new NotFoundError(t("sale.not_found"));
     }
     return sale;
+  }
+
+  async getReceipt(
+    tenantId: string,
+    saleId: string,
+    t: Translator,
+  ): Promise<{ sale: ReceiptRecord; branding: TenantBranding }> {
+    const sale = await posRepository.findReceiptById(tenantId, saleId);
+    if (!sale) {
+      throw new NotFoundError(t("sale.not_found"));
+    }
+    const settings = await settingsRepository.findByTenant(tenantId);
+    const branding: TenantBranding = {
+      organizationName: settings?.organizationName ?? null,
+      taxId: settings?.taxId ?? null,
+      receiptHeader: settings?.receiptHeader ?? null,
+      receiptFooter: settings?.receiptFooter ?? null,
+    };
+    return { sale, branding };
+  }
+
+  async returnSale(
+    tenantId: string,
+    saleId: string,
+    payload: ReturnSaleDto,
+    t: Translator,
+  ): Promise<SaleRecord> {
+    // 1. Fetch the sale
+    const sale = await posRepository.findById(tenantId, saleId);
+    if (!sale) {
+      throw new NotFoundError(t("sale.not_found"));
+    }
+
+    // 2. Guard: already cancelled
+    if (sale.status === SaleStatus.CANCELLED) {
+      throw new ConflictError(t("sale.already_cancelled"));
+    }
+
+    // 3. Fetch the OUTBOUND movements that were created for this sale
+    const movements = await posRepository.findSaleMovements(tenantId, saleId);
+
+    // 4. Atomic reversal: restore batches + items + create RETURN_IN movements + cancel sale
+    const cancelled = await prisma.$transaction(async (tx) => {
+      for (const movement of movements) {
+        // Restore batch quantity (batchId may be null if batch was deleted)
+        if (movement.batchId) {
+          const batch = await tx.inventoryBatch.findUnique({
+            where: { id: movement.batchId },
+          });
+          if (batch) {
+            const restoredQty = batch.quantityOnHand.add(movement.quantity);
+            await tx.inventoryBatch.update({
+              where: { id: movement.batchId },
+              data: { quantityOnHand: restoredQty },
+            });
+
+            await stockMovementsRepository.createInTransaction(tx, {
+              tenantId,
+              branchId: sale.branchId,
+              inventoryItemId: movement.inventoryItemId,
+              batchId: movement.batchId,
+              movementType: StockMovementType.RETURN_IN,
+              quantity: movement.quantity,
+              quantityBefore: batch.quantityOnHand,
+              quantityAfter: restoredQty,
+              referenceType: "sale_return",
+              referenceId: saleId,
+              ...(payload.notes != null ? { notes: payload.notes } : {}),
+            });
+          }
+        }
+
+        // Restore inventory item quantity
+        await tx.inventoryItem.update({
+          where: { id: movement.inventoryItemId },
+          data: { quantityOnHand: { increment: movement.quantity } },
+        });
+      }
+
+      // Cancel the sale
+      return posRepository.cancelInTransaction(tx, saleId, payload.notes);
+    });
+
+    return cancelled;
   }
 
   async createSale(
