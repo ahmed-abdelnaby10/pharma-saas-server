@@ -24,6 +24,7 @@ import enPurchaseOrder from "./locales/en/purchase-order.json";
 import enShift from "./locales/en/shift.json";
 import enSale from "./locales/en/sale.json";
 import enAlert from "./locales/en/alert.json";
+import enReport from "./locales/en/report.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -43,6 +44,7 @@ import arPurchaseOrder from "./locales/ar/purchase-order.json";
 import arShift from "./locales/ar/shift.json";
 import arSale from "./locales/ar/sale.json";
 import arAlert from "./locales/ar/alert.json";
+import arReport from "./locales/ar/report.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -67,6 +69,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enShift,
     ...enSale,
     ...enAlert,
+    ...enReport,
   },
   ar: {
     ...arCommon,
@@ -88,6 +91,7 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arShift,
     ...arSale,
     ...arAlert,
+    ...arReport,
   },
 };
 

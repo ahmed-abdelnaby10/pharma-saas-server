@@ -15,6 +15,7 @@ import { purchasingRoutes } from "../modules/tenant/purchasing";
 import { shiftsRoutes } from "../modules/tenant/shifts";
 import { posRoutes } from "../modules/tenant/pos";
 import { alertsRoutes } from "../modules/tenant/alerts";
+import { reportsRoutes } from "../modules/tenant/reports";
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use("/purchasing", purchasingRoutes);
 router.use("/shifts", shiftsRoutes);
 router.use("/pos", posRoutes);
 router.use("/alerts", alertsRoutes);
+router.use("/reports", reportsRoutes);
 
 export const tenantRoutes = router;

@@ -1,0 +1,79 @@
+{
+  "info": {
+    "name": "Reports",
+    "_postman_id": "reports-collection-v1",
+    "description": "Branch-level reports: shift summary, daily sales, and stock valuation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" },
+    { "key": "shiftId", "value": "<shift_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Shift Summary",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/reports/shift-summary?shiftId={{shiftId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "reports", "shift-summary"],
+          "query": [{ "key": "shiftId", "value": "{{shiftId}}" }]
+        },
+        "description": "Aggregated totals for a single shift: sale count, subtotal, VAT, total, and payment-method breakdown. Only COMPLETED sales are included in revenue."
+      }
+    },
+    {
+      "name": "Daily Sales — Current Month",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/reports/daily-sales?branchId={{branchId}}&from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "reports", "daily-sales"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" }
+          ]
+        },
+        "description": "Completed sales grouped by calendar day for the full month. Includes per-day rows and grand totals."
+      }
+    },
+    {
+      "name": "Daily Sales — Today",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/reports/daily-sales?branchId={{branchId}}&from=2026-04-21T00:00:00Z&to=2026-04-21T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "reports", "daily-sales"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-21T00:00:00Z" },
+            { "key": "to", "value": "2026-04-21T23:59:59Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Stock Valuation",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/reports/stock-valuation?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "reports", "stock-valuation"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "Total inventory value = sum(quantityOnHand × sellingPrice) for all active items. Items without a sellingPrice have lineValue: null and are excluded from totalValue."
+      }
+    }
+  ]
+}
