@@ -1,0 +1,4 @@
+{
+  "alert.low_stock_disabled": "Low stock alerts are disabled for this tenant",
+  "alert.expiry_disabled": "Expiry alerts are disabled for this tenant"
+}

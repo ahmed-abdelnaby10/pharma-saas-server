@@ -14,6 +14,7 @@ import { stockMovementsRoutes } from "../modules/tenant/stock-movements";
 import { purchasingRoutes } from "../modules/tenant/purchasing";
 import { shiftsRoutes } from "../modules/tenant/shifts";
 import { posRoutes } from "../modules/tenant/pos";
+import { alertsRoutes } from "../modules/tenant/alerts";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/stock-movements", stockMovementsRoutes);
 router.use("/purchasing", purchasingRoutes);
 router.use("/shifts", shiftsRoutes);
 router.use("/pos", posRoutes);
+router.use("/alerts", alertsRoutes);
 
 export const tenantRoutes = router;

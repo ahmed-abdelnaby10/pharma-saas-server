@@ -1,0 +1,76 @@
+{
+  "info": {
+    "name": "Alerts",
+    "_postman_id": "alerts-collection-v1",
+    "description": "Operational alerts: low-stock inventory items and expiring batches.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Low Stock Alerts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/alerts/low-stock?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "alerts", "low-stock"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "Returns inventory items where quantityOnHand ≤ reorderLevel. Empty array if lowStockAlerts disabled in TenantSettings."
+      }
+    },
+    {
+      "name": "Expiring Batches — 30 Days (default)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/alerts/expiring?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "alerts", "expiring"],
+          "query": [{ "key": "branchId", "value": "{{branchId}}" }]
+        },
+        "description": "Batches expiring within the next 30 days (default window). Sorted by earliest expiry first."
+      }
+    },
+    {
+      "name": "Expiring Batches — 60 Days",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/alerts/expiring?branchId={{branchId}}&days=60",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "alerts", "expiring"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "days", "value": "60" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Expiring Batches — 7 Days (urgent)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/alerts/expiring?branchId={{branchId}}&days=7",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "alerts", "expiring"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "days", "value": "7" }
+          ]
+        },
+        "description": "Urgent: batches expiring within the next 7 days."
+      }
+    }
+  ]
+}
