@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "Analytics",
+    "_postman_id": "analytics-collection-v1",
+    "description": "Branch analytics: top-selling items, revenue trend, payment method distribution.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "tenantAccessToken", "value": "<tenant_jwt>", "type": "string" },
+    { "key": "branchId", "value": "<branch_cuid>", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Top Items — This Month (Top 10)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/analytics/top-items?branchId={{branchId}}&from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "analytics", "top-items"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" }
+          ]
+        },
+        "description": "Top 10 items by quantity sold this month. Sorted by totalQuantitySold descending."
+      }
+    },
+    {
+      "name": "Top Items — Top 5",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/analytics/top-items?branchId={{branchId}}&from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=5",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "analytics", "top-items"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" },
+            { "key": "limit", "value": "5" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Revenue Trend — Daily (This Month)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/analytics/revenue-trend?branchId={{branchId}}&from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&granularity=day",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "analytics", "revenue-trend"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" },
+            { "key": "granularity", "value": "day" }
+          ]
+        },
+        "description": "Daily revenue trend for the month. Period key format: YYYY-MM-DD."
+      }
+    },
+    {
+      "name": "Revenue Trend — Weekly (Last 3 Months)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/analytics/revenue-trend?branchId={{branchId}}&from=2026-01-01T00:00:00Z&to=2026-04-30T23:59:59Z&granularity=week",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "analytics", "revenue-trend"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-01-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" },
+            { "key": "granularity", "value": "week" }
+          ]
+        },
+        "description": "Weekly revenue trend for Q1-Q2. Period key format: YYYY-Www (ISO week)."
+      }
+    },
+    {
+      "name": "Payment Methods — This Month",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/analytics/payment-methods?branchId={{branchId}}&from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "analytics", "payment-methods"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "from", "value": "2026-04-01T00:00:00Z" },
+            { "key": "to", "value": "2026-04-30T23:59:59Z" }
+          ]
+        },
+        "description": "Payment method distribution with percentage of grand total. Sorted by totalAmount descending."
+      }
+    }
+  ]
+}

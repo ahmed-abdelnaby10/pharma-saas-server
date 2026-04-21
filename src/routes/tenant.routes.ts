@@ -17,6 +17,7 @@ import { posRoutes } from "../modules/tenant/pos";
 import { alertsRoutes } from "../modules/tenant/alerts";
 import { reportsRoutes } from "../modules/tenant/reports";
 import { dashboardRoutes } from "../modules/tenant/dashboard";
+import { analyticsRoutes } from "../modules/tenant/analytics";
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use("/pos", posRoutes);
 router.use("/alerts", alertsRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/analytics", analyticsRoutes);
 
 export const tenantRoutes = router;
