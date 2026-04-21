@@ -125,6 +125,34 @@ export class PosRepository {
     }) as Promise<ReceiptRecord | null>;
   }
 
+  /** Cancel a sale in a transaction — sets status to CANCELLED. */
+  async cancelInTransaction(
+    tx: Prisma.TransactionClient,
+    saleId: string,
+    notes?: string | null,
+  ): Promise<SaleRecord> {
+    return tx.sale.update({
+      where: { id: saleId },
+      data: {
+        status: "CANCELLED",
+        ...(notes !== undefined ? { notes } : {}),
+      },
+      include: saleInclude,
+    });
+  }
+
+  /** Fetch OUTBOUND stock movements created for a given sale (to reverse them on return). */
+  async findSaleMovements(tenantId: string, saleId: string) {
+    return prisma.stockMovement.findMany({
+      where: {
+        tenantId,
+        referenceType: "sale",
+        referenceId: saleId,
+        movementType: "OUTBOUND",
+      },
+    });
+  }
+
   /** Find active (non-zero quantity) batches for an item, sorted FEFO (earliest expiry first). */
   async findFefoBatches(
     tenantId: string,

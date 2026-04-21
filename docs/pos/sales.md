@@ -190,6 +190,27 @@ Return a print-ready receipt payload for a sale. Combines the sale data with ten
 
 ---
 
+### `POST /tenant/pos/:saleId/return`
+
+Cancel a completed sale and reverse all inventory changes. Restores stock to the batches that were originally consumed (identified via `StockMovement` records with `referenceType: "sale"`), creates `RETURN_IN` stock movements, and transitions the sale status to `CANCELLED`.
+
+**Request Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `notes` | `string \| null` | No | Reason for return |
+
+**Response `200`** — updated sale object with `status: "CANCELLED"`.
+
+**Errors**
+
+| Code | Condition |
+|------|-----------|
+| `404 Not Found` | `sale.not_found` |
+| `409 Conflict` | `sale.already_cancelled` — sale is already cancelled |
+
+---
+
 ## Permissions
 
 All endpoints require a valid tenant JWT. `tenantId` is taken from the JWT — never from the request body.
@@ -232,6 +253,12 @@ The entire sale creation (Sale record, SaleItem records, Payment record, Invento
 - `InventoryBatch.quantityOnHand` decremented per batch consumed.
 - `InventoryItem.quantityOnHand` decremented per line item.
 - One `StockMovement` (type: `OUTBOUND`) created per batch consumed, with `referenceType: "sale"` and `referenceId: <saleId>`.
+
+**On return (`POST /:saleId/return`):**
+- `InventoryBatch.quantityOnHand` incremented for each batch that was originally consumed.
+- `InventoryItem.quantityOnHand` incremented per line item.
+- One `StockMovement` (type: `RETURN_IN`) created per batch, with `referenceType: "sale_return"` and `referenceId: <saleId>`.
+- Sale `status` set to `CANCELLED`.
 
 ---
 

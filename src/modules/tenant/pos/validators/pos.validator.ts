@@ -4,6 +4,7 @@ import { ValidationError } from "../../../../shared/errors/validation-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
 import { CreateSaleDto } from "../dto/create-sale.dto";
 import { QuerySalesDto } from "../dto/query-sales.dto";
+import { ReturnSaleDto } from "../dto/return-sale.dto";
 
 const saleLine = z.object({
   inventoryItemId: z.string().cuid(),
@@ -51,6 +52,18 @@ export function parseQuerySales(query: unknown): QuerySalesDto {
     throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
   }
   return result.data as QuerySalesDto;
+}
+
+const returnSaleSchema = z.object({
+  notes: z.string().max(500).nullish(),
+});
+
+export function parseReturnSale(body: unknown): ReturnSaleDto {
+  const result = returnSaleSchema.safeParse(body);
+  if (!result.success) {
+    throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
+  }
+  return result.data as ReturnSaleDto;
 }
 
 const saleIdParamSchema = z.object({ saleId: z.string().cuid() });
