@@ -8,7 +8,7 @@ import { settingsRepository } from "../../settings/repository/settings.repositor
 import { stockMovementsRepository } from "../../stock-movements/repository/stock-movements.repository";
 import { CreateSaleDto } from "../dto/create-sale.dto";
 import { QuerySalesDto } from "../dto/query-sales.dto";
-import { SaleRecord } from "../mapper/pos.mapper";
+import { SaleRecord, ReceiptRecord, TenantBranding } from "../mapper/pos.mapper";
 
 function generateSaleNumber(): string {
   return "SALE-" + Date.now().toString(36).toUpperCase();
@@ -29,6 +29,25 @@ export class PosService {
       throw new NotFoundError(t("sale.not_found"));
     }
     return sale;
+  }
+
+  async getReceipt(
+    tenantId: string,
+    saleId: string,
+    t: Translator,
+  ): Promise<{ sale: ReceiptRecord; branding: TenantBranding }> {
+    const sale = await posRepository.findReceiptById(tenantId, saleId);
+    if (!sale) {
+      throw new NotFoundError(t("sale.not_found"));
+    }
+    const settings = await settingsRepository.findByTenant(tenantId);
+    const branding: TenantBranding = {
+      organizationName: settings?.organizationName ?? null,
+      taxId: settings?.taxId ?? null,
+      receiptHeader: settings?.receiptHeader ?? null,
+      receiptFooter: settings?.receiptFooter ?? null,
+    };
+    return { sale, branding };
   }
 
   async createSale(

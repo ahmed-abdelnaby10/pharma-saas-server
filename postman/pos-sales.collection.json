@@ -151,6 +151,19 @@
         },
         "description": "Retrieve a single sale by ID, including all line items and the payment record."
       }
+    },
+    {
+      "name": "Get Receipt",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}/receipt",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}", "receipt"]
+        },
+        "description": "Returns a print-ready receipt payload. Includes tenant branding (organizationName, taxId, receiptHeader, receiptFooter), branch details, cashier name, product names from the global catalog, VAT breakdown, and payment details."
+      }
     }
   ]
 }
