@@ -88,6 +88,27 @@ enum PlatformInvoiceStatus {
   OVERDUE
 }
 
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportTicketCategory {
+  BILLING
+  TECHNICAL
+  GENERAL
+  FEATURE_REQUEST
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -126,6 +147,7 @@ model Tenant {
   payments         Payment[]
   ocrDocuments      OcrDocument[]
   platformInvoices  PlatformInvoice[]
+  supportTickets    SupportTicket[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -249,9 +271,10 @@ model TenantUser {
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  userRoles    UserRole[]
-  shifts       Shift[]
-  ocrDocuments OcrDocument[]
+  userRoles      UserRole[]
+  shifts         Shift[]
+  ocrDocuments   OcrDocument[]
+  supportTickets SupportTicket[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -619,5 +642,29 @@ model PlatformInvoice {
 
   @@index([tenantId, status])
   @@index([status, dueDate])
+  @@index([createdAt])
+}
+
+model SupportTicket {
+  id             String                @id @default(cuid())
+  tenantId       String
+  submittedById  String
+  subject        String
+  description    String
+  category       SupportTicketCategory @default(GENERAL)
+  priority       SupportTicketPriority @default(MEDIUM)
+  status         SupportTicketStatus   @default(OPEN)
+  /** PlatformAdmin ID (no enforced FK — platform admins live outside tenant graph) */
+  assignedToId   String?
+  resolutionNote String?
+  resolvedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submittedBy TenantUser @relation(fields: [submittedById], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, status])
+  @@index([status, priority])
   @@index([createdAt])
 }

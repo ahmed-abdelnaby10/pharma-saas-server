@@ -19,6 +19,7 @@ import { reportsRoutes } from "../modules/tenant/reports";
 import { dashboardRoutes } from "../modules/tenant/dashboard";
 import { analyticsRoutes } from "../modules/tenant/analytics";
 import { ocrRoutes } from "../modules/tenant/ocr";
+import { tenantSupportRoutes } from "../modules/tenant/support";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/reports", reportsRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/ocr/documents", ocrRoutes);
+router.use("/support/tickets", tenantSupportRoutes);
 
 export const tenantRoutes = router;
