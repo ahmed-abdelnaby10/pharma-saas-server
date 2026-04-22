@@ -63,14 +63,20 @@ export class OcrService {
     if (!doc) {
       throw new NotFoundError(t("ocr.not_found"));
     }
-    if (doc.documentType !== OcrDocumentType.INVOICE) {
-      throw new BadRequestError(t("ocr.wrong_type_invoice"));
+
+    const supported: OcrDocumentType[] = [OcrDocumentType.INVOICE, OcrDocumentType.PRESCRIPTION];
+    if (!supported.includes(doc.documentType)) {
+      throw new BadRequestError(t("ocr.unsupported_type"));
     }
+
     if (doc.status !== OcrDocumentStatus.PENDING) {
       throw new ConflictError(t("ocr.not_pending"));
     }
 
-    await ocrQueue.add("process-invoice", {
+    const jobName =
+      doc.documentType === OcrDocumentType.INVOICE ? "process-invoice" : "process-prescription";
+
+    await ocrQueue.add(jobName, {
       documentId: doc.id,
       tenantId: doc.tenantId,
       filePath: doc.filePath,

@@ -4,6 +4,6 @@
   "ocr.file_required": "يجب تقديم ملف",
   "ocr.invalid_file_type": "نوع الملف غير صالح. المسموح به: JPEG، PNG، WEBP، PDF",
   "ocr.processing_started": "تمت إضافة المستند إلى قائمة انتظار المعالجة",
-  "ocr.wrong_type_invoice": "هذه النقطة تعالج مستندات الفواتير فقط",
+  "ocr.unsupported_type": "نوع المستند لا يدعم معالجة OCR",
   "ocr.not_pending": "يجب أن يكون المستند في حالة PENDING لبدء المعالجة"
 }

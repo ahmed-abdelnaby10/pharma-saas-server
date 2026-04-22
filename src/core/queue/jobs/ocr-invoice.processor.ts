@@ -5,17 +5,11 @@ import { bullmqConnection } from "../bullmq";
 import { OCR_QUEUE_NAME, OcrJobData } from "../queues";
 import { ocrRepository } from "../../../modules/tenant/ocr/repository/ocr.repository";
 import { stubInvoiceExtractor } from "../../../modules/tenant/ocr/extractor/stub-invoice.extractor";
+import { handleOcrPrescription } from "./ocr-prescription.processor";
 import { logger } from "../../logger/logger";
 
-async function handleOcrJob(job: Job<OcrJobData>): Promise<void> {
-  const { documentId, tenantId, filePath, mimeType, documentType } = job.data;
-
-  if (documentType !== OcrDocumentType.INVOICE) {
-    // Prescription jobs are handled by a different processor (Slice 30)
-    logger.info("ocr-invoice.processor: skipping non-invoice job", { documentId, documentType });
-    return;
-  }
-
+async function handleOcrInvoice(data: OcrJobData): Promise<void> {
+  const { documentId, tenantId, filePath, mimeType } = data;
   const absoluteFilePath = path.join(process.cwd(), filePath);
 
   // Mark in-progress (also handles re-attempts after transient failures)
@@ -37,8 +31,22 @@ async function handleOcrJob(job: Job<OcrJobData>): Promise<void> {
     const message = error instanceof Error ? error.message : String(error);
     await ocrRepository.updateStatus(documentId, OcrDocumentStatus.FAILED, message);
     logger.error("Invoice OCR failed", { documentId, error });
-    throw error; // re-throw so BullMQ records the failure
+    throw error;
   }
+}
+
+async function handleOcrJob(job: Job<OcrJobData>): Promise<void> {
+  const { documentType } = job.data;
+
+  if (documentType === OcrDocumentType.INVOICE) {
+    return handleOcrInvoice(job.data);
+  }
+
+  if (documentType === OcrDocumentType.PRESCRIPTION) {
+    return handleOcrPrescription(job.data);
+  }
+
+  logger.warn("OCR worker: unknown document type — skipping", { documentType });
 }
 
 export function startOcrInvoiceWorker(): Worker<OcrJobData> {

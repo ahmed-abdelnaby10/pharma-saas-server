@@ -4,6 +4,6 @@
   "ocr.file_required": "A file must be provided",
   "ocr.invalid_file_type": "Invalid file type. Allowed: JPEG, PNG, WEBP, PDF",
   "ocr.processing_started": "OCR processing has been queued",
-  "ocr.wrong_type_invoice": "This endpoint only processes INVOICE documents",
+  "ocr.unsupported_type": "Document type does not support OCR processing",
   "ocr.not_pending": "Document must be in PENDING status to start processing"
 }

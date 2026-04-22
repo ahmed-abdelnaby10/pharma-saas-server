@@ -167,10 +167,10 @@ Enqueue an invoice document for async OCR processing. The document transitions `
 }
 ```
 
-**Error `400`** — document is not an INVOICE type.  
+**Error `400`** — document type does not support OCR processing.  
 **Error `409`** — document is not in PENDING status (already processing or done).
 
-### Extracted Data Shape (on COMPLETED)
+### Extracted Data Shape (on COMPLETED — Invoice)
 
 ```json
 {
@@ -186,6 +186,30 @@ Enqueue an invoice document for async OCR processing. The document transitions `
   "totalAmount": 57.5,
   "currency": "SAR",
   "confidence": 0.94
+}
+```
+
+### Extracted Data Shape (on COMPLETED — Prescription)
+
+```json
+{
+  "patientName": "Ahmed Al-Rashidi",
+  "patientDateOfBirth": "1990-06-15",
+  "doctorName": "Dr. Fatima Al-Zahraa",
+  "doctorLicenseNumber": "SAH-00123",
+  "prescriptionDate": "2026-04-22",
+  "medications": [
+    {
+      "name": "Amoxicillin 500mg",
+      "dosage": "500mg",
+      "frequency": "Three times daily",
+      "duration": "7 days",
+      "quantity": 21,
+      "instructions": "Take with food"
+    }
+  ],
+  "notes": "Patient allergic to penicillin — verify before dispensing.",
+  "confidence": 0.91
 }
 ```
 

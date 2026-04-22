@@ -100,6 +100,21 @@
         },
         "description": "Enqueue an INVOICE document for async OCR processing. Document must be in PENDING status. Returns 202 immediately — poll GET /:documentId to track progress (PENDING → PROCESSING → COMPLETED/FAILED). extractedData is populated on COMPLETED."
       }
+    },
+    {
+      "name": "Process Prescription Document (Trigger OCR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{prescriptionDocumentId}}/process",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{prescriptionDocumentId}}", "process"]
+        },
+        "description": "Enqueue a PRESCRIPTION document for async OCR processing. Document must be in PENDING status. Returns 202 immediately. extractedData on COMPLETED contains: patientName, doctorName, medications array (name, dosage, frequency, duration, quantity, instructions), notes, confidence."
+      }
     }
   ]
 }
