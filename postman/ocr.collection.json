@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "OCR",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List OCR Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents?branchId={{branchId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "documentType", "value": "INVOICE", "disabled": true },
+            { "key": "status", "value": "PENDING", "disabled": true }
+          ]
+        },
+        "description": "List OCR documents for a branch. Filter by documentType (INVOICE|PRESCRIPTION) and/or status (PENDING|PROCESSING|COMPLETED|FAILED)."
+      }
+    },
+    {
+      "name": "Get OCR Document",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{documentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{documentId}}"]
+        },
+        "description": "Fetch a single OCR document by ID."
+      }
+    },
+    {
+      "name": "Upload OCR Document (Invoice PDF)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "file", "type": "file", "src": "/path/to/invoice.pdf" },
+            { "key": "branchId", "value": "{{branchId}}", "type": "text" },
+            { "key": "documentType", "value": "INVOICE", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents"]
+        },
+        "description": "Upload an invoice PDF for OCR processing. Returns a PENDING document record."
+      }
+    },
+    {
+      "name": "Upload OCR Document (Prescription Image)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "file", "type": "file", "src": "/path/to/prescription.jpg" },
+            { "key": "branchId", "value": "{{branchId}}", "type": "text" },
+            { "key": "documentType", "value": "PRESCRIPTION", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents"]
+        },
+        "description": "Upload a prescription image (JPEG/PNG/WEBP) for OCR processing."
+      }
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+# OCR Document Flow
+
+## Purpose
+
+Provides endpoints for uploading and querying OCR documents (invoices, prescriptions) within a tenant branch. Uploaded files are stored on disk and tracked in the database with status lifecycle (`PENDING → PROCESSING → COMPLETED / FAILED`). Actual OCR processing is handled by later slices (Invoice OCR, Prescription OCR).
+
+## Dependencies
+
+- `authMiddleware` — validates JWT
+- `tenantMiddleware` — injects `tenantId` from token
+- `ocrUpload` — Multer disk storage middleware (max 10 MB; JPEG, PNG, WEBP, PDF)
+- `OcrDocument` Prisma model
+- `Tenant`, `Branch`, `TenantUser` models (foreign keys)
+
+## Endpoints
+
+### `GET /tenant/ocr/documents`
+
+List OCR documents for a branch.
+
+**Headers**
+
+| Header | Required | Description |
+|---|---|---|
+| `Authorization` | ✅ | `Bearer <jwt>` |
+| `Accept-Language` | ❌ | `en` (default) or `ar` |
+
+**Query Parameters**
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `branchId` | `string (cuid)` | ✅ | Filter by branch |
+| `documentType` | `INVOICE \| PRESCRIPTION` | ❌ | Filter by type |
+| `status` | `PENDING \| PROCESSING \| COMPLETED \| FAILED` | ❌ | Filter by status |
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "clx...",
+      "tenantId": "clx...",
+      "branchId": "clx...",
+      "documentType": "INVOICE",
+      "status": "PENDING",
+      "fileName": "invoice.pdf",
+      "filePath": "uploads/ocr/1714000000000-invoice.pdf",
+      "mimeType": "application/pdf",
+      "fileSize": 204800,
+      "errorMessage": null,
+      "extractedData": null,
+      "reviewedAt": null,
+      "reviewedById": null,
+      "createdAt": "2026-04-22T10:00:00.000Z",
+      "updatedAt": "2026-04-22T10:00:00.000Z"
+    }
+  ],
+  "meta": { "count": 1 }
+}
+```
+
+---
+
+### `GET /tenant/ocr/documents/:documentId`
+
+Fetch a single OCR document by ID.
+
+**Headers**
+
+| Header | Required | Description |
+|---|---|---|
+| `Authorization` | ✅ | `Bearer <jwt>` |
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `documentId` | `string (cuid)` | OCR document ID |
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": { ... }
+}
+```
+
+**Error `404`** — document not found or belongs to different tenant.
+
+---
+
+### `POST /tenant/ocr/documents`
+
+Upload a new OCR document. Uses `multipart/form-data`.
+
+**Headers**
+
+| Header | Required | Description |
+|---|---|---|
+| `Authorization` | ✅ | `Bearer <jwt>` |
+| `Content-Type` | ✅ | `multipart/form-data` |
+
+**Form Fields**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `file` | file | ✅ | Document file (JPEG, PNG, WEBP, PDF; max 10 MB) |
+| `branchId` | `string (cuid)` | ✅ | Target branch |
+| `documentType` | `INVOICE \| PRESCRIPTION` | ✅ | Document category |
+
+**Response `201`**
+
+```json
+{
+  "success": true,
+  "message": "Document uploaded successfully",
+  "data": {
+    "id": "clx...",
+    "status": "PENDING",
+    ...
+  }
+}
+```
+
+**Error `400`** — file missing, invalid type, or oversized.
+
+---
+
+## Permissions
+
+All endpoints require a valid tenant JWT. `tenantId` is always taken from the token — never from the request body.
+
+## Tenant / Branch Scope
+
+- All queries are scoped by `tenantId` from JWT.
+- Documents are associated to a `branchId` provided in query/body.
+
+## Side Effects
+
+- `POST /` writes a file to `uploads/ocr/` on disk and creates an `OcrDocument` record with `status: PENDING`.
+- File path stored as a relative path (relative to `process.cwd()`).
+
+## Related Modules
+
+- **Invoice OCR** (Slice 29) — processes `INVOICE` documents, populates `extractedData`
+- **Prescription OCR** (Slice 30) — processes `PRESCRIPTION` documents
+- **Review Workflow** (Slice 31) — allows staff to review and approve extracted data
+- **Purchasing** — invoice OCR feeds into purchase orders

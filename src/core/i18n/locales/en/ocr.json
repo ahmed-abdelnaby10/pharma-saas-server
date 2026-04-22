@@ -1,0 +1,6 @@
+{
+  "ocr.uploaded": "Document uploaded successfully",
+  "ocr.not_found": "OCR document not found",
+  "ocr.file_required": "A file must be provided",
+  "ocr.invalid_file_type": "Invalid file type. Allowed: JPEG, PNG, WEBP, PDF"
+}

@@ -68,6 +68,18 @@ enum PaymentMethod {
   INSURANCE
 }
 
+enum OcrDocumentType {
+  INVOICE
+  PRESCRIPTION
+}
+
+enum OcrDocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -104,6 +116,7 @@ model Tenant {
   shifts           Shift[]
   sales            Sale[]
   payments         Payment[]
+  ocrDocuments     OcrDocument[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -204,6 +217,7 @@ model Branch {
   purchaseOrders PurchaseOrder[]
   shifts         Shift[]
   sales          Sale[]
+  ocrDocuments   OcrDocument[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -225,8 +239,9 @@ model TenantUser {
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  userRoles UserRole[]
-  shifts    Shift[]
+  userRoles    UserRole[]
+  shifts       Shift[]
+  ocrDocuments OcrDocument[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -545,4 +560,30 @@ model Payment {
 
   @@index([saleId])
   @@index([tenantId])
+}
+
+model OcrDocument {
+  id            String            @id @default(cuid())
+  tenantId      String
+  branchId      String
+  documentType  OcrDocumentType
+  status        OcrDocumentStatus @default(PENDING)
+  fileName      String            // original filename
+  filePath      String            // server-relative storage path
+  mimeType      String
+  fileSize      Int               // bytes
+  errorMessage  String?
+  extractedData Json?             // raw OCR result populated by processing slices
+  reviewedAt    DateTime?
+  reviewedById  String?           // TenantUser who reviewed
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch     Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  reviewedBy TenantUser? @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, branchId])
+  @@index([tenantId, documentType, status])
+  @@index([createdAt])
 }
