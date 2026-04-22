@@ -60,6 +60,21 @@ export class OcrRepository {
       },
     });
   }
+
+  async updateReview(
+    documentId: string,
+    reviewedById: string,
+    correctedData?: Prisma.InputJsonValue,
+  ): Promise<OcrDocumentRecord> {
+    return prisma.ocrDocument.update({
+      where: { id: documentId },
+      data: {
+        reviewedAt: new Date(),
+        reviewedById,
+        ...(correctedData !== undefined ? { extractedData: correctedData } : {}),
+      },
+    });
+  }
 }
 
 export const ocrRepository = new OcrRepository();

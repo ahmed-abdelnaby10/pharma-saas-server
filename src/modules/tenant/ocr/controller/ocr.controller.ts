@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
-import { parseQueryOcrDocuments, parseUploadBody, parseDocumentIdParam } from "../validators/ocr.validator";
+import { parseQueryOcrDocuments, parseUploadBody, parseDocumentIdParam, parseReviewBody } from "../validators/ocr.validator";
 import { mapOcrDocumentResponse } from "../mapper/ocr.mapper";
 import { ocrService, OcrService } from "../service/ocr.service";
 
@@ -68,6 +68,28 @@ export class OcrController {
     return res.status(202).json(
       successResponse(
         req.t?.("ocr.processing_started") || "Processing started",
+        mapOcrDocumentResponse(doc),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  reviewDocument = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const documentId = parseDocumentIdParam(req.params);
+    const { correctedData } = parseReviewBody(req.body);
+    const doc = await this.service.reviewDocument(
+      auth.tenantId,
+      auth.userId,
+      documentId,
+      correctedData,
+      req.t!,
+    );
+    return res.status(200).json(
+      successResponse(
+        req.t?.("ocr.reviewed") || "Document reviewed",
         mapOcrDocumentResponse(doc),
         undefined,
         req.requestId,

@@ -115,6 +115,46 @@
         },
         "description": "Enqueue a PRESCRIPTION document for async OCR processing. Document must be in PENDING status. Returns 202 immediately. extractedData on COMPLETED contains: patientName, doctorName, medications array (name, dosage, frequency, duration, quantity, instructions), notes, confidence."
       }
+    },
+    {
+      "name": "Review OCR Document (Approve)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{documentId}}/review",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{documentId}}", "review"]
+        },
+        "description": "Approve a COMPLETED OCR document as-is. Stamps reviewedAt and reviewedById. Document must not have been previously reviewed."
+      }
+    },
+    {
+      "name": "Review OCR Document (Approve with Corrections)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correctedData\": {\n    \"invoiceNumber\": \"INV-2026-042\",\n    \"supplierName\": \"Corrected Supplier Name\",\n    \"totalAmount\": 130.00\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{documentId}}/review",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{documentId}}", "review"]
+        },
+        "description": "Approve a COMPLETED OCR document with manual corrections. correctedData replaces extractedData in full. reviewedAt and reviewedById are stamped."
+      }
     }
   ]
 }

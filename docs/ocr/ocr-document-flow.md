@@ -215,6 +215,62 @@ Enqueue an invoice document for async OCR processing. The document transitions `
 
 ---
 
+### `POST /tenant/ocr/documents/:documentId/review`
+
+Mark an OCR-completed document as reviewed by the current user. Optionally provide `correctedData` to override `extractedData`.
+
+**Headers**
+
+| Header | Required | Description |
+|---|---|---|
+| `Authorization` | ✅ | `Bearer <jwt>` |
+| `Content-Type` | ✅ | `application/json` |
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `documentId` | `string (cuid)` | OCR document ID |
+
+**Body**
+
+```json
+{
+  "correctedData": { ... }
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `correctedData` | `object` | ❌ | Corrected extracted data to store |
+
+**Constraints**
+
+- `status` must be `COMPLETED`
+- `reviewedAt` must be `null` (not previously reviewed)
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "message": "Document reviewed successfully",
+  "data": {
+    "id": "clx...",
+    "status": "COMPLETED",
+    "reviewedAt": "2026-04-22T12:00:00.000Z",
+    "reviewedById": "clx...",
+    "extractedData": { ... },
+    ...
+  }
+}
+```
+
+**Error `400`** — document is not in COMPLETED status.  
+**Error `409`** — document has already been reviewed.
+
+---
+
 ## Permissions
 
 All endpoints require a valid tenant JWT. `tenantId` is always taken from the token — never from the request body.
@@ -229,6 +285,7 @@ All endpoints require a valid tenant JWT. `tenantId` is always taken from the to
 - `POST /` writes a file to `uploads/ocr/` on disk and creates an `OcrDocument` record with `status: PENDING`.
 - File path stored as a relative path (relative to `process.cwd()`).
 - `POST /:documentId/process` enqueues a BullMQ job on the `ocr` queue. The worker transitions status `PENDING → PROCESSING → COMPLETED / FAILED` and writes `extractedData`.
+- `POST /:documentId/review` stamps `reviewedAt` + `reviewedById` on the document. Optionally overwrites `extractedData` if `correctedData` is provided.
 
 ## Related Modules
 

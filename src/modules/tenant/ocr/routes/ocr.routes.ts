@@ -12,6 +12,7 @@ router.use(authMiddleware, tenantMiddleware);
 router.get("/", asyncHandler(ocrController.listDocuments));
 router.post("/", ocrUpload.single("file"), asyncHandler(ocrController.uploadDocument));
 router.post("/:documentId/process", asyncHandler(ocrController.processDocument));
+router.post("/:documentId/review", asyncHandler(ocrController.reviewDocument));
 router.get("/:documentId", asyncHandler(ocrController.getDocument));
 
 export { router as ocrRoutes };

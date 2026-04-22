@@ -1,4 +1,4 @@
-import { OcrDocumentStatus, OcrDocumentType } from "@prisma/client";
+import { OcrDocumentStatus, OcrDocumentType, Prisma } from "@prisma/client";
 import { Translator } from "../../../../shared/types/locale.types";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
@@ -85,6 +85,31 @@ export class OcrService {
     });
 
     return doc;
+  }
+
+  async reviewDocument(
+    tenantId: string,
+    userId: string,
+    documentId: string,
+    correctedData: Record<string, unknown> | undefined,
+    t: Translator,
+  ): Promise<OcrDocumentRecord> {
+    const doc = await ocrRepository.findById(tenantId, documentId);
+    if (!doc) {
+      throw new NotFoundError(t("ocr.not_found"));
+    }
+    if (doc.status !== OcrDocumentStatus.COMPLETED) {
+      throw new BadRequestError(t("ocr.not_completed"));
+    }
+    if (doc.reviewedAt !== null) {
+      throw new ConflictError(t("ocr.already_reviewed"));
+    }
+
+    return ocrRepository.updateReview(
+      documentId,
+      userId,
+      correctedData as Prisma.InputJsonValue | undefined,
+    );
   }
 }
 
