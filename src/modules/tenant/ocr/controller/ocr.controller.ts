@@ -59,6 +59,21 @@ export class OcrController {
       ),
     );
   };
+
+  processDocument = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const documentId = parseDocumentIdParam(req.params);
+    const doc = await this.service.triggerProcessing(auth.tenantId, documentId, req.t!);
+    return res.status(202).json(
+      successResponse(
+        req.t?.("ocr.processing_started") || "Processing started",
+        mapOcrDocumentResponse(doc),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
 }
 
 export const ocrController = new OcrController(ocrService);

@@ -85,6 +85,21 @@
         },
         "description": "Upload a prescription image (JPEG/PNG/WEBP) for OCR processing."
       }
+    },
+    {
+      "name": "Process Invoice Document (Trigger OCR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{documentId}}/process",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{documentId}}", "process"]
+        },
+        "description": "Enqueue an INVOICE document for async OCR processing. Document must be in PENDING status. Returns 202 immediately — poll GET /:documentId to track progress (PENDING → PROCESSING → COMPLETED/FAILED). extractedData is populated on COMPLETED."
+      }
     }
   ]
 }

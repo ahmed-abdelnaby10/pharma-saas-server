@@ -2,13 +2,14 @@
 
 ## Purpose
 
-Provides endpoints for uploading and querying OCR documents (invoices, prescriptions) within a tenant branch. Uploaded files are stored on disk and tracked in the database with status lifecycle (`PENDING → PROCESSING → COMPLETED / FAILED`). Actual OCR processing is handled by later slices (Invoice OCR, Prescription OCR).
+Provides endpoints for uploading, querying, and triggering OCR processing on documents (invoices, prescriptions) within a tenant branch. Uploaded files are stored on disk and tracked in the database with status lifecycle (`PENDING → PROCESSING → COMPLETED / FAILED`). Invoice OCR processing is dispatched asynchronously via a BullMQ job queue — clients poll `GET /:documentId` to check status.
 
 ## Dependencies
 
 - `authMiddleware` — validates JWT
 - `tenantMiddleware` — injects `tenantId` from token
 - `ocrUpload` — Multer disk storage middleware (max 10 MB; JPEG, PNG, WEBP, PDF)
+- `BullMQ` + Redis — async job queue for OCR processing
 - `OcrDocument` Prisma model
 - `Tenant`, `Branch`, `TenantUser` models (foreign keys)
 
@@ -131,6 +132,65 @@ Upload a new OCR document. Uses `multipart/form-data`.
 
 ---
 
+### `POST /tenant/ocr/documents/:documentId/process`
+
+Enqueue an invoice document for async OCR processing. The document transitions `PENDING → PROCESSING → COMPLETED / FAILED` asynchronously. Poll `GET /:documentId` to check status.
+
+**Headers**
+
+| Header | Required | Description |
+|---|---|---|
+| `Authorization` | ✅ | `Bearer <jwt>` |
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `documentId` | `string (cuid)` | OCR document ID |
+
+**Constraints**
+
+- `documentType` must be `INVOICE`
+- `status` must be `PENDING`
+
+**Response `202`**
+
+```json
+{
+  "success": true,
+  "message": "OCR processing has been queued",
+  "data": {
+    "id": "clx...",
+    "status": "PENDING",
+    ...
+  }
+}
+```
+
+**Error `400`** — document is not an INVOICE type.  
+**Error `409`** — document is not in PENDING status (already processing or done).
+
+### Extracted Data Shape (on COMPLETED)
+
+```json
+{
+  "invoiceNumber": "INV-001",
+  "invoiceDate": "2026-04-22",
+  "supplierName": "Pharma Supplier Ltd",
+  "supplierTaxId": "300-000-0000",
+  "lineItems": [
+    { "description": "Paracetamol 500mg × 100", "quantity": 10, "unitPrice": 5.0, "total": 50.0 }
+  ],
+  "subtotal": 50.0,
+  "vatAmount": 7.5,
+  "totalAmount": 57.5,
+  "currency": "SAR",
+  "confidence": 0.94
+}
+```
+
+---
+
 ## Permissions
 
 All endpoints require a valid tenant JWT. `tenantId` is always taken from the token — never from the request body.
@@ -144,6 +204,7 @@ All endpoints require a valid tenant JWT. `tenantId` is always taken from the to
 
 - `POST /` writes a file to `uploads/ocr/` on disk and creates an `OcrDocument` record with `status: PENDING`.
 - File path stored as a relative path (relative to `process.cwd()`).
+- `POST /:documentId/process` enqueues a BullMQ job on the `ocr` queue. The worker transitions status `PENDING → PROCESSING → COMPLETED / FAILED` and writes `extractedData`.
 
 ## Related Modules
 
