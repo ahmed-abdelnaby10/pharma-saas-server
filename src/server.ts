@@ -1,10 +1,13 @@
+import { Worker } from "bullmq";
 import { createApp } from "./app";
 import { appConfig } from "./core/config/app.config";
 import { connectRedis, disconnectRedis } from "./core/cache/redis";
 import { connectPrisma, disconnectPrisma } from "./core/db/prisma";
+import { startOcrInvoiceWorker } from "./core/queue/jobs/ocr-invoice.processor";
 import { logger } from "./core/logger/logger";
 
 let isShuttingDown = false;
+let ocrWorker: Worker | undefined;
 
 const shutdown = async (signal: NodeJS.Signals) => {
   if (isShuttingDown) {
@@ -15,7 +18,11 @@ const shutdown = async (signal: NodeJS.Signals) => {
   logger.info(`Received ${signal}. Shutting down gracefully.`);
 
   try {
-    await Promise.all([disconnectRedis(), disconnectPrisma()]);
+    await Promise.all([
+      disconnectRedis(),
+      disconnectPrisma(),
+      ocrWorker?.close(),
+    ]);
     process.exit(0);
   } catch (error) {
     logger.error("Failed to shutdown gracefully", error);
@@ -27,6 +34,8 @@ const start = async () => {
   try {
     await connectPrisma();
     await connectRedis();
+
+    ocrWorker = startOcrInvoiceWorker();
 
     const app = createApp();
 

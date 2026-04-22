@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "Support",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Tenant — Create Ticket",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Cannot access inventory reports\",\n  \"description\": \"When I navigate to the reports section and select stock valuation, I receive a 500 error. This started after the last update.\",\n  \"category\": \"TECHNICAL\",\n  \"priority\": \"HIGH\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/support/tickets",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "support", "tickets"]
+        }
+      }
+    },
+    {
+      "name": "Tenant — List My Tickets",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/support/tickets",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "support", "tickets"]
+        }
+      }
+    },
+    {
+      "name": "Tenant — Get Ticket",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/support/tickets/{{ticketId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "support", "tickets", "{{ticketId}}"]
+        }
+      }
+    },
+    {
+      "name": "Platform — List All Tickets",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/support/tickets",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "support", "tickets"],
+          "query": [
+            { "key": "status", "value": "OPEN", "disabled": true },
+            { "key": "priority", "value": "HIGH", "disabled": true },
+            { "key": "tenantId", "value": "{{tenantId}}", "disabled": true }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Platform — Get Ticket",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/support/tickets/{{ticketId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "support", "tickets", "{{ticketId}}"]
+        }
+      }
+    },
+    {
+      "name": "Platform — Assign Ticket",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"assignedToId\": \"{{platformAdminId}}\"\n}" },
+        "url": {
+          "raw": "{{baseUrl}}/platform/support/tickets/{{ticketId}}/assign",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "support", "tickets", "{{ticketId}}", "assign"]
+        },
+        "description": "Assign ticket to a platform admin. Auto-sets status → IN_PROGRESS."
+      }
+    },
+    {
+      "name": "Platform — Resolve Ticket",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"RESOLVED\",\n  \"resolutionNote\": \"Identified and fixed a caching issue on the reports endpoint. Deployed in v2.1.3.\"\n}" },
+        "url": {
+          "raw": "{{baseUrl}}/platform/support/tickets/{{ticketId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "support", "tickets", "{{ticketId}}", "status"]
+        }
+      }
+    }
+  ]
+}

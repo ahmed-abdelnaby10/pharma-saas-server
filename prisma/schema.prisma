@@ -68,6 +68,47 @@ enum PaymentMethod {
   INSURANCE
 }
 
+enum OcrDocumentType {
+  INVOICE
+  PRESCRIPTION
+}
+
+enum OcrDocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PlatformInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportTicketCategory {
+  BILLING
+  TECHNICAL
+  GENERAL
+  FEATURE_REQUEST
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -104,6 +145,9 @@ model Tenant {
   shifts           Shift[]
   sales            Sale[]
   payments         Payment[]
+  ocrDocuments      OcrDocument[]
+  platformInvoices  PlatformInvoice[]
+  supportTickets    SupportTicket[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -177,8 +221,9 @@ model Subscription {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan   Plan   @relation(fields: [planId], references: [id])
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan             Plan              @relation(fields: [planId], references: [id])
+  platformInvoices PlatformInvoice[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
@@ -204,6 +249,7 @@ model Branch {
   purchaseOrders PurchaseOrder[]
   shifts         Shift[]
   sales          Sale[]
+  ocrDocuments   OcrDocument[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -225,8 +271,10 @@ model TenantUser {
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  userRoles UserRole[]
-  shifts    Shift[]
+  userRoles      UserRole[]
+  shifts         Shift[]
+  ocrDocuments   OcrDocument[]
+  supportTickets SupportTicket[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -545,4 +593,78 @@ model Payment {
 
   @@index([saleId])
   @@index([tenantId])
+}
+
+model OcrDocument {
+  id            String            @id @default(cuid())
+  tenantId      String
+  branchId      String
+  documentType  OcrDocumentType
+  status        OcrDocumentStatus @default(PENDING)
+  fileName      String            // original filename
+  filePath      String            // server-relative storage path
+  mimeType      String
+  fileSize      Int               // bytes
+  errorMessage  String?
+  extractedData Json?             // raw OCR result populated by processing slices
+  reviewedAt    DateTime?
+  reviewedById  String?           // TenantUser who reviewed
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch     Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  reviewedBy TenantUser? @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, branchId])
+  @@index([tenantId, documentType, status])
+  @@index([createdAt])
+}
+
+model PlatformInvoice {
+  id             String                @id @default(cuid())
+  tenantId       String
+  subscriptionId String?
+  invoiceNumber  String                @unique
+  status         PlatformInvoiceStatus @default(DRAFT)
+  amount         Decimal               @db.Decimal(12, 2)
+  currency       String                @default("EGP")
+  periodStart    DateTime
+  periodEnd      DateTime
+  dueDate        DateTime
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([status, dueDate])
+  @@index([createdAt])
+}
+
+model SupportTicket {
+  id             String                @id @default(cuid())
+  tenantId       String
+  submittedById  String
+  subject        String
+  description    String
+  category       SupportTicketCategory @default(GENERAL)
+  priority       SupportTicketPriority @default(MEDIUM)
+  status         SupportTicketStatus   @default(OPEN)
+  /** PlatformAdmin ID (no enforced FK — platform admins live outside tenant graph) */
+  assignedToId   String?
+  resolutionNote String?
+  resolvedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submittedBy TenantUser @relation(fields: [submittedById], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, status])
+  @@index([status, priority])
+  @@index([createdAt])
 }

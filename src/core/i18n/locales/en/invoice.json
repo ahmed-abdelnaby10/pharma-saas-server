@@ -1,0 +1,11 @@
+{
+  "invoice.created": "Invoice created successfully",
+  "invoice.issued": "Invoice issued successfully",
+  "invoice.paid": "Invoice marked as paid",
+  "invoice.voided": "Invoice voided",
+  "invoice.not_found": "Invoice not found",
+  "invoice.not_draft": "Only DRAFT invoices can be issued",
+  "invoice.not_payable": "Only ISSUED or OVERDUE invoices can be marked as paid",
+  "invoice.already_paid": "Paid invoices cannot be voided",
+  "invoice.already_void": "Invoice is already voided"
+}

@@ -1,0 +1,11 @@
+{
+  "invoice.created": "تم إنشاء الفاتورة بنجاح",
+  "invoice.issued": "تم إصدار الفاتورة بنجاح",
+  "invoice.paid": "تم تحديد الفاتورة كمدفوعة",
+  "invoice.voided": "تم إلغاء الفاتورة",
+  "invoice.not_found": "الفاتورة غير موجودة",
+  "invoice.not_draft": "لا يمكن إصدار إلا الفواتير في حالة مسودة",
+  "invoice.not_payable": "لا يمكن تحديد الفواتير كمدفوعة إلا إذا كانت بحالة ISSUED أو OVERDUE",
+  "invoice.already_paid": "لا يمكن إلغاء الفواتير المدفوعة",
+  "invoice.already_void": "الفاتورة ملغاة مسبقاً"
+}
