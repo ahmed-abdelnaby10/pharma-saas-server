@@ -80,6 +80,14 @@ enum OcrDocumentStatus {
   FAILED
 }
 
+enum PlatformInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  OVERDUE
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -116,7 +124,8 @@ model Tenant {
   shifts           Shift[]
   sales            Sale[]
   payments         Payment[]
-  ocrDocuments     OcrDocument[]
+  ocrDocuments      OcrDocument[]
+  platformInvoices  PlatformInvoice[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -190,8 +199,9 @@ model Subscription {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan   Plan   @relation(fields: [planId], references: [id])
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan             Plan              @relation(fields: [planId], references: [id])
+  platformInvoices PlatformInvoice[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
@@ -585,5 +595,29 @@ model OcrDocument {
 
   @@index([tenantId, branchId])
   @@index([tenantId, documentType, status])
+  @@index([createdAt])
+}
+
+model PlatformInvoice {
+  id             String                @id @default(cuid())
+  tenantId       String
+  subscriptionId String?
+  invoiceNumber  String                @unique
+  status         PlatformInvoiceStatus @default(DRAFT)
+  amount         Decimal               @db.Decimal(12, 2)
+  currency       String                @default("EGP")
+  periodStart    DateTime
+  periodEnd      DateTime
+  dueDate        DateTime
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([status, dueDate])
   @@index([createdAt])
 }

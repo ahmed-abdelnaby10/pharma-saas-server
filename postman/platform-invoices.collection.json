@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "Platform Invoices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Invoices",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices"],
+          "query": [
+            { "key": "tenantId", "value": "{{tenantId}}", "disabled": true },
+            { "key": "status", "value": "ISSUED", "disabled": true }
+          ]
+        },
+        "description": "List all platform invoices. Filter by tenantId and/or status."
+      }
+    },
+    {
+      "name": "Create Invoice (DRAFT)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"subscriptionId\": \"{{subscriptionId}}\",\n  \"amount\": 299.00,\n  \"currency\": \"EGP\",\n  \"periodStart\": \"2026-04-01T00:00:00.000Z\",\n  \"periodEnd\": \"2026-04-30T23:59:59.000Z\",\n  \"dueDate\": \"2026-05-05T00:00:00.000Z\",\n  \"notes\": \"Monthly subscription - April 2026\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices"]
+        },
+        "description": "Create a new DRAFT invoice. invoiceNumber is auto-generated (INV-YYYY-XXXXXX)."
+      }
+    },
+    {
+      "name": "Get Invoice",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices/{{invoiceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices", "{{invoiceId}}"]
+        }
+      }
+    },
+    {
+      "name": "Issue Invoice (DRAFT → ISSUED)",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices/{{invoiceId}}/issue",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices", "{{invoiceId}}", "issue"]
+        },
+        "description": "Transition a DRAFT invoice to ISSUED. 409 if not DRAFT."
+      }
+    },
+    {
+      "name": "Mark Invoice Paid",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices/{{invoiceId}}/mark-paid",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices", "{{invoiceId}}", "mark-paid"]
+        },
+        "description": "Mark an ISSUED or OVERDUE invoice as PAID. Sets paidAt to now. 409 if wrong status."
+      }
+    },
+    {
+      "name": "Void Invoice",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/invoices/{{invoiceId}}/void",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "invoices", "{{invoiceId}}", "void"]
+        },
+        "description": "Void any non-PAID, non-VOID invoice. 409 if already PAID or VOID."
+      }
+    }
+  ]
+}
