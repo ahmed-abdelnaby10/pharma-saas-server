@@ -6,6 +6,9 @@ import { tenantsRoutes } from "../modules/platform/tenants";
 import { platformCatalogRoutes } from "../modules/platform/catalog";
 import { invoicesRoutes } from "../modules/platform/invoices";
 import { platformSupportRoutes } from "../modules/platform/support";
+import { metricsRoutes } from "../modules/platform/metrics";
+import { auditLogsRoutes } from "../modules/platform/audit-logs";
+import { dashboardRoutes } from "../modules/platform/dashboard";
 
 const router = Router();
 
@@ -16,5 +19,8 @@ router.use("/tenants/:tenantId/subscriptions", subscriptionsRoutes);
 router.use("/catalog", platformCatalogRoutes);
 router.use("/invoices", invoicesRoutes);
 router.use("/support/tickets", platformSupportRoutes);
+router.use("/metrics", metricsRoutes);
+router.use("/audit", auditLogsRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export const platformRoutes = router;

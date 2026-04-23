@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Audit Explorer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/audit",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "audit"],
+          "query": [
+            { "key": "tenantId",   "value": "{{tenantId}}",        "disabled": true },
+            { "key": "actorId",    "value": "{{tenantUserId}}",    "disabled": true },
+            { "key": "actorType",  "value": "TENANT_USER",         "disabled": true },
+            { "key": "action",     "value": "sale.create",         "disabled": true },
+            { "key": "resource",   "value": "Sale",                "disabled": true },
+            { "key": "dateFrom",   "value": "2026-01-01T00:00:00Z","disabled": true },
+            { "key": "dateTo",     "value": "2026-12-31T23:59:59Z","disabled": true },
+            { "key": "cursor",     "value": "{{auditCursor}}",     "disabled": true },
+            { "key": "limit",      "value": "50",                  "disabled": true }
+          ]
+        },
+        "description": "List audit log entries, newest first. Supports filtering by tenantId, actorId, actorType, action, resource, and date range. Cursor-based pagination via ?cursor=<nextCursor>."
+      }
+    },
+    {
+      "name": "List Audit Logs — by Tenant",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/audit?tenantId={{tenantId}}&limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "audit"],
+          "query": [
+            { "key": "tenantId", "value": "{{tenantId}}" },
+            { "key": "limit",    "value": "50" }
+          ]
+        },
+        "description": "All audit entries scoped to a single tenant."
+      }
+    },
+    {
+      "name": "List Audit Logs — Platform Admin Actions",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/audit?actorType=PLATFORM_ADMIN&limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "audit"],
+          "query": [
+            { "key": "actorType", "value": "PLATFORM_ADMIN" },
+            { "key": "limit",     "value": "50" }
+          ]
+        },
+        "description": "All actions performed by platform admins."
+      }
+    },
+    {
+      "name": "List Audit Logs — Date Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/audit?dateFrom=2026-04-01T00:00:00Z&dateTo=2026-04-23T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "audit"],
+          "query": [
+            { "key": "dateFrom", "value": "2026-04-01T00:00:00Z" },
+            { "key": "dateTo",   "value": "2026-04-23T23:59:59Z" }
+          ]
+        },
+        "description": "All audit entries within a specific date range."
+      }
+    },
+    {
+      "name": "Get Audit Log Entry",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/audit/{{logId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "audit", "{{logId}}"]
+        },
+        "description": "Fetch a single audit log entry by ID."
+      }
+    }
+  ]
+}

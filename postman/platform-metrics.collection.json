@@ -1,0 +1,53 @@
+{
+  "info": {
+    "name": "Platform Metrics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/metrics/overview",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "metrics", "overview"]
+        },
+        "description": "Returns a snapshot of all core operational metrics: tenant counts by status, subscription distribution, invoice revenue totals, and support ticket queue state."
+      }
+    },
+    {
+      "name": "Tenant Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/metrics/tenants",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "metrics", "tenants"]
+        },
+        "description": "Tenant counts grouped by status plus new-tenant growth signals (last 30 days, last 7 days)."
+      }
+    },
+    {
+      "name": "Revenue Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/metrics/revenue",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "metrics", "revenue"]
+        },
+        "description": "Invoice revenue breakdown by status. Includes totalRevenue (PAID) and outstandingAmount (ISSUED + OVERDUE)."
+      }
+    }
+  ]
+}
