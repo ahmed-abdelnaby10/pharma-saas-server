@@ -109,6 +109,31 @@ enum SupportTicketCategory {
   FEATURE_REQUEST
 }
 
+enum ActorType {
+  PLATFORM_ADMIN
+  TENANT_USER
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  tenantId   String?
+  actorId    String
+  actorType  ActorType
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([actorId, actorType])
+  @@index([resource, action])
+  @@index([createdAt])
+}
+
 model PlatformAdmin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -148,6 +173,7 @@ model Tenant {
   ocrDocuments      OcrDocument[]
   platformInvoices  PlatformInvoice[]
   supportTickets    SupportTicket[]
+  auditLogs         AuditLog[]
 
   @@index([status])
   @@index([trialEndsAt])
