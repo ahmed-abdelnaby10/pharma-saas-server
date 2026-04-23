@@ -1,0 +1,114 @@
+{
+  "info": {
+    "name": "Sync / Idempotency",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Demonstrates the offline sync safety foundation: idempotent sale creation via X-Idempotency-Key header and externalId field. Apply the same pattern to Shift, StockMovement, and PurchaseOrder when those routes are wired."
+  },
+  "item": [
+    {
+      "name": "POS — Create Sale (first attempt, with sync headers)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization",    "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",     "value": "application/json" },
+          { "key": "X-Idempotency-Key","value": "{{$guid}}", "description": "Stable UUID for this logical operation. Use the SAME value on every retry." },
+          { "key": "X-Client-Id",      "value": "desktop-device-001", "description": "Optional device identifier." }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"externalId\": \"{{$guid}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 150.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 300.00,\n  \"notes\": \"Offline sale synced from desktop\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "First submission. The response will contain `meta.syncAck` with `fromCache: false`. Store the `X-Idempotency-Key` value and use it verbatim on retries.\n\nIMPORTANT: `externalId` should be the local SQLite record ID — NOT a new GUID each time. Use the same `externalId` across retries for the same record."
+      }
+    },
+    {
+      "name": "POS — Create Sale (retry, same idempotency key)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization",    "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",     "value": "application/json" },
+          { "key": "X-Idempotency-Key","value": "{{idempotencyKey}}", "description": "Must be the SAME key used in the first attempt." },
+          { "key": "X-Client-Id",      "value": "desktop-device-001" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"externalId\": \"{{localSaleId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 150.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 300.00\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "Retry with the same X-Idempotency-Key. The response is served from the Redis cache. `meta.syncAck.fromCache` will be `true`. No new Sale is created. Stock is NOT decremented again.\n\nSet {{idempotencyKey}} to the same UUID you used in the first request."
+      }
+    },
+    {
+      "name": "POS — Create Sale (no idempotency header, standard request)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 1,\n      \"unitPrice\": 80.00\n    }\n  ],\n  \"paymentMethod\": \"CARD\",\n  \"paymentAmount\": 80.00\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "Standard (non-sync) sale creation. No X-Idempotency-Key header. No externalId. The response does NOT include `meta.syncAck`. Fully backward-compatible."
+      }
+    },
+    {
+      "name": "POS — Create Sale (externalId dedup, Redis cache expired)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization",    "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",     "value": "application/json" },
+          { "key": "X-Idempotency-Key","value": "{{newGuid}}", "description": "A NEW key (simulates Redis cache expiry — key is not in cache)." }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"externalId\": \"{{localSaleId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 150.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 300.00\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "Simulates a retry after the 24 h Redis TTL has expired. A NEW X-Idempotency-Key is used (so Redis returns a cache miss), but `externalId` matches an existing Sale. The service finds the record by `externalId` and returns it without creating a duplicate. The response will contain the existing Sale's `id` and `externalId`."
+      }
+    },
+    {
+      "name": "POS — Get Sale (verify no duplicate was created)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos/{{saleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos", "{{saleId}}"]
+        },
+        "description": "Fetch the sale returned by any of the sync attempts. Confirm a single record exists with the expected total and externalId."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "idempotencyKey", "value": "", "description": "Copy the X-Idempotency-Key UUID from the first request here." },
+    { "key": "localSaleId",    "value": "", "description": "The externalId you used (your local SQLite record UUID)." },
+    { "key": "newGuid",        "value": "", "description": "A fresh UUID to simulate Redis cache expiry." }
+  ]
+}

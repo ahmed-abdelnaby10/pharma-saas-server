@@ -123,6 +123,17 @@ export class PosService {
     payload: CreateSaleDto,
     t: Translator,
   ): Promise<SaleRecord> {
+    // 0. Data-level idempotency via externalId.
+    //    If the desktop retries after the Redis TTL expired the record already
+    //    exists in the DB — return it immediately without re-running any logic.
+    if (payload.externalId) {
+      const existing = await posRepository.findByExternalId(
+        tenantId,
+        payload.externalId,
+      );
+      if (existing) return existing;
+    }
+
     // 1. Validate shift is OPEN and belongs to branch
     const shift = await prisma.shift.findFirst({
       where: {
@@ -246,6 +257,7 @@ export class PosService {
         vatAmount,
         total,
         notes: payload.notes,
+        externalId: payload.externalId ?? null,
         items: resolutions.map((r) => ({
           inventoryItemId: r.inventoryItemId,
           quantity: r.quantity,

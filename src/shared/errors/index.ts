@@ -7,3 +7,4 @@ export * from "./subscription-error";
 export * from "./tenant-error";
 export * from "./unauthorized-error";
 export * from "./validation-error";
+export * from "./sync-conflict-error";
