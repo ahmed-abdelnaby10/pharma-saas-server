@@ -54,12 +54,12 @@ This layer handles **long-tail retries** where the 24 h Redis TTL has passed.
 
 | Model | Route example |
 |---|---|
-| `Sale` | `POST /tenant/pos` |
-| `Shift` | `POST /tenant/shifts` _(not yet wired — see below)_ |
-| `StockMovement` | `POST /tenant/stock-movements` _(not yet wired)_ |
-| `PurchaseOrder` | `POST /tenant/purchasing` _(not yet wired)_ |
+| `Sale` | `POST /tenant/pos` | ✅ fully wired |
+| `Shift` | `POST /tenant/shifts`, `POST /tenant/shifts/:id/close` | ✅ fully wired |
+| `StockMovement` | `POST /tenant/stock-movements` | 🔲 DB column ready, wiring pending |
+| `PurchaseOrder` | `POST /tenant/purchasing` | 🔲 DB column ready, wiring pending |
 
-> **Scope note:** Only `Sale` (POS) has both layers wired in this slice. The other three models have the `externalId` column and DB unique index ready — wiring the service/validator is a follow-up for each module.
+> **Scope note:** `Sale` and `Shift` have both layers wired. `StockMovement` and `PurchaseOrder` have the `externalId` DB column and unique index ready — service/validator/middleware wiring is a follow-up for each module.
 
 ---
 
@@ -258,7 +258,7 @@ The client sync queue should use **exponential backoff** with jitter. The 24 h R
 
 1. **Payload hash verification** — the middleware does not check if the body of a retry matches the original. A different payload for the same idempotency key returns the cached response silently. This is safe (idempotent) but not strict. A future pass can add HMAC fingerprinting.
 
-2. **Only `Sale` is fully wired** — `Shift`, `StockMovement`, `PurchaseOrder` have the DB columns and indexes but the service/validator/middleware wiring is pending for each module.
+2. **`StockMovement` and `PurchaseOrder` not yet wired** — DB columns and unique indexes exist; service/validator/middleware wiring is pending for each. `Sale` and `Shift` are both fully wired.
 
 3. **`X-Client-Id` header** — defined but not yet validated or stored in audit logs.
 
