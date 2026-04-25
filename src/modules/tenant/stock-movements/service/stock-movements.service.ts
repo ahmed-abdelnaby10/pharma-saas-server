@@ -37,6 +37,18 @@ export class StockMovementsService {
     auth: TenantAuthContext,
     payload: CreateStockMovementDto,
   ): Promise<StockMovementRecord> {
+    // 0. Data-level idempotency via externalId.
+    //    If the desktop retries after the Redis TTL has expired, the movement
+    //    already exists in the DB — return it without re-running any logic
+    //    (no duplicate stock adjustment, no duplicate record).
+    if (payload.externalId) {
+      const existing = await this.repository.findByExternalId(
+        auth.tenantId,
+        payload.externalId,
+      );
+      if (existing) return existing;
+    }
+
     await this.assertBranchBelongsToTenant(auth.tenantId, payload.branchId);
 
     const item = await prisma.inventoryItem.findFirst({
@@ -122,6 +134,7 @@ export class StockMovementsService {
         referenceType: payload.referenceType ?? null,
         referenceId: payload.referenceId ?? null,
         notes: payload.notes ?? null,
+        externalId: payload.externalId ?? null,
       });
     });
   }

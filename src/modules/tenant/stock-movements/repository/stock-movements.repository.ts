@@ -15,9 +15,17 @@ export interface CreateMovementInput {
   referenceType?: string | null;
   referenceId?: string | null;
   notes?: string | null;
+  /** Client-generated sync ID — passed only from the public API route, not from POS internals. */
+  externalId?: string | null;
 }
 
 export class StockMovementsRepository {
+  async findByExternalId(tenantId: string, externalId: string): Promise<StockMovementRecord | null> {
+    return prisma.stockMovement.findUnique({
+      where: { tenantId_externalId: { tenantId, externalId } },
+    });
+  }
+
   async list(tenantId: string, query: QueryStockMovementsDto): Promise<StockMovementRecord[]> {
     return prisma.stockMovement.findMany({
       where: {
@@ -60,6 +68,7 @@ export class StockMovementsRepository {
         ...(input.referenceType != null ? { referenceType: input.referenceType } : {}),
         ...(input.referenceId != null ? { referenceId: input.referenceId } : {}),
         ...(input.notes != null ? { notes: input.notes } : {}),
+        ...(input.externalId != null ? { externalId: input.externalId } : {}),
       },
     });
   }

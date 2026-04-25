@@ -2,7 +2,7 @@
   "info": {
     "name": "Sync / Idempotency",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Demonstrates the offline sync safety foundation: idempotent Sale and Shift operations via X-Idempotency-Key header and externalId field. StockMovement and PurchaseOrder have DB columns ready — wiring pending."
+    "description": "Demonstrates the offline sync safety foundation: idempotent Sale, Shift, and StockMovement operations via X-Idempotency-Key header and externalId field. PurchaseOrder has DB column ready — wiring pending."
   },
   "item": [
     {
@@ -217,13 +217,104 @@
           }
         }
       ]
+    },
+    {
+      "name": "Stock Movements",
+      "item": [
+        {
+          "name": "Create Movement — first sync attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{$guid}}", "description": "Stable UUID — reuse on every retry of this movement." },
+              { "key": "X-Client-Id",       "value": "desktop-device-001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_IN\",\n  \"quantity\": 10,\n  \"externalId\": \"{{localMovementId}}\",\n  \"notes\": \"Offline count adjustment synced from desktop\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/stock-movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "stock-movements"]
+            },
+            "description": "First submission. Response includes `meta.syncAck` with `fromCache: false`. Stock quantity is updated atomically. Save the X-Idempotency-Key for retries. `externalId` is your local SQLite record ID."
+          }
+        },
+        {
+          "name": "Create Movement — retry (Redis cache hit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{movementIdempotencyKey}}", "description": "SAME key as the first attempt." }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_IN\",\n  \"quantity\": 10,\n  \"externalId\": \"{{localMovementId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/stock-movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "stock-movements"]
+            },
+            "description": "`meta.syncAck.fromCache: true`. No new movement created, no stock re-adjusted."
+          }
+        },
+        {
+          "name": "Create Movement — retry (Redis expired, externalId dedup)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{$guid}}", "description": "NEW key — simulates Redis TTL expiry." }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_IN\",\n  \"quantity\": 10,\n  \"externalId\": \"{{localMovementId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/stock-movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "stock-movements"]
+            },
+            "description": "Redis miss but `externalId` matches an existing StockMovement — service returns it without applying a second stock adjustment."
+          }
+        },
+        {
+          "name": "Create Movement — standard (no sync headers)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": \"ADJUSTMENT_OUT\",\n  \"quantity\": 3,\n  \"notes\": \"Manual write-off\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/stock-movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "stock-movements"]
+            },
+            "description": "No X-Idempotency-Key, no externalId. Response has no `meta.syncAck`. Fully backward-compatible."
+          }
+        }
+      ]
     }
   ],
   "variable": [
-    { "key": "idempotencyKey",      "value": "", "description": "X-Idempotency-Key from first POS create attempt." },
-    { "key": "localSaleId",         "value": "", "description": "Local SQLite sale externalId." },
-    { "key": "shiftIdempotencyKey", "value": "", "description": "X-Idempotency-Key from first open-shift attempt." },
-    { "key": "closeIdempotencyKey", "value": "", "description": "X-Idempotency-Key from first close-shift attempt." },
-    { "key": "localShiftId",        "value": "", "description": "Local SQLite shift externalId." }
+    { "key": "idempotencyKey",         "value": "", "description": "X-Idempotency-Key from first POS create attempt." },
+    { "key": "localSaleId",            "value": "", "description": "Local SQLite sale externalId." },
+    { "key": "shiftIdempotencyKey",    "value": "", "description": "X-Idempotency-Key from first open-shift attempt." },
+    { "key": "closeIdempotencyKey",    "value": "", "description": "X-Idempotency-Key from first close-shift attempt." },
+    { "key": "localShiftId",           "value": "", "description": "Local SQLite shift externalId." },
+    { "key": "movementIdempotencyKey", "value": "", "description": "X-Idempotency-Key from first stock-movement attempt." },
+    { "key": "localMovementId",        "value": "", "description": "Local SQLite stock movement externalId." }
   ]
 }

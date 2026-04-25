@@ -15,6 +15,8 @@ export interface StockMovementResponse {
   referenceType: string | null;
   referenceId: string | null;
   notes: string | null;
+  /** Echoed back so the desktop can reconcile its local SQLite record. */
+  externalId: string | null;
   createdAt: Date;
 }
 
@@ -32,6 +34,7 @@ export function mapStockMovementResponse(movement: StockMovementRecord): StockMo
     referenceType: movement.referenceType,
     referenceId: movement.referenceId,
     notes: movement.notes,
+    externalId: movement.externalId ?? null,
     createdAt: movement.createdAt,
   };
 }

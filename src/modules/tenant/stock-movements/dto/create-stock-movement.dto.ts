@@ -9,4 +9,6 @@ export interface CreateStockMovementDto {
   referenceType?: string | null;
   referenceId?: string | null;
   notes?: string | null;
+  /** Client-generated SQLite primary key for offline desktop reconciliation (data-level dedup). */
+  externalId?: string | null;
 }

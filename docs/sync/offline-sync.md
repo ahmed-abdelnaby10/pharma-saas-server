@@ -56,10 +56,10 @@ This layer handles **long-tail retries** where the 24 h Redis TTL has passed.
 |---|---|
 | `Sale` | `POST /tenant/pos` | ✅ fully wired |
 | `Shift` | `POST /tenant/shifts`, `POST /tenant/shifts/:id/close` | ✅ fully wired |
-| `StockMovement` | `POST /tenant/stock-movements` | 🔲 DB column ready, wiring pending |
+| `StockMovement` | `POST /tenant/stock-movements` | ✅ fully wired |
 | `PurchaseOrder` | `POST /tenant/purchasing` | 🔲 DB column ready, wiring pending |
 
-> **Scope note:** `Sale` and `Shift` have both layers wired. `StockMovement` and `PurchaseOrder` have the `externalId` DB column and unique index ready — service/validator/middleware wiring is a follow-up for each module.
+> **Scope note:** `Sale`, `Shift`, and `StockMovement` have both layers wired. `PurchaseOrder` has the `externalId` DB column and unique index ready — service/validator/middleware wiring is a follow-up.
 
 ---
 
@@ -258,7 +258,7 @@ The client sync queue should use **exponential backoff** with jitter. The 24 h R
 
 1. **Payload hash verification** — the middleware does not check if the body of a retry matches the original. A different payload for the same idempotency key returns the cached response silently. This is safe (idempotent) but not strict. A future pass can add HMAC fingerprinting.
 
-2. **`StockMovement` and `PurchaseOrder` not yet wired** — DB columns and unique indexes exist; service/validator/middleware wiring is pending for each. `Sale` and `Shift` are both fully wired.
+2. **`PurchaseOrder` not yet wired** — DB column and unique index exist; service/validator/middleware wiring is pending. `Sale`, `Shift`, and `StockMovement` are all fully wired.
 
 3. **`X-Client-Id` header** — defined but not yet validated or stored in audit logs.
 
