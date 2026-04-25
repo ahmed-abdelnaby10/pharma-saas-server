@@ -74,6 +74,10 @@ export class UsersRepository {
     });
   }
 
+  async countActive(tenantId: string): Promise<number> {
+    return prisma.tenantUser.count({ where: { tenantId, isActive: true } });
+  }
+
   async deactivate(tenantId: string, userId: string): Promise<UserRecord> {
     return prisma.tenantUser.update({
       where: { id: userId },

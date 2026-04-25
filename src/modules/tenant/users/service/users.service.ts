@@ -3,6 +3,8 @@ import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
 import { hashPassword } from "../../../../core/security/password";
+import { usageLimitService } from "../../../../core/usage/usage-limit.service";
+import { FeatureKey } from "../../../../shared/constants/feature-keys";
 import { branchesRepository } from "../../branches/repository/branches.repository";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { UpdateUserDto } from "../dto/update-user.dto";
@@ -46,6 +48,13 @@ export class UsersService {
     auth: TenantAuthContext,
     payload: CreateUserDto,
   ): Promise<UserRecord> {
+    const activeCount = await usersRepository.countActive(auth.tenantId);
+    await usageLimitService.assertCountUnderLimit(
+      auth.tenantId,
+      FeatureKey.MAX_USERS,
+      activeCount,
+    );
+
     const existing = await usersRepository.findByEmail(
       auth.tenantId,
       payload.email,

@@ -1,51 +1,15 @@
 import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { ConflictError } from "../../../../shared/errors/conflict-error";
-import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
-import {
-  subscriptionsRepository,
-} from "../../../platform/subscriptions/repository/subscriptions.repository";
+import { usageLimitService } from "../../../../core/usage/usage-limit.service";
+import { FeatureKey } from "../../../../shared/constants/feature-keys";
 import { CreateBranchDto } from "../dto/create-branch.dto";
 import { UpdateBranchDto } from "../dto/update-branch.dto";
 import { QueryBranchesDto } from "../dto/query-branch.dto";
 import { BranchRecord } from "../mapper/branches.mapper";
 import { branchesRepository } from "../repository/branches.repository";
 
-const MAX_BRANCHES_FEATURE_KEY = "max_branches";
-
 export class BranchesService {
-  /**
-   * Enforce plan-level branch limit.
-   * Throws ForbiddenError if the tenant has reached the max_branches limit
-   * defined on their active subscription's plan features.
-   */
-  private async enforceLimit(tenantId: string): Promise<void> {
-    const subscription =
-      await subscriptionsRepository.findCurrentWithPlanFeaturesByTenant(tenantId);
-
-    if (!subscription) {
-      throw new ForbiddenError(
-        "No active subscription found",
-        undefined,
-        "subscription.not_found",
-      );
-    }
-
-    const feature = subscription.plan.features?.find(
-      (f) => f.featureKey === MAX_BRANCHES_FEATURE_KEY && f.enabled,
-    );
-
-    if (feature && feature.limitValue !== null) {
-      const activeCount = await branchesRepository.countActive(tenantId);
-      if (activeCount >= feature.limitValue) {
-        throw new ForbiddenError(
-          "Branch limit reached for your plan",
-          undefined,
-          "branch.limit_exceeded",
-        );
-      }
-    }
-  }
 
   async listBranches(
     auth: TenantAuthContext,
@@ -69,7 +33,12 @@ export class BranchesService {
     auth: TenantAuthContext,
     payload: CreateBranchDto,
   ): Promise<BranchRecord> {
-    await this.enforceLimit(auth.tenantId);
+    const activeCount = await branchesRepository.countActive(auth.tenantId);
+    await usageLimitService.assertCountUnderLimit(
+      auth.tenantId,
+      FeatureKey.MAX_BRANCHES,
+      activeCount,
+    );
 
     const [existingEn, existingAr] = await Promise.all([
       branchesRepository.findByNameEn(auth.tenantId, payload.nameEn),
