@@ -1,11 +1,14 @@
 import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { subscriptionsRepository } from "../../../platform/subscriptions/repository/subscriptions.repository";
+import { usageLimitService } from "../../../../core/usage/usage-limit.service";
 
 export interface EntitlementResponse {
   featureKey: string;
   enabled: boolean;
   limitValue: number | null;
+  /** true when a platform admin override is in effect for this feature */
+  isOverride: boolean;
 }
 
 export interface TenantSubscriptionResponse {
@@ -33,6 +36,8 @@ export class TenantSubscriptionService {
       );
     }
 
+    const entitlements = await usageLimitService.getEffectiveEntitlements(auth.tenantId);
+
     return {
       subscriptionId: sub.id,
       planCode: sub.plan.code,
@@ -41,10 +46,11 @@ export class TenantSubscriptionService {
       startsAt: sub.startsAt,
       endsAt: sub.endsAt ?? null,
       trialEndsAt: sub.trialEndsAt ?? null,
-      entitlements: sub.plan.features.map((f) => ({
-        featureKey: f.featureKey,
-        enabled: f.enabled,
-        limitValue: f.limitValue ?? null,
+      entitlements: entitlements.map((e) => ({
+        featureKey: e.featureKey,
+        enabled: e.enabled,
+        limitValue: e.limitValue,
+        isOverride: e.isOverride,
       })),
     };
   }

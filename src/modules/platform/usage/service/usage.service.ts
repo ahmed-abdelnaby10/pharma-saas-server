@@ -1,5 +1,6 @@
 import { prisma } from "../../../../core/db/prisma";
 import { subscriptionsRepository } from "../../subscriptions/repository/subscriptions.repository";
+import { usageLimitService } from "../../../../core/usage/usage-limit.service";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { COUNT_LIMITED_KEYS, FeatureKey } from "../../../../shared/constants/feature-keys";
 
@@ -7,7 +8,9 @@ export interface FeatureUsage {
   featureKey: string;
   enabled: boolean;
   limitValue: number | null;
-  /** Present only for count-limited features. */
+  /** true when a platform admin override is in effect for this feature */
+  isOverride: boolean;
+  /** Present only for count-limited features with a limitValue */
   currentValue?: number;
 }
 
@@ -46,12 +49,15 @@ export class UsageService {
       );
     }
 
+    const effective = await usageLimitService.getEffectiveEntitlements(tenantId);
+
     const features: FeatureUsage[] = await Promise.all(
-      sub.plan.features.map(async (f) => {
+      effective.map(async (f) => {
         const base: FeatureUsage = {
           featureKey: f.featureKey,
           enabled: f.enabled,
-          limitValue: f.limitValue ?? null,
+          limitValue: f.limitValue,
+          isOverride: f.isOverride,
         };
 
         if (COUNT_LIMITED_KEYS.has(f.featureKey as any) && f.enabled && f.limitValue !== null) {

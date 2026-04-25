@@ -10,6 +10,7 @@ import { metricsRoutes } from "../modules/platform/metrics";
 import { auditLogsRoutes } from "../modules/platform/audit-logs";
 import { dashboardRoutes } from "../modules/platform/dashboard";
 import { usageRoutes } from "../modules/platform/usage";
+import { featureOverridesRoutes } from "../modules/platform/feature-overrides";
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use("/plans", plansRoutes);
 router.use("/tenants", tenantsRoutes);
 router.use("/tenants/:tenantId/subscriptions", subscriptionsRoutes);
 router.use("/tenants/:tenantId/usage", usageRoutes);
+router.use("/tenants/:tenantId/feature-overrides", featureOverridesRoutes);
 router.use("/catalog", platformCatalogRoutes);
 router.use("/invoices", invoicesRoutes);
 router.use("/support/tickets", platformSupportRoutes);
