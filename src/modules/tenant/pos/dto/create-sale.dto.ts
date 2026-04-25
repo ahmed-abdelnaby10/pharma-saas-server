@@ -22,4 +22,5 @@ export interface CreateSaleDto {
    * Max 128 characters; any opaque string is accepted (UUID recommended).
    */
   externalId?: string | null;
+  patientId?: string | null;
 }

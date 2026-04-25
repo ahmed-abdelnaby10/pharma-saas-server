@@ -258,6 +258,7 @@ export class PosService {
         total,
         notes: payload.notes,
         externalId: payload.externalId ?? null,
+        patientId: payload.patientId ?? null,
         items: resolutions.map((r) => ({
           inventoryItemId: r.inventoryItemId,
           quantity: r.quantity,

@@ -22,6 +22,7 @@ const createSaleSchema = z.object({
   notes: z.string().max(500).nullish(),
   // Offline sync: client-generated SQLite record ID for reconciliation.
   externalId: z.string().max(128).nullish(),
+  patientId: z.string().cuid("Invalid patientId").nullish(),
 });
 
 const querySalesSchema = z.object({

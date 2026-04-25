@@ -21,6 +21,7 @@ import { analyticsRoutes } from "../modules/tenant/analytics";
 import { ocrRoutes } from "../modules/tenant/ocr";
 import { tenantSupportRoutes } from "../modules/tenant/support";
 import { tenantSubscriptionRoutes } from "../modules/tenant/subscription";
+import { patientsRoutes } from "../modules/tenant/patients";
 
 const router = Router();
 
@@ -46,5 +47,6 @@ router.use("/analytics", analyticsRoutes);
 router.use("/ocr/documents", ocrRoutes);
 router.use("/support/tickets", tenantSupportRoutes);
 router.use("/subscription", tenantSubscriptionRoutes);
+router.use("/patients", patientsRoutes);
 
 export const tenantRoutes = router;
