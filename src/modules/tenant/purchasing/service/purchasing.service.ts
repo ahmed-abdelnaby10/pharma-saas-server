@@ -57,6 +57,17 @@ export class PurchasingService {
     auth: TenantAuthContext,
     payload: CreatePurchaseOrderDto,
   ): Promise<PurchaseOrderWithRelations> {
+    // 0. Data-level idempotency via externalId.
+    //    If the desktop retries after the Redis TTL has expired, the order
+    //    already exists in the DB — return it without re-running any logic.
+    if (payload.externalId) {
+      const existing = await this.repository.findByExternalId(
+        auth.tenantId,
+        payload.externalId,
+      );
+      if (existing) return existing;
+    }
+
     await this.assertBranch(auth.tenantId, payload.branchId);
 
     if (payload.supplierId) {
@@ -80,6 +91,7 @@ export class PurchasingService {
       orderNumber,
       notes: payload.notes ?? null,
       expectedAt: payload.expectedAt ? new Date(payload.expectedAt) : null,
+      externalId: payload.externalId ?? null,
     });
   }
 

@@ -2,7 +2,7 @@
   "info": {
     "name": "Sync / Idempotency",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Demonstrates the offline sync safety foundation: idempotent Sale, Shift, and StockMovement operations via X-Idempotency-Key header and externalId field. PurchaseOrder has DB column ready — wiring pending."
+    "description": "Demonstrates the offline sync safety foundation: idempotent Sale, Shift, StockMovement, and PurchaseOrder operations via X-Idempotency-Key header and externalId field. All four write models are fully wired."
   },
   "item": [
     {
@@ -306,6 +306,95 @@
           }
         }
       ]
+    },
+    {
+      "name": "Purchase Orders",
+      "item": [
+        {
+          "name": "Create Order — first sync attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{$guid}}", "description": "Stable UUID — reuse on every retry of this order creation." },
+              { "key": "X-Client-Id",       "value": "desktop-device-001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"supplierId\": \"{{supplierId}}\",\n  \"externalId\": \"{{localOrderId}}\",\n  \"notes\": \"Offline order created on desktop\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/purchasing/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "purchasing", "orders"]
+            },
+            "description": "First submission. Response includes `meta.syncAck` with `fromCache: false`. Save the X-Idempotency-Key for retries. `externalId` is your local SQLite record ID."
+          }
+        },
+        {
+          "name": "Create Order — retry (Redis cache hit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{orderIdempotencyKey}}", "description": "SAME key as the first attempt." }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"supplierId\": \"{{supplierId}}\",\n  \"externalId\": \"{{localOrderId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/purchasing/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "purchasing", "orders"]
+            },
+            "description": "`meta.syncAck.fromCache: true`. No new order created."
+          }
+        },
+        {
+          "name": "Create Order — retry (Redis expired, externalId dedup)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",     "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",      "value": "application/json" },
+              { "key": "X-Idempotency-Key", "value": "{{$guid}}", "description": "NEW key — simulates Redis TTL expiry." }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"supplierId\": \"{{supplierId}}\",\n  \"externalId\": \"{{localOrderId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/purchasing/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "purchasing", "orders"]
+            },
+            "description": "Redis miss but `externalId` matches an existing PurchaseOrder — service returns it without creating a duplicate."
+          }
+        },
+        {
+          "name": "Create Order — standard (no sync headers)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"notes\": \"Standard online order\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/purchasing/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "purchasing", "orders"]
+            },
+            "description": "No X-Idempotency-Key, no externalId. Response has no `meta.syncAck`. Fully backward-compatible."
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -315,6 +404,8 @@
     { "key": "closeIdempotencyKey",    "value": "", "description": "X-Idempotency-Key from first close-shift attempt." },
     { "key": "localShiftId",           "value": "", "description": "Local SQLite shift externalId." },
     { "key": "movementIdempotencyKey", "value": "", "description": "X-Idempotency-Key from first stock-movement attempt." },
-    { "key": "localMovementId",        "value": "", "description": "Local SQLite stock movement externalId." }
+    { "key": "localMovementId",        "value": "", "description": "Local SQLite stock movement externalId." },
+    { "key": "orderIdempotencyKey",    "value": "", "description": "X-Idempotency-Key from first purchase-order create attempt." },
+    { "key": "localOrderId",           "value": "", "description": "Local SQLite purchase order externalId." }
   ]
 }

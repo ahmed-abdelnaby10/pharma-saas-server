@@ -42,6 +42,8 @@ export interface PurchaseOrderResponse {
   notes: string | null;
   orderedAt: Date | null;
   expectedAt: Date | null;
+  /** Echoed back so the desktop can reconcile its local SQLite record. */
+  externalId: string | null;
   items: PurchaseOrderItemResponse[];
   createdAt: Date;
   updatedAt: Date;
@@ -85,6 +87,7 @@ export function mapPurchaseOrderResponse(order: PurchaseOrderWithRelations): Pur
     notes: order.notes,
     orderedAt: order.orderedAt,
     expectedAt: order.expectedAt,
+    externalId: order.externalId ?? null,
     items: order.items.map(mapPurchaseOrderItemResponse),
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
