@@ -16,6 +16,7 @@ const INBOUND_TYPES = new Set<StockMovementType>([
   StockMovementType.INBOUND,
   StockMovementType.ADJUSTMENT_IN,
   StockMovementType.RETURN_IN,
+  StockMovementType.RECONCILIATION_IN,
 ]);
 
 export class StockMovementsService {
