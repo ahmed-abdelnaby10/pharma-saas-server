@@ -18,6 +18,7 @@ export class PatientsRepository {
     const where: Prisma.PatientWhereInput = {
       tenantId,
       ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
+      ...(query.updatedSince ? { updatedAt: { gt: new Date(query.updatedSince) } } : {}),
       ...(query.search
         ? {
             OR: [

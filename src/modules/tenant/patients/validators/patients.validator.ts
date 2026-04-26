@@ -45,6 +45,7 @@ const queryPatientsSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v === undefined ? undefined : v === "true")),
+  updatedSince: z.string().datetime({ offset: true }).optional(),
 });
 
 const patientIdParamSchema = z.object({ patientId: z.string().cuid("Invalid patientId") });

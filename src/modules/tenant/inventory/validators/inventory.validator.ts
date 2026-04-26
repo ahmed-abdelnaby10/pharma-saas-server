@@ -44,6 +44,7 @@ const queryInventoryItemsSchema = z.object({
       return undefined;
     }),
   search: z.string().min(1).max(100).optional(),
+  updatedSince: z.string().datetime({ offset: true }).optional(),
 });
 
 const inventoryItemIdParamSchema = z.object({
