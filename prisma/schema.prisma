@@ -126,6 +126,17 @@ enum PrescriptionStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  LOW_STOCK
+  EXPIRY_ALERT
+  OCR_COMPLETED
+  OCR_FAILED
+  SHIFT_OPENED
+  SHIFT_CLOSED
+  PURCHASE_ORDER_RECEIVED
+  GENERAL
+}
+
 model AuditLog {
   id         String    @id @default(cuid())
   tenantId   String?
@@ -189,6 +200,7 @@ model Tenant {
   featureOverrides  TenantFeatureOverride[]
   patients          Patient[]
   prescriptions     Prescription[]
+  notifications     Notification[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -357,6 +369,7 @@ model TenantUser {
   shifts         Shift[]
   ocrDocuments   OcrDocument[]
   supportTickets SupportTicket[]
+  notifications  Notification[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -801,4 +814,23 @@ model PrescriptionItem {
   createdAt           DateTime     @default(now())
 
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  tenantId  String
+  userId    String
+  type      NotificationType @default(GENERAL)
+  title     String
+  body      String
+  metadata  Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   TenantUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, isRead])
+  @@index([tenantId, userId, createdAt])
 }
