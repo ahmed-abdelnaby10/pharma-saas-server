@@ -19,5 +19,6 @@ router.post("/push", asyncHandler(syncController.push));
 router.get("/devices", asyncHandler(syncController.listDevices));
 router.post("/devices", asyncHandler(syncController.registerDevice));
 router.delete("/devices/:deviceId", asyncHandler(syncController.revokeDevice));
+router.post("/devices/:deviceId/session", asyncHandler(syncController.issueDeviceSession));
 
 export const syncRoutes = router;

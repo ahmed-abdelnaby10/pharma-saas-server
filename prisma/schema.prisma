@@ -204,6 +204,7 @@ model Tenant {
   prescriptions     Prescription[]
   notifications     Notification[]
   devices           Device[]
+  deviceSessions    DeviceSession[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -374,6 +375,7 @@ model TenantUser {
   ocrDocuments   OcrDocument[]
   supportTickets SupportTicket[]
   notifications  Notification[]
+  deviceSessions DeviceSession[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -856,11 +858,33 @@ model Device {
   registeredAt DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch   Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  sessions DeviceSession[]
 
   @@unique([tenantId, fingerprint])
   @@index([tenantId])
   @@index([tenantId, branchId])
   @@index([tenantId, isActive])
+}
+
+/// Long-lived offline session token issued to a registered device.
+/// The plaintext token is returned once on issue; only the SHA-256 hash is stored.
+model DeviceSession {
+  id        String   @id @default(cuid())
+  deviceId  String
+  tenantId  String
+  userId    String
+  tokenHash String   @unique // SHA-256(plaintext token) — never store plaintext
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  device Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   TenantUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([expiresAt])
 }

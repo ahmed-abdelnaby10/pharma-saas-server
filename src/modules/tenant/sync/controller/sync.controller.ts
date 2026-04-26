@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { syncService, SERVER_SCHEMA_VERSION, MIN_DESKTOP_SCHEMA_VERSION } from "../service/sync.service";
+import { deviceSessionService } from "../service/device-session.service";
+import { tenantSubscriptionService } from "../../subscription/service/tenant-subscription.service";
 import {
   parseBootstrapQuery,
   parseDeltaQuery,
@@ -76,8 +78,25 @@ class SyncController {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const deviceId = parseDeviceIdParam(req.params);
+    // Revoke all active sessions before deactivating the device
+    await deviceSessionService.revokeAllForDevice(deviceId);
     const device = await syncService.revokeDevice(auth, deviceId);
     res.json({ success: true, data: device });
+  };
+
+  /**
+   * POST /tenant/sync/devices/:deviceId/session
+   * Issues a long-lived device token tied to this device + authenticated user.
+   * The plaintext token is returned once — the desktop must persist it securely.
+   */
+  issueDeviceSession = async (req: Request, res: Response): Promise<void> => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const deviceId = parseDeviceIdParam(req.params);
+    // Use current license validUntil as the session expiry
+    const { license } = await tenantSubscriptionService.getCurrent(auth);
+    const result = await deviceSessionService.issueSession(auth, deviceId, license.validUntil);
+    res.status(201).json({ success: true, data: result });
   };
 }
 

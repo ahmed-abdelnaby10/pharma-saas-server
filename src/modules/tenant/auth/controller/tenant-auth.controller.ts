@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
-import { parseTenantLoginDto } from "../validators/tenant-auth.validator";
+import { parseTenantLoginDto, parseDeviceRefreshDto } from "../validators/tenant-auth.validator";
 import {
   tenantAuthService,
   TenantAuthService,
 } from "../service/tenant-auth.service";
+import { deviceSessionService } from "../../sync/service/device-session.service";
 
 export class TenantAuthController {
   constructor(private readonly service: TenantAuthService) {}
@@ -16,6 +17,23 @@ export class TenantAuthController {
     return res.status(200).json(
       successResponse(
         req.t?.("auth.login_success") || "Login successful",
+        result,
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  /**
+   * POST /tenant/auth/device-refresh  (no auth — called when JWT has expired offline)
+   * Accepts a long-lived device token and returns a fresh short-lived JWT.
+   */
+  deviceRefresh = async (req: Request, res: Response) => {
+    const { deviceToken } = parseDeviceRefreshDto(req.body);
+    const result = await deviceSessionService.refreshFromDeviceToken(deviceToken);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("auth.token_refreshed") || "Token refreshed",
         result,
         undefined,
         req.requestId,
