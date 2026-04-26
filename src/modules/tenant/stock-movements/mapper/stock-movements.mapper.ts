@@ -17,6 +17,8 @@ export interface StockMovementResponse {
   notes: string | null;
   /** Echoed back so the desktop can reconcile its local SQLite record. */
   externalId: string | null;
+  /** When the movement was recorded on the desktop (offline timestamp). Null for online movements. */
+  clientCreatedAt: Date | null;
   createdAt: Date;
 }
 
@@ -35,6 +37,7 @@ export function mapStockMovementResponse(movement: StockMovementRecord): StockMo
     referenceId: movement.referenceId,
     notes: movement.notes,
     externalId: movement.externalId ?? null,
+    clientCreatedAt: movement.clientCreatedAt ?? null,
     createdAt: movement.createdAt,
   };
 }

@@ -61,6 +61,7 @@ export class ShiftsService {
       openingBalance: new Prisma.Decimal(payload.openingBalance),
       notes: payload.notes ?? null,
       externalId: payload.externalId ?? null,
+      clientCreatedAt: payload.clientCreatedAt ? new Date(payload.clientCreatedAt) : null,
     });
   }
 
@@ -82,6 +83,7 @@ export class ShiftsService {
       shiftId,
       new Prisma.Decimal(payload.closingBalance),
       payload.notes ?? null,
+      payload.clientClosedAt ? new Date(payload.clientClosedAt) : null,
     );
   }
 

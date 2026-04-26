@@ -85,6 +85,7 @@ export class PosRepository {
       notes?: string | null;
       externalId?: string | null;
       patientId?: string | null;
+      clientCreatedAt?: Date | null;
       items: Array<{
         inventoryItemId: string;
         quantity: Prisma.Decimal;
@@ -112,6 +113,7 @@ export class PosRepository {
         ...(data.notes != null ? { notes: data.notes } : {}),
         ...(data.externalId != null ? { externalId: data.externalId } : {}),
         ...(data.patientId != null ? { patientId: data.patientId } : {}),
+        ...(data.clientCreatedAt != null ? { clientCreatedAt: data.clientCreatedAt } : {}),
         items: {
           create: data.items.map((item) => ({
             inventoryItemId: item.inventoryItemId,

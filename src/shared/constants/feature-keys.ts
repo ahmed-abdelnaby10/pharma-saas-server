@@ -13,6 +13,9 @@ export const FeatureKey = {
   OCR_ENABLED: "ocr_enabled",
   SALES_RETURNS_ENABLED: "sales_returns_enabled",
   ADVANCED_ANALYTICS_ENABLED: "advanced_analytics_enabled",
+
+  // Offline mode — how many hours the desktop may operate offline before forcing re-auth (default: 24)
+  MAX_OFFLINE_HOURS: "max_offline_hours",
 } as const;
 
 export type FeatureKeyValue = (typeof FeatureKey)[keyof typeof FeatureKey];

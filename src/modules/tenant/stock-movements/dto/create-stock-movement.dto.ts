@@ -11,4 +11,6 @@ export interface CreateStockMovementDto {
   notes?: string | null;
   /** Client-generated SQLite primary key for offline desktop reconciliation (data-level dedup). */
   externalId?: string | null;
+  /** When the movement was recorded on the desktop (offline timestamp). */
+  clientCreatedAt?: string | null;
 }

@@ -14,13 +14,12 @@ export interface CreateSaleDto {
   paymentAmount: number;
   paymentReference?: string | null;
   notes?: string | null;
-  /**
-   * Optional client-generated identifier from the desktop SQLite store.
-   * When provided the backend stores it on the Sale record and uses it for
-   * data-level idempotency: a second submission with the same externalId
-   * returns the existing Sale rather than creating a duplicate.
-   * Max 128 characters; any opaque string is accepted (UUID recommended).
-   */
+  /** Client-generated sync ID for data-level idempotency. Max 128 chars. */
   externalId?: string | null;
+  /** Client-generated receipt number (e.g. "BR1-S5-0042"). When provided and
+   *  unique, the server uses it verbatim. Falls back to server-generated. */
+  saleNumber?: string | null;
+  /** When the sale was recorded on the desktop (offline timestamp). */
+  clientCreatedAt?: string | null;
   patientId?: string | null;
 }

@@ -135,6 +135,7 @@ export class StockMovementsService {
         referenceId: payload.referenceId ?? null,
         notes: payload.notes ?? null,
         externalId: payload.externalId ?? null,
+        clientCreatedAt: payload.clientCreatedAt ? new Date(payload.clientCreatedAt) : null,
       });
     });
   }

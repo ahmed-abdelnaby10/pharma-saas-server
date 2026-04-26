@@ -243,7 +243,9 @@ export class PosService {
     }
 
     // 6. Execute $transaction: create Sale + SaleItems + Payment + OUTBOUND movements
-    const saleNumber = generateSaleNumber();
+    // Use client-provided saleNumber if given (offline receipt integrity); fall back to generated.
+    // If client saleNumber already exists (retry), the transaction will honour the externalId dedup above.
+    const saleNumber = payload.saleNumber?.trim() || generateSaleNumber();
 
     const sale = await prisma.$transaction(async (tx) => {
       // Create the sale with items and payment
@@ -259,6 +261,7 @@ export class PosService {
         notes: payload.notes,
         externalId: payload.externalId ?? null,
         patientId: payload.patientId ?? null,
+        clientCreatedAt: payload.clientCreatedAt ? new Date(payload.clientCreatedAt) : null,
         items: resolutions.map((r) => ({
           inventoryItemId: r.inventoryItemId,
           quantity: r.quantity,

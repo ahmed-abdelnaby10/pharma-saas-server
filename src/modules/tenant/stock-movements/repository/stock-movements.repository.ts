@@ -17,6 +17,8 @@ export interface CreateMovementInput {
   notes?: string | null;
   /** Client-generated sync ID — passed only from the public API route, not from POS internals. */
   externalId?: string | null;
+  /** When the movement was recorded on the desktop (offline timestamp). */
+  clientCreatedAt?: Date | null;
 }
 
 export class StockMovementsRepository {
@@ -69,6 +71,7 @@ export class StockMovementsRepository {
         ...(input.referenceId != null ? { referenceId: input.referenceId } : {}),
         ...(input.notes != null ? { notes: input.notes } : {}),
         ...(input.externalId != null ? { externalId: input.externalId } : {}),
+        ...(input.clientCreatedAt != null ? { clientCreatedAt: input.clientCreatedAt } : {}),
       },
     });
   }

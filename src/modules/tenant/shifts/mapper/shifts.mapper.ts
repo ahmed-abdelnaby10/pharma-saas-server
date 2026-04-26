@@ -20,6 +20,10 @@ export interface ShiftResponse {
   externalId: string | null;
   openedAt: Date;
   closedAt: Date | null;
+  /** When the shift was opened on the desktop (offline timestamp). Null for online shifts. */
+  clientCreatedAt: Date | null;
+  /** When the shift was closed on the desktop (offline timestamp). Null for online shifts. */
+  clientClosedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +46,8 @@ export function mapShiftResponse(shift: ShiftRecord): ShiftResponse {
     externalId: shift.externalId ?? null,
     openedAt: shift.openedAt,
     closedAt: shift.closedAt,
+    clientCreatedAt: shift.clientCreatedAt ?? null,
+    clientClosedAt: shift.clientClosedAt ?? null,
     createdAt: shift.createdAt,
     updatedAt: shift.updatedAt,
   };

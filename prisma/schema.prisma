@@ -42,6 +42,8 @@ enum StockMovementType {
   ADJUSTMENT_OUT
   RETURN_IN
   RETURN_OUT
+  RECONCILIATION_IN   // Manual fix: add stock to correct an oversell discrepancy
+  RECONCILIATION_OUT  // Manual fix: remove stock to correct a discrepancy
 }
 
 enum PurchaseOrderStatus {
@@ -201,6 +203,7 @@ model Tenant {
   patients          Patient[]
   prescriptions     Prescription[]
   notifications     Notification[]
+  devices           Device[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -344,6 +347,7 @@ model Branch {
   sales          Sale[]
   ocrDocuments   OcrDocument[]
   prescriptions  Prescription[]
+  devices        Device[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
@@ -549,9 +553,10 @@ model StockMovement {
   quantityAfter   Decimal           @db.Decimal(12, 3)
   referenceType   String?
   referenceId     String?
-  notes           String?
-  externalId      String?           // Client-generated sync ID for offline desktop reconciliation
-  createdAt       DateTime          @default(now())
+  notes             String?
+  externalId        String?           // Client-generated sync ID for offline desktop reconciliation
+  clientCreatedAt   DateTime?         // When the movement was recorded on the desktop (offline timestamp)
+  createdAt         DateTime          @default(now())
 
   tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   inventoryItem InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
@@ -618,12 +623,14 @@ model Shift {
   status         ShiftStatus @default(OPEN)
   openingBalance Decimal     @db.Decimal(12, 2)
   closingBalance Decimal?    @db.Decimal(12, 2)
-  notes          String?
-  externalId     String?     // Client-generated sync ID for offline desktop reconciliation
-  openedAt       DateTime    @default(now())
-  closedAt       DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  notes           String?
+  externalId      String?     // Client-generated sync ID for offline desktop reconciliation
+  openedAt        DateTime    @default(now())
+  closedAt        DateTime?
+  clientCreatedAt DateTime?   // When the shift was opened on the desktop (offline timestamp)
+  clientClosedAt  DateTime?   // When the shift was closed on the desktop (offline timestamp)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch Branch     @relation(fields: [branchId], references: [id], onDelete: Restrict)
@@ -647,11 +654,12 @@ model Sale {
   vatPercentage Decimal    @db.Decimal(5, 2)
   vatAmount     Decimal    @db.Decimal(12, 2)
   total         Decimal    @db.Decimal(12, 2)
-  patientId     String?
-  notes         String?
-  externalId    String?    // Client-generated sync ID for offline desktop reconciliation
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  patientId       String?
+  notes           String?
+  externalId      String?    // Client-generated sync ID for offline desktop reconciliation
+  clientCreatedAt DateTime?  // When the sale was recorded on the desktop (offline timestamp)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branch       Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
@@ -833,4 +841,26 @@ model Notification {
 
   @@index([tenantId, userId, isRead])
   @@index([tenantId, userId, createdAt])
+}
+
+/// Represents a physical desktop/POS device registered to a branch.
+/// Enables per-device offline session tracking and device revocation.
+model Device {
+  id           String    @id @default(cuid())
+  tenantId     String
+  branchId     String
+  fingerprint  String    // Client-generated stable device identifier (e.g. machine UUID)
+  label        String?   // Human-readable label e.g. "Cashier Terminal 1"
+  isActive     Boolean   @default(true)
+  lastSyncAt   DateTime?
+  registeredAt DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, fingerprint])
+  @@index([tenantId])
+  @@index([tenantId, branchId])
+  @@index([tenantId, isActive])
 }

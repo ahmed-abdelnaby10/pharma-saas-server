@@ -16,6 +16,7 @@ const createStockMovementSchema = z.object({
   referenceId: z.string().min(1).max(128).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
   externalId: z.string().max(128).nullish(),
+  clientCreatedAt: z.string().datetime({ offset: true }).nullish(),
 });
 
 const queryStockMovementsSchema = z.object({
