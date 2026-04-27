@@ -1,55 +1,27 @@
-import { Prescription, PrescriptionItem, PrescriptionStatus } from "@prisma/client";
+import { Prescription, PrescriptionItem } from "@prisma/client";
 
-export type PrescriptionRecord = Prescription & {
-  items: PrescriptionItem[];
-};
+export type PrescriptionWithItems = Prescription & { items: PrescriptionItem[] };
 
-export interface PrescriptionItemResponse {
-  id: string;
-  drugName: string;
-  quantity: string;
-  dosageInstructions: string | null;
-}
-
-export interface PrescriptionResponse {
-  id: string;
-  tenantId: string;
-  branchId: string;
-  patientId: string | null;
-  saleId: string | null;
-  ocrDocumentId: string | null;
-  prescriptionNumber: string | null;
-  doctorName: string | null;
-  doctorLicense: string | null;
-  status: PrescriptionStatus;
-  issuedAt: Date | null;
-  dispensedAt: Date | null;
-  notes: string | null;
-  items: PrescriptionItemResponse[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export function mapPrescriptionResponse(p: PrescriptionRecord): PrescriptionResponse {
+export function mapPrescriptionResponse(p: PrescriptionWithItems) {
   return {
     id: p.id,
     tenantId: p.tenantId,
     branchId: p.branchId,
-    patientId: p.patientId ?? null,
-    saleId: p.saleId ?? null,
-    ocrDocumentId: p.ocrDocumentId ?? null,
-    prescriptionNumber: p.prescriptionNumber ?? null,
-    doctorName: p.doctorName ?? null,
-    doctorLicense: p.doctorLicense ?? null,
+    patientId: p.patientId,
+    saleId: p.saleId,
+    prescriptionNumber: p.prescriptionNumber,
+    doctorName: p.doctorName,
+    doctorLicense: p.doctorLicense,
     status: p.status,
-    issuedAt: p.issuedAt ?? null,
-    dispensedAt: p.dispensedAt ?? null,
-    notes: p.notes ?? null,
+    issuedAt: p.issuedAt,
+    dispensedAt: p.dispensedAt,
+    notes: p.notes,
+    ocrDocumentId: p.ocrDocumentId,
     items: p.items.map((item) => ({
       id: item.id,
       drugName: item.drugName,
-      quantity: item.quantity.toString(),
-      dosageInstructions: item.dosageInstructions ?? null,
+      quantity: item.quantity,
+      dosageInstructions: item.dosageInstructions,
     })),
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,

@@ -1,101 +1,51 @@
-import { TenantAuthContext } from "../../../../shared/types/auth.types";
-import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
-import { CreatePatientDto } from "../dto/create-patient.dto";
-import { UpdatePatientDto } from "../dto/update-patient.dto";
-import { QueryPatientsDto } from "../dto/query-patients.dto";
+import { ConflictError } from "../../../../shared/errors/conflict-error";
+import { Translator } from "../../../../shared/types/locale.types";
 import { PatientRecord } from "../mapper/patients.mapper";
-import { patientsRepository } from "../repository/patients.repository";
+import { patientsRepository, PatientsRepository } from "../repository/patients.repository";
+import { CreatePatientDto, QueryPatientsDto, UpdatePatientDto } from "../validators/patients.validator";
 
 export class PatientsService {
-  async listPatients(auth: TenantAuthContext, query: QueryPatientsDto): Promise<PatientRecord[]> {
-    return patientsRepository.list(auth.tenantId, query);
+  constructor(private readonly repo: PatientsRepository) {}
+
+  async list(tenantId: string, query: QueryPatientsDto): Promise<PatientRecord[]> {
+    return this.repo.list(tenantId, query);
   }
 
-  async getPatient(auth: TenantAuthContext, patientId: string): Promise<PatientRecord> {
-    const patient = await patientsRepository.findById(auth.tenantId, patientId);
-    if (!patient) {
-      throw new NotFoundError("Patient not found", undefined, "patient.not_found");
-    }
+  async getById(tenantId: string, patientId: string, t: Translator): Promise<PatientRecord> {
+    const patient = await this.repo.findById(tenantId, patientId);
+    if (!patient) throw new NotFoundError(t("patient.not_found"));
     return patient;
   }
 
-  async createPatient(auth: TenantAuthContext, payload: CreatePatientDto): Promise<PatientRecord> {
+  async create(tenantId: string, payload: CreatePatientDto, t: Translator): Promise<PatientRecord> {
     if (payload.nationalId) {
-      const existing = await patientsRepository.findByNationalId(
-        auth.tenantId,
-        payload.nationalId,
-      );
-      if (existing) {
-        throw new ConflictError(
-          "A patient with this national ID already exists",
-          undefined,
-          "patient.national_id_conflict",
-        );
-      }
+      const existing = await this.repo.findByNationalId(tenantId, payload.nationalId);
+      if (existing) throw new ConflictError(t("patient.national_id_taken"));
     }
-
-    return patientsRepository.create({
-      tenantId: auth.tenantId,
-      fullName: payload.fullName,
-      dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : null,
-      phone: payload.phone ?? null,
-      email: payload.email ?? null,
-      nationalId: payload.nationalId ?? null,
-      gender: payload.gender ?? null,
-      notes: payload.notes ?? null,
-    });
+    return this.repo.create(tenantId, payload);
   }
 
-  async updatePatient(
-    auth: TenantAuthContext,
+  async update(
+    tenantId: string,
     patientId: string,
     payload: UpdatePatientDto,
+    t: Translator,
   ): Promise<PatientRecord> {
-    const patient = await patientsRepository.findById(auth.tenantId, patientId);
-    if (!patient) {
-      throw new NotFoundError("Patient not found", undefined, "patient.not_found");
+    const patient = await this.getById(tenantId, patientId, t);
+
+    if (payload.nationalId && payload.nationalId !== patient.nationalId) {
+      const existing = await this.repo.findByNationalId(tenantId, payload.nationalId);
+      if (existing) throw new ConflictError(t("patient.national_id_taken"));
     }
 
-    if (payload.nationalId !== undefined && payload.nationalId !== patient.nationalId) {
-      if (payload.nationalId !== null) {
-        const conflict = await patientsRepository.findByNationalId(
-          auth.tenantId,
-          payload.nationalId,
-        );
-        if (conflict) {
-          throw new ConflictError(
-            "A patient with this national ID already exists",
-            undefined,
-            "patient.national_id_conflict",
-          );
-        }
-      }
-    }
-
-    return patientsRepository.update(patientId, {
-      fullName: payload.fullName,
-      dateOfBirth: payload.dateOfBirth !== undefined
-        ? payload.dateOfBirth ? new Date(payload.dateOfBirth) : null
-        : undefined,
-      phone: payload.phone,
-      email: payload.email,
-      nationalId: payload.nationalId,
-      gender: payload.gender,
-      notes: payload.notes,
-    });
+    return this.repo.update(tenantId, patientId, payload);
   }
 
-  async deactivatePatient(auth: TenantAuthContext, patientId: string): Promise<PatientRecord> {
-    const patient = await patientsRepository.findById(auth.tenantId, patientId);
-    if (!patient) {
-      throw new NotFoundError("Patient not found", undefined, "patient.not_found");
-    }
-    if (!patient.isActive) {
-      throw new ConflictError("Patient is already inactive", undefined, "patient.already_inactive");
-    }
-    return patientsRepository.deactivate(patientId);
+  async deactivate(tenantId: string, patientId: string, t: Translator): Promise<PatientRecord> {
+    await this.getById(tenantId, patientId, t);
+    return this.repo.deactivate(tenantId, patientId);
   }
 }
 
-export const patientsService = new PatientsService();
+export const patientsService = new PatientsService(patientsRepository);

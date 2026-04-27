@@ -1,33 +1,18 @@
-import { Gender, Patient } from "@prisma/client";
+import { Patient } from "@prisma/client";
 
 export type PatientRecord = Patient;
 
-export interface PatientResponse {
-  id: string;
-  tenantId: string;
-  fullName: string;
-  dateOfBirth: Date | null;
-  phone: string | null;
-  email: string | null;
-  nationalId: string | null;
-  gender: Gender | null;
-  notes: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export function mapPatientResponse(p: PatientRecord): PatientResponse {
+export function mapPatientResponse(p: PatientRecord) {
   return {
     id: p.id,
     tenantId: p.tenantId,
     fullName: p.fullName,
-    dateOfBirth: p.dateOfBirth ?? null,
-    phone: p.phone ?? null,
-    email: p.email ?? null,
-    nationalId: p.nationalId ?? null,
-    gender: p.gender ?? null,
-    notes: p.notes ?? null,
+    dateOfBirth: p.dateOfBirth,
+    phone: p.phone,
+    email: p.email,
+    nationalId: p.nationalId,
+    gender: p.gender,
+    notes: p.notes,
     isActive: p.isActive,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,

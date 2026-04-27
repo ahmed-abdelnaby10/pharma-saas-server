@@ -1,191 +1,122 @@
-import { Prisma, PrescriptionStatus } from "@prisma/client";
-import { prisma } from "../../../../core/db/prisma";
-import { TenantAuthContext } from "../../../../shared/types/auth.types";
+import { PrescriptionStatus } from "@prisma/client";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
-import { BadRequestError } from "../../../../shared/errors/bad-request-error";
 import { ConflictError } from "../../../../shared/errors/conflict-error";
-import { prescriptionsRepository } from "../repository/prescriptions.repository";
-import { PrescriptionRecord } from "../mapper/prescriptions.mapper";
-import { CreatePrescriptionDto } from "../dto/create-prescription.dto";
-import { UpdatePrescriptionDto } from "../dto/update-prescription.dto";
-import { DispensePrescriptionDto } from "../dto/dispense-prescription.dto";
-import { QueryPrescriptionsDto } from "../dto/query-prescriptions.dto";
+import { BadRequestError } from "../../../../shared/errors/bad-request-error";
+import { Translator } from "../../../../shared/types/locale.types";
+import { prisma } from "../../../../core/db/prisma";
+import { PrescriptionWithItems } from "../mapper/prescriptions.mapper";
+import {
+  prescriptionsRepository,
+  PrescriptionsRepository,
+} from "../repository/prescriptions.repository";
+import {
+  CreatePrescriptionDto,
+  DispenseDto,
+  QueryPrescriptionsDto,
+  UpdatePrescriptionDto,
+} from "../validators/prescriptions.validator";
 
 export class PrescriptionsService {
-  async listPrescriptions(
-    auth: TenantAuthContext,
-    query: QueryPrescriptionsDto,
-  ): Promise<PrescriptionRecord[]> {
-    return prescriptionsRepository.list(auth.tenantId, query);
+  constructor(private readonly repo: PrescriptionsRepository) {}
+
+  async list(tenantId: string, query: QueryPrescriptionsDto): Promise<PrescriptionWithItems[]> {
+    return this.repo.list(tenantId, query);
   }
 
-  async getPrescription(
-    auth: TenantAuthContext,
+  async getById(
+    tenantId: string,
     prescriptionId: string,
-  ): Promise<PrescriptionRecord> {
-    const prescription = await prescriptionsRepository.findById(auth.tenantId, prescriptionId);
-    if (!prescription) {
-      throw new NotFoundError("Prescription not found", undefined, "prescription.not_found");
-    }
-    return prescription;
+    t: Translator,
+  ): Promise<PrescriptionWithItems> {
+    const rx = await this.repo.findById(tenantId, prescriptionId);
+    if (!rx) throw new NotFoundError(t("prescription.not_found"));
+    return rx;
   }
 
-  async createPrescription(
-    auth: TenantAuthContext,
+  async create(
+    tenantId: string,
     payload: CreatePrescriptionDto,
-  ): Promise<PrescriptionRecord> {
+    t: Translator,
+  ): Promise<PrescriptionWithItems> {
+    // Validate branch belongs to tenant
     const branch = await prisma.branch.findFirst({
-      where: { id: payload.branchId, tenantId: auth.tenantId, isActive: true },
+      where: { id: payload.branchId, tenantId },
     });
-    if (!branch) {
-      throw new NotFoundError("Branch not found", undefined, "branch.not_found");
-    }
+    if (!branch) throw new NotFoundError(t("branch.not_found"));
 
+    // Validate patient belongs to tenant (if provided)
     if (payload.patientId) {
       const patient = await prisma.patient.findFirst({
-        where: { id: payload.patientId, tenantId: auth.tenantId },
+        where: { id: payload.patientId, tenantId },
       });
-      if (!patient) {
-        throw new NotFoundError("Patient not found", undefined, "patient.not_found");
-      }
+      if (!patient) throw new NotFoundError(t("patient.not_found"));
     }
 
-    return prescriptionsRepository.create(auth.tenantId, {
-      branchId: payload.branchId,
-      patientId: payload.patientId ?? null,
-      prescriptionNumber: payload.prescriptionNumber ?? null,
-      doctorName: payload.doctorName ?? null,
-      doctorLicense: payload.doctorLicense ?? null,
-      issuedAt: payload.issuedAt ? new Date(payload.issuedAt) : null,
-      notes: payload.notes ?? null,
-      items: payload.items.map((item) => ({
-        drugName: item.drugName,
-        quantity: new Prisma.Decimal(item.quantity),
-        dosageInstructions: item.dosageInstructions ?? null,
-      })),
-    });
+    return this.repo.create(tenantId, payload);
   }
 
-  async updatePrescription(
-    auth: TenantAuthContext,
+  async update(
+    tenantId: string,
     prescriptionId: string,
     payload: UpdatePrescriptionDto,
-  ): Promise<PrescriptionRecord> {
-    const prescription = await prescriptionsRepository.findById(auth.tenantId, prescriptionId);
-    if (!prescription) {
-      throw new NotFoundError("Prescription not found", undefined, "prescription.not_found");
-    }
-    if (prescription.status !== PrescriptionStatus.PENDING) {
-      throw new BadRequestError(
-        "Only PENDING prescriptions can be edited",
-        undefined,
-        "prescription.not_editable",
-      );
+    t: Translator,
+  ): Promise<PrescriptionWithItems> {
+    const rx = await this.getById(tenantId, prescriptionId, t);
+
+    if (rx.status !== PrescriptionStatus.PENDING) {
+      throw new BadRequestError(t("prescription.not_pending"));
     }
 
+    // Validate new patient if being changed
     if (payload.patientId) {
       const patient = await prisma.patient.findFirst({
-        where: { id: payload.patientId, tenantId: auth.tenantId },
+        where: { id: payload.patientId, tenantId },
       });
-      if (!patient) {
-        throw new NotFoundError("Patient not found", undefined, "patient.not_found");
-      }
+      if (!patient) throw new NotFoundError(t("patient.not_found"));
     }
 
-    return prescriptionsRepository.update(prescriptionId, {
-      ...(payload.patientId !== undefined ? { patientId: payload.patientId ?? null } : {}),
-      ...(payload.prescriptionNumber !== undefined
-        ? { prescriptionNumber: payload.prescriptionNumber ?? null }
-        : {}),
-      ...(payload.doctorName !== undefined ? { doctorName: payload.doctorName ?? null } : {}),
-      ...(payload.doctorLicense !== undefined
-        ? { doctorLicense: payload.doctorLicense ?? null }
-        : {}),
-      ...(payload.issuedAt !== undefined
-        ? { issuedAt: payload.issuedAt ? new Date(payload.issuedAt) : null }
-        : {}),
-      ...(payload.notes !== undefined ? { notes: payload.notes ?? null } : {}),
-      ...(payload.items !== undefined
-        ? {
-            items: payload.items.map((item) => ({
-              drugName: item.drugName,
-              quantity: new Prisma.Decimal(item.quantity),
-              dosageInstructions: item.dosageInstructions ?? null,
-            })),
-          }
-        : {}),
-    });
+    return this.repo.update(tenantId, prescriptionId, payload);
   }
 
-  async dispensePrescription(
-    auth: TenantAuthContext,
+  async dispense(
+    tenantId: string,
     prescriptionId: string,
-    payload: DispensePrescriptionDto,
-  ): Promise<PrescriptionRecord> {
-    const prescription = await prescriptionsRepository.findById(auth.tenantId, prescriptionId);
-    if (!prescription) {
-      throw new NotFoundError("Prescription not found", undefined, "prescription.not_found");
-    }
-    if (prescription.status === PrescriptionStatus.DISPENSED) {
-      throw new ConflictError(
-        "Prescription is already dispensed",
-        undefined,
-        "prescription.already_dispensed",
-      );
-    }
-    if (prescription.status === PrescriptionStatus.CANCELLED) {
-      throw new BadRequestError(
-        "Prescription is cancelled",
-        undefined,
-        "prescription.cancelled",
-      );
+    payload: DispenseDto,
+    t: Translator,
+  ): Promise<PrescriptionWithItems> {
+    const rx = await this.getById(tenantId, prescriptionId, t);
+
+    if (rx.status !== PrescriptionStatus.PENDING) {
+      throw new BadRequestError(t("prescription.not_pending"));
     }
 
-    const sale = await prisma.sale.findFirst({
-      where: { id: payload.saleId, tenantId: auth.tenantId },
-    });
-    if (!sale) {
-      throw new NotFoundError("Sale not found", undefined, "sale.not_found");
-    }
+    // Validate the sale belongs to the same tenant
+    const sale = await prisma.sale.findFirst({ where: { id: payload.saleId, tenantId } });
+    if (!sale) throw new NotFoundError(t("sale.not_found"));
 
-    // Guard: sale already linked to a different prescription
-    const existing = await prescriptionsRepository.findBySaleId(auth.tenantId, payload.saleId);
-    if (existing && existing.id !== prescriptionId) {
-      throw new ConflictError(
-        "Sale is already linked to another prescription",
-        undefined,
-        "prescription.sale_already_linked",
-      );
-    }
+    // A sale can only be linked to one prescription
+    const existingLink = await this.repo.findBySaleId(tenantId, payload.saleId);
+    if (existingLink) throw new ConflictError(t("prescription.sale_already_linked"));
 
-    return prescriptionsRepository.dispense(prescriptionId, payload.saleId);
+    return this.repo.dispense(prescriptionId, payload.saleId);
   }
 
-  async cancelPrescription(
-    auth: TenantAuthContext,
+  async cancel(
+    tenantId: string,
     prescriptionId: string,
-  ): Promise<PrescriptionRecord> {
-    const prescription = await prescriptionsRepository.findById(auth.tenantId, prescriptionId);
-    if (!prescription) {
-      throw new NotFoundError("Prescription not found", undefined, "prescription.not_found");
+    t: Translator,
+  ): Promise<PrescriptionWithItems> {
+    const rx = await this.getById(tenantId, prescriptionId, t);
+
+    if (rx.status === PrescriptionStatus.DISPENSED) {
+      throw new BadRequestError(t("prescription.cannot_cancel_dispensed"));
     }
-    if (prescription.status === PrescriptionStatus.DISPENSED) {
-      throw new ConflictError(
-        "Dispensed prescriptions cannot be cancelled",
-        undefined,
-        "prescription.already_dispensed",
-      );
-    }
-    if (prescription.status === PrescriptionStatus.CANCELLED) {
-      throw new ConflictError(
-        "Prescription is already cancelled",
-        undefined,
-        "prescription.already_cancelled",
-      );
+    if (rx.status === PrescriptionStatus.CANCELLED) {
+      return rx; // idempotent
     }
 
-    return prescriptionsRepository.cancel(prescriptionId);
+    return this.repo.cancel(prescriptionId);
   }
 }
 
-export const prescriptionsService = new PrescriptionsService();
+export const prescriptionsService = new PrescriptionsService(prescriptionsRepository);

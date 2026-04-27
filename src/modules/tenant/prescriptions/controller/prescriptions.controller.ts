@@ -1,66 +1,86 @@
 import { Request, Response } from "express";
+import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
-import { prescriptionsService } from "../service/prescriptions.service";
-import { mapPrescriptionResponse } from "../mapper/prescriptions.mapper";
 import {
-  parseCreatePrescriptionDto,
-  parseUpdatePrescriptionDto,
-  parseDispensePrescriptionDto,
-  parseQueryPrescriptionsDto,
+  parseCreatePrescription,
+  parseUpdatePrescription,
+  parseQueryPrescriptions,
+  parseDispense,
   parsePrescriptionIdParam,
 } from "../validators/prescriptions.validator";
+import { mapPrescriptionResponse } from "../mapper/prescriptions.mapper";
+import { prescriptionsService, PrescriptionsService } from "../service/prescriptions.service";
 
-class PrescriptionsController {
-  list = async (req: Request, res: Response): Promise<void> => {
+export class PrescriptionsController {
+  constructor(private readonly service: PrescriptionsService) {}
+
+  list = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
-    const query = parseQueryPrescriptionsDto(req.query);
-    const prescriptions = await prescriptionsService.listPrescriptions(auth, query);
-    res.json({ success: true, data: prescriptions.map(mapPrescriptionResponse) });
+    const query = parseQueryPrescriptions(req.query);
+    const rxs = await this.service.list(auth.tenantId, query);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        rxs.map(mapPrescriptionResponse),
+        { count: rxs.length },
+        req.requestId,
+      ),
+    );
   };
 
-  get = async (req: Request, res: Response): Promise<void> => {
+  getById = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const prescriptionId = parsePrescriptionIdParam(req.params);
-    const prescription = await prescriptionsService.getPrescription(auth, prescriptionId);
-    res.json({ success: true, data: mapPrescriptionResponse(prescription) });
+    const rx = await this.service.getById(auth.tenantId, prescriptionId, req.t!);
+    return res.status(200).json(
+      successResponse(req.t?.("common.ok") || "OK", mapPrescriptionResponse(rx), undefined, req.requestId),
+    );
   };
 
-  create = async (req: Request, res: Response): Promise<void> => {
+  create = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
-    const dto = parseCreatePrescriptionDto(req.body);
-    const prescription = await prescriptionsService.createPrescription(auth, dto);
-    res.status(201).json({ success: true, data: mapPrescriptionResponse(prescription) });
+    const payload = parseCreatePrescription(req.body);
+    const rx = await this.service.create(auth.tenantId, payload, req.t!);
+    return res.status(201).json(
+      successResponse(req.t?.("prescription.created") || "Prescription created", mapPrescriptionResponse(rx), undefined, req.requestId),
+    );
   };
 
-  update = async (req: Request, res: Response): Promise<void> => {
-    const auth = req.auth!;
-    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
-    const prescriptionId = parsePrescriptionIdParam(req.params);
-    const dto = parseUpdatePrescriptionDto(req.body);
-    const prescription = await prescriptionsService.updatePrescription(auth, prescriptionId, dto);
-    res.json({ success: true, data: mapPrescriptionResponse(prescription) });
-  };
-
-  dispense = async (req: Request, res: Response): Promise<void> => {
+  update = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const prescriptionId = parsePrescriptionIdParam(req.params);
-    const dto = parseDispensePrescriptionDto(req.body);
-    const prescription = await prescriptionsService.dispensePrescription(auth, prescriptionId, dto);
-    res.json({ success: true, data: mapPrescriptionResponse(prescription) });
+    const payload = parseUpdatePrescription(req.body);
+    const rx = await this.service.update(auth.tenantId, prescriptionId, payload, req.t!);
+    return res.status(200).json(
+      successResponse(req.t?.("prescription.updated") || "Prescription updated", mapPrescriptionResponse(rx), undefined, req.requestId),
+    );
   };
 
-  cancel = async (req: Request, res: Response): Promise<void> => {
+  dispense = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const prescriptionId = parsePrescriptionIdParam(req.params);
-    const prescription = await prescriptionsService.cancelPrescription(auth, prescriptionId);
-    res.json({ success: true, data: mapPrescriptionResponse(prescription) });
+    const payload = parseDispense(req.body);
+    const rx = await this.service.dispense(auth.tenantId, prescriptionId, payload, req.t!);
+    return res.status(200).json(
+      successResponse(req.t?.("prescription.dispensed") || "Prescription dispensed", mapPrescriptionResponse(rx), undefined, req.requestId),
+    );
+  };
+
+  cancel = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const prescriptionId = parsePrescriptionIdParam(req.params);
+    const rx = await this.service.cancel(auth.tenantId, prescriptionId, req.t!);
+    return res.status(200).json(
+      successResponse(req.t?.("prescription.cancelled") || "Prescription cancelled", mapPrescriptionResponse(rx), undefined, req.requestId),
+    );
   };
 }
 
-export const prescriptionsController = new PrescriptionsController();
+export const prescriptionsController = new PrescriptionsController(prescriptionsService);

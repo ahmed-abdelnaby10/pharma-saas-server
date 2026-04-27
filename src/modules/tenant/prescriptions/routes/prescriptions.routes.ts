@@ -8,11 +8,11 @@ const router = Router();
 
 router.use(authMiddleware, tenantMiddleware);
 
-router.get("/", asyncHandler(prescriptionsController.list));
-router.post("/", asyncHandler(prescriptionsController.create));
-router.get("/:prescriptionId", asyncHandler(prescriptionsController.get));
-router.patch("/:prescriptionId", asyncHandler(prescriptionsController.update));
-router.post("/:prescriptionId/dispense", asyncHandler(prescriptionsController.dispense));
-router.delete("/:prescriptionId", asyncHandler(prescriptionsController.cancel));
+router.get("/",                               asyncHandler(prescriptionsController.list));
+router.get("/:prescriptionId",                asyncHandler(prescriptionsController.getById));
+router.post("/",                              asyncHandler(prescriptionsController.create));
+router.patch("/:prescriptionId",              asyncHandler(prescriptionsController.update));
+router.post("/:prescriptionId/dispense",      asyncHandler(prescriptionsController.dispense));
+router.delete("/:prescriptionId",             asyncHandler(prescriptionsController.cancel));
 
-export const prescriptionsRoutes = router;
+export { router as prescriptionsRoutes };

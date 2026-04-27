@@ -1,68 +1,46 @@
 import { z } from "zod";
 import { Gender } from "@prisma/client";
-import { ValidationError } from "../../../../shared/errors/validation-error";
-import { CreatePatientDto } from "../dto/create-patient.dto";
-import { UpdatePatientDto } from "../dto/update-patient.dto";
-import { QueryPatientsDto } from "../dto/query-patients.dto";
 
-const genders = Object.values(Gender) as [Gender, ...Gender[]];
-
-const createPatientSchema = z.object({
+export const createPatientSchema = z.object({
   fullName: z.string().min(1).max(200),
-  dateOfBirth: z.string().datetime({ offset: true }).nullable().optional(),
-  phone: z.string().min(1).max(30).nullable().optional(),
-  email: z.string().email().max(254).nullable().optional(),
-  nationalId: z.string().min(1).max(50).nullable().optional(),
-  gender: z.enum(genders).nullable().optional(),
-  notes: z.string().max(1000).nullable().optional(),
+  dateOfBirth: z.string().datetime().optional(),
+  phone: z.string().max(30).optional(),
+  email: z.string().email().optional(),
+  nationalId: z.string().max(50).optional(),
+  gender: z.nativeEnum(Gender).optional(),
+  notes: z.string().max(2000).optional(),
 });
 
-const updatePatientSchema = z
-  .object({
-    fullName: z.string().min(1).max(200).optional(),
-    dateOfBirth: z.string().datetime({ offset: true }).nullable().optional(),
-    phone: z.string().min(1).max(30).nullable().optional(),
-    email: z.string().email().max(254).nullable().optional(),
-    nationalId: z.string().min(1).max(50).nullable().optional(),
-    gender: z.enum(genders).nullable().optional(),
-    notes: z.string().max(1000).nullable().optional(),
-  })
-  .refine(
-    (d) =>
-      d.fullName !== undefined ||
-      d.dateOfBirth !== undefined ||
-      d.phone !== undefined ||
-      d.email !== undefined ||
-      d.nationalId !== undefined ||
-      d.gender !== undefined ||
-      d.notes !== undefined,
-    { message: "At least one field must be provided" },
-  );
+export const updatePatientSchema = createPatientSchema.partial();
 
-const queryPatientsSchema = z.object({
-  search: z.string().min(1).max(100).optional(),
+export const queryPatientsSchema = z.object({
   isActive: z
     .string()
     .optional()
-    .transform((v) => (v === undefined ? undefined : v === "true")),
-  updatedSince: z.string().datetime({ offset: true }).optional(),
+    .transform((v) => (v === "true" ? true : v === "false" ? false : undefined)),
+  search: z.string().optional(),
 });
 
-const patientIdParamSchema = z.object({ patientId: z.string().cuid("Invalid patientId") });
+export const patientIdParamSchema = z.object({
+  patientId: z.string().cuid(),
+});
 
-const parse = <T>(schema: z.ZodType<T>, input: unknown): T => {
-  const result = schema.safeParse(input);
-  if (!result.success) {
-    throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
-  }
-  return result.data;
-};
+export type CreatePatientDto = z.infer<typeof createPatientSchema>;
+export type UpdatePatientDto = z.infer<typeof updatePatientSchema>;
+export type QueryPatientsDto = z.infer<typeof queryPatientsSchema>;
 
-export const parseCreatePatientDto = (b: unknown): CreatePatientDto =>
-  parse(createPatientSchema, b);
-export const parseUpdatePatientDto = (b: unknown): UpdatePatientDto =>
-  parse(updatePatientSchema, b);
-export const parseQueryPatientsDto = (q: unknown): QueryPatientsDto =>
-  parse(queryPatientsSchema, q) as QueryPatientsDto;
-export const parsePatientIdParam = (p: unknown): string =>
-  parse(patientIdParamSchema, p).patientId;
+export function parseCreatePatient(body: unknown): CreatePatientDto {
+  return createPatientSchema.parse(body);
+}
+
+export function parseUpdatePatient(body: unknown): UpdatePatientDto {
+  return updatePatientSchema.parse(body);
+}
+
+export function parseQueryPatients(query: unknown): QueryPatientsDto {
+  return queryPatientsSchema.parse(query);
+}
+
+export function parsePatientIdParam(params: unknown): string {
+  return patientIdParamSchema.parse(params).patientId;
+}
