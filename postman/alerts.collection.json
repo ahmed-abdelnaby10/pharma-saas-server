@@ -12,6 +12,46 @@
   ],
   "item": [
     {
+      "name": "Combined Alerts (low-stock + expiry)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "x-tenant-id",   "value": "{{tenantId}}", "description": "Required" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tenant/alerts?branchId={{branchId}}&days=30",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tenant", "alerts"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "days",     "value": "30", "description": "Expiry look-ahead window 1–365 (default 30)" }
+          ]
+        },
+        "description": "Returns both low-stock and expiry alerts in a single call. Respects TenantSettings flags."
+      }
+    },
+    {
+      "name": "POST /alerts/notify — dispatch to inbox",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantAccessToken}}" },
+          { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tenant/alerts/notify?branchId={{branchId}}&days=30",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tenant", "alerts", "notify"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}" },
+            { "key": "days",     "value": "30" }
+          ]
+        },
+        "description": "Scans current alerts and creates Notification records for the authenticated user. Skips items already notified within 48 hours. Returns { created, skipped }."
+      }
+    },
+    {
       "name": "Low Stock Alerts",
       "request": {
         "method": "GET",
