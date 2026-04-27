@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../../shared/middlewares/auth.middleware";
 import { tenantMiddleware } from "../../../../shared/middlewares/tenant.middleware";
+import { deviceFingerprintMiddleware } from "../../../../shared/middlewares/device-fingerprint.middleware";
 import { asyncHandler } from "../../../../shared/utils/async-handler";
 import { syncController } from "../controller/sync.controller";
 
@@ -9,7 +10,10 @@ const router = Router();
 // Schema version is public (no auth needed — desktop checks before logging in)
 router.get("/schema-version", asyncHandler(syncController.schemaVersion));
 
-router.use(authMiddleware, tenantMiddleware);
+// All routes below require a valid tenant JWT.
+// deviceFingerprintMiddleware auto-touches Device.lastSyncAt on every request
+// that carries X-Device-Fingerprint (best-effort, never blocks).
+router.use(authMiddleware, tenantMiddleware, deviceFingerprintMiddleware);
 
 router.get("/bootstrap", asyncHandler(syncController.bootstrap));
 router.get("/delta", asyncHandler(syncController.delta));

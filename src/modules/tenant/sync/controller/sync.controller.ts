@@ -48,11 +48,7 @@ class SyncController {
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const { operations } = parsePushBody(req.body);
     const results = await syncService.push(auth, operations);
-    // Touch the device if fingerprint was provided
-    const fingerprint = req.headers["x-device-fingerprint"];
-    if (fingerprint && typeof fingerprint === "string") {
-      void syncService.touchDevice(auth, fingerprint).catch(() => {/* best-effort */});
-    }
+    // Device.lastSyncAt is updated by deviceFingerprintMiddleware on every sync route.
     res.json({ success: true, data: { results } });
   };
 
