@@ -1,8 +1,9 @@
 import path from "path";
-import { Prisma, OcrDocumentStatus } from "@prisma/client";
+import { NotificationType, Prisma, OcrDocumentStatus, OcrDocumentType } from "@prisma/client";
 import { OcrJobData } from "../queues";
 import { ocrRepository } from "../../../modules/tenant/ocr/repository/ocr.repository";
-import { stubPrescriptionExtractor } from "../../../modules/tenant/ocr/extractor/stub-prescription.extractor";
+import { anthropicPrescriptionExtractor } from "../../../modules/tenant/ocr/extractor/anthropic-prescription.extractor";
+import { notificationsRepository } from "../../../modules/tenant/notifications/repository/notifications.repository";
 import { logger } from "../../logger/logger";
 
 /**
@@ -11,7 +12,7 @@ import { logger } from "../../logger/logger";
  * documentType === PRESCRIPTION.
  */
 export async function handleOcrPrescription(data: OcrJobData): Promise<void> {
-  const { documentId, tenantId, filePath, mimeType } = data;
+  const { documentId, tenantId, userId, filePath, mimeType } = data;
   const absoluteFilePath = path.join(process.cwd(), filePath);
 
   await ocrRepository.updateStatus(documentId, OcrDocumentStatus.PROCESSING);
@@ -20,18 +21,68 @@ export async function handleOcrPrescription(data: OcrJobData): Promise<void> {
     const doc = await ocrRepository.findById(tenantId, documentId);
     if (!doc) throw new Error(`Document ${documentId} not found for tenant ${tenantId}`);
 
-    const extracted = await stubPrescriptionExtractor.extract(absoluteFilePath, mimeType);
+    const extracted = await anthropicPrescriptionExtractor.extract(absoluteFilePath, mimeType);
 
     await ocrRepository.updateExtractedData(
       documentId,
       extracted as unknown as Prisma.InputJsonValue,
     );
 
-    logger.info("Prescription OCR completed", { documentId });
+    logger.info("Prescription OCR completed", { documentId, confidence: extracted.confidence });
+
+    // Fire-and-forget inbox notification
+    notificationsRepository
+      .create({
+        tenantId,
+        userId,
+        type: NotificationType.OCR_COMPLETED,
+        title: "Prescription OCR completed",
+        body:
+          extracted.confidence >= 0.6
+            ? `Prescription processed successfully (confidence: ${Math.round(extracted.confidence * 100)}%).`
+            : `Prescription processed but confidence is low (${Math.round(extracted.confidence * 100)}%). Please review the extracted data.`,
+        metadata: {
+          refId: documentId,
+          documentId,
+          documentType: OcrDocumentType.PRESCRIPTION,
+          confidence: extracted.confidence,
+          patientName: extracted.patientName,
+          medicationCount: extracted.medications.length,
+        },
+      })
+      .catch((err: unknown) => {
+        logger.error("ocr-prescription: failed to create OCR_COMPLETED notification", {
+          documentId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await ocrRepository.updateStatus(documentId, OcrDocumentStatus.FAILED, message);
     logger.error("Prescription OCR failed", { documentId, error });
+
+    // Fire-and-forget failure notification
+    notificationsRepository
+      .create({
+        tenantId,
+        userId,
+        type: NotificationType.OCR_FAILED,
+        title: "Prescription OCR failed",
+        body: `Prescription processing failed: ${message}`,
+        metadata: {
+          refId: documentId,
+          documentId,
+          documentType: OcrDocumentType.PRESCRIPTION,
+          errorMessage: message,
+        },
+      })
+      .catch((notifErr: unknown) => {
+        logger.error("ocr-prescription: failed to create OCR_FAILED notification", {
+          documentId,
+          error: notifErr instanceof Error ? notifErr.message : String(notifErr),
+        });
+      });
+
     throw error;
   }
 }

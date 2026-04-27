@@ -84,6 +84,9 @@ const envSchema = z.object({
 
   APP_NAME: z.string().default("Pharmacy SaaS"),
   APP_URL: z.string().url().default("http://localhost:8080"),
+
+  // Anthropic Claude Vision — required for real OCR extraction
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

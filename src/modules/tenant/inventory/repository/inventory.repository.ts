@@ -17,6 +17,7 @@ export class InventoryRepository {
       ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
       // lowStock post-filter applied in service — only pre-filter by reorderLevel presence
       ...(query.lowStock ? { reorderLevel: { not: null } } : {}),
+      ...(query.updatedSince ? { updatedAt: { gt: new Date(query.updatedSince) } } : {}),
       ...(query.search
         ? {
             catalogItem: {

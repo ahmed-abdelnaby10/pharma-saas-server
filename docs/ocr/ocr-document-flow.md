@@ -2,7 +2,42 @@
 
 ## Purpose
 
-Provides endpoints for uploading, querying, and triggering OCR processing on documents (invoices, prescriptions) within a tenant branch. Uploaded files are stored on disk and tracked in the database with status lifecycle (`PENDING → PROCESSING → COMPLETED / FAILED`). Invoice OCR processing is dispatched asynchronously via a BullMQ job queue — clients poll `GET /:documentId` to check status.
+Provides endpoints for uploading, querying, and triggering OCR processing on documents (invoices, prescriptions) within a tenant branch. Uploaded files are stored on disk and tracked in the database with status lifecycle (`PENDING → PROCESSING → COMPLETED / FAILED`). OCR processing is dispatched asynchronously via a BullMQ job queue — clients poll `GET /:documentId` to check status.
+
+---
+
+## OCR Engine
+
+**Provider:** Anthropic Claude Vision (`claude-opus-4-7`)
+
+Both invoice and prescription documents are processed by dedicated extractor classes:
+
+| Document type | Extractor class |
+|---|---|
+| `INVOICE` | `AnthropicInvoiceExtractor` |
+| `PRESCRIPTION` | `AnthropicPrescriptionExtractor` |
+
+**How it works:**
+1. The BullMQ worker reads the file from disk and base64-encodes it.
+2. PDFs are sent as `document` content blocks (`media_type: application/pdf`); images (JPEG, PNG, WEBP) as `image` content blocks.
+3. Claude is given a domain-specific system prompt and asked to return a strict JSON object matching the extraction schema.
+4. The response is validated against a Zod schema via `messages.parse()` — if Claude returns unexpected structure the job fails and retries.
+5. The validated object is stored in `extractedData` on the `OcrDocument` record.
+
+**Confidence field:** Every extracted document includes a `confidence` float (0–1) set by the model:
+- `1.0` — all fields clearly readable
+- `0.7–0.9` — most fields extracted; some may be inferred
+- `< 0.5` — document is unclear or partially legible; human review strongly recommended
+- `0` — stub/dev mode only (real extractor never returns 0)
+
+**Cost optimisation:** The system prompts are marked with `cache_control: ephemeral` — Anthropic caches them across calls, reducing input token cost on repeated OCR runs.
+
+**Environment requirement:**
+```
+ANTHROPIC_API_KEY=sk-ant-...    # required; worker fails at startup if absent
+```
+
+---
 
 ## Dependencies
 
@@ -10,6 +45,7 @@ Provides endpoints for uploading, querying, and triggering OCR processing on doc
 - `tenantMiddleware` — injects `tenantId` from token
 - `ocrUpload` — Multer disk storage middleware (max 10 MB; JPEG, PNG, WEBP, PDF)
 - `BullMQ` + Redis — async job queue for OCR processing
+- `@anthropic-ai/sdk` — Anthropic TypeScript SDK (Claude Vision)
 - `OcrDocument` Prisma model
 - `Tenant`, `Branch`, `TenantUser` models (foreign keys)
 
@@ -150,7 +186,7 @@ Enqueue an invoice document for async OCR processing. The document transitions `
 
 **Constraints**
 
-- `documentType` must be `INVOICE`
+- `documentType` must be `INVOICE` or `PRESCRIPTION`
 - `status` must be `PENDING`
 
 **Response `202`**
@@ -284,12 +320,24 @@ All endpoints require a valid tenant JWT. `tenantId` is always taken from the to
 
 - `POST /` writes a file to `uploads/ocr/` on disk and creates an `OcrDocument` record with `status: PENDING`.
 - File path stored as a relative path (relative to `process.cwd()`).
-- `POST /:documentId/process` enqueues a BullMQ job on the `ocr` queue. The worker transitions status `PENDING → PROCESSING → COMPLETED / FAILED` and writes `extractedData`.
+- `POST /:documentId/process` enqueues a BullMQ job on the `ocr` queue. The worker transitions status `PENDING → PROCESSING → COMPLETED / FAILED`, calls the Anthropic Claude Vision extractor, and writes `extractedData`.
 - `POST /:documentId/review` stamps `reviewedAt` + `reviewedById` on the document. Optionally overwrites `extractedData` if `correctedData` is provided.
+
+## Worker Behaviour
+
+The BullMQ worker (`startOcrInvoiceWorker`) processes both `INVOICE` and `PRESCRIPTION` jobs on the `ocr` queue with concurrency 3 and up to 2 automatic retries on transient failures (e.g. Anthropic API timeout).
+
+**Job failure path:**
+- Status transitions to `FAILED`
+- `errorMessage` is set to the caught error message
+- BullMQ retries up to 2 times with exponential backoff before giving up
+
+**Low-confidence results:**
+- The job still completes with `status: COMPLETED`
+- `extractedData.confidence` below ~0.6 is a signal to the frontend to prompt the user for manual review via `POST /:documentId/review`
 
 ## Related Modules
 
-- **Invoice OCR** (Slice 29) — processes `INVOICE` documents, populates `extractedData`
-- **Prescription OCR** (Slice 30) — processes `PRESCRIPTION` documents
-- **Review Workflow** (Slice 31) — allows staff to review and approve extracted data
-- **Purchasing** — invoice OCR feeds into purchase orders
+- **Purchasing** — invoice OCR `extractedData` can be used to pre-fill a purchase order
+- **Notifications** — future: `OCR_COMPLETED` / `OCR_FAILED` notification types are reserved in the `NotificationType` enum for push to user inbox once wired
+- **Anthropic SDK** — `@anthropic-ai/sdk` v0.91+; extractor classes in `src/modules/tenant/ocr/extractor/`

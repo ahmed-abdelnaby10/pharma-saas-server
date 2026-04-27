@@ -20,6 +20,11 @@ import { dashboardRoutes } from "../modules/tenant/dashboard";
 import { analyticsRoutes } from "../modules/tenant/analytics";
 import { ocrRoutes } from "../modules/tenant/ocr";
 import { tenantSupportRoutes } from "../modules/tenant/support";
+import { tenantSubscriptionRoutes } from "../modules/tenant/subscription";
+import { patientsRoutes } from "../modules/tenant/patients";
+import { prescriptionsRoutes } from "../modules/tenant/prescriptions";
+import { notificationsRoutes } from "../modules/tenant/notifications";
+import { syncRoutes } from "../modules/tenant/sync";
 
 const router = Router();
 
@@ -44,5 +49,10 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/ocr/documents", ocrRoutes);
 router.use("/support/tickets", tenantSupportRoutes);
+router.use("/subscription", tenantSubscriptionRoutes);
+router.use("/patients", patientsRoutes);
+router.use("/prescriptions", prescriptionsRoutes);
+router.use("/notifications", notificationsRoutes);
+router.use("/sync", syncRoutes);
 
 export const tenantRoutes = router;

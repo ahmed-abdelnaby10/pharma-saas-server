@@ -16,11 +16,66 @@ Both alerts respect per-tenant feature flags (`lowStockAlerts`, `expiryAlerts`) 
 - **`InventoryItem`** → `CatalogItem` — low-stock detection + product names
 - **`InventoryBatch`** → `InventoryItem` → `CatalogItem` — expiry detection + product names
 - **`TenantSettings`** — `lowStockAlerts` and `expiryAlerts` feature flags
+- **`Notification`** — written by `POST /alerts/notify`; read via `GET /tenant/notifications`
 - **Auth middleware** + **Tenant middleware** — all routes require a tenant-scoped JWT
 
 ---
 
 ## Endpoints
+
+### `GET /tenant/alerts?branchId=<cuid>&days=N`
+
+Combined endpoint — returns both low-stock and expiry alert lists in a single call.
+
+**Query Parameters**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `branchId` | `CUID` | **Yes** | Branch to check |
+| `days` | `integer 1–365` | No | Expiry look-ahead window (default `30`) |
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "data": {
+    "lowStock": [ /* same shape as GET /alerts/low-stock */ ],
+    "expiring": [ /* same shape as GET /alerts/expiring */ ]
+  },
+  "meta": { "lowStockCount": 1, "expiringCount": 2 }
+}
+```
+
+---
+
+### `POST /tenant/alerts/notify?branchId=<cuid>&days=N`
+
+Scans current alerts and creates `Notification` inbox records for the authenticated user. Safe to call on every page load — idempotent within the 48-hour dedup window.
+
+**Query Parameters** — same as combined GET above.
+
+**Dedup logic:**
+- Before creating a notification, the service checks whether a notification of the same type (LOW_STOCK / EXPIRY_ALERT) with the same `metadata.refId` already exists for this user within the last 48 hours.
+- `refId` for low-stock = `inventoryItemId`; for expiry = `batchId`.
+- Already-notified items are silently skipped.
+
+**Notification metadata shape:**
+- LOW_STOCK: `{ refId, inventoryItemId, branchId, catalogItemId, catalogNameEn, catalogNameAr, quantityOnHand, reorderLevel }`
+- EXPIRY_ALERT: `{ refId, batchId, inventoryItemId, branchId, catalogItemId, catalogNameEn, catalogNameAr, batchNumber, expiryDate, daysUntilExpiry, quantityOnHand }`
+
+**Response `200`**
+
+```json
+{
+  "success": true,
+  "data": { "created": 3, "skipped": 1 }
+}
+```
+
+**Side effects:** Creates `Notification` records — visible via `GET /tenant/notifications`.
+
+---
 
 ### `GET /tenant/alerts/low-stock`
 
@@ -116,7 +171,8 @@ All endpoints require a valid tenant JWT. `tenantId` is always taken from the JW
 
 ## Side Effects
 
-None — both endpoints are read-only.
+- `GET /alerts`, `GET /alerts/low-stock`, `GET /alerts/expiring` — read-only, no side effects.
+- `POST /alerts/notify` — creates `Notification` records in the DB for the authenticated user.
 
 ---
 
@@ -125,4 +181,5 @@ None — both endpoints are read-only.
 - **Inventory** — source of `quantityOnHand` and `reorderLevel`
 - **Inventory Batches** — source of `expiryDate` and batch-level stock
 - **Settings** — `lowStockAlerts` and `expiryAlerts` feature flags
+- **Notifications** — `POST /alerts/notify` writes here; `GET /notifications` reads it
 - **Reports** (future) — alert counts may feed dashboard KPIs

@@ -1,0 +1,104 @@
+import { Prisma, NotificationType } from "@prisma/client";
+import { prisma } from "../../../../core/db/prisma";
+import { NotificationRecord } from "../mapper/notifications.mapper";
+import { QueryNotificationsDto } from "../dto/query-notifications.dto";
+
+export class NotificationsRepository {
+  async list(
+    tenantId: string,
+    userId: string,
+    query: QueryNotificationsDto,
+  ): Promise<NotificationRecord[]> {
+    const where: Prisma.NotificationWhereInput = {
+      tenantId,
+      userId,
+      ...(query.isRead !== undefined ? { isRead: query.isRead } : {}),
+      ...(query.cursor ? { createdAt: { lt: new Date(query.cursor) } } : {}),
+    };
+
+    return prisma.notification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: query.limit ?? 20,
+    });
+  }
+
+  async countUnread(tenantId: string, userId: string): Promise<number> {
+    return prisma.notification.count({
+      where: { tenantId, userId, isRead: false },
+    });
+  }
+
+  async findById(
+    tenantId: string,
+    userId: string,
+    notificationId: string,
+  ): Promise<NotificationRecord | null> {
+    return prisma.notification.findFirst({
+      where: { id: notificationId, tenantId, userId },
+    });
+  }
+
+  async create(data: {
+    tenantId: string;
+    userId: string;
+    type: NotificationType;
+    title: string;
+    body: string;
+    metadata?: Prisma.InputJsonValue | null;
+  }): Promise<NotificationRecord> {
+    return prisma.notification.create({
+      data: {
+        tenantId: data.tenantId,
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        body: data.body,
+        ...(data.metadata != null ? { metadata: data.metadata } : {}),
+      },
+    });
+  }
+
+  async markRead(notificationId: string): Promise<NotificationRecord> {
+    return prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() },
+    });
+  }
+
+  async markAllRead(tenantId: string, userId: string): Promise<number> {
+    const result = await prisma.notification.updateMany({
+      where: { tenantId, userId, isRead: false },
+      data: { isRead: true, readAt: new Date() },
+    });
+    return result.count;
+  }
+
+  /**
+   * Returns the set of `metadata.refId` values from notifications of the given
+   * types created for this user within the last `withinHours` hours.
+   * Used by alert dispatch to skip already-notified items (dedup window).
+   */
+  async findRecentRefIds(
+    tenantId: string,
+    userId: string,
+    types: NotificationType[],
+    withinHours: number,
+  ): Promise<Set<string>> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000);
+    const rows = await prisma.notification.findMany({
+      where: { tenantId, userId, type: { in: types }, createdAt: { gte: since } },
+      select: { metadata: true },
+    });
+    const refIds = new Set<string>();
+    for (const row of rows) {
+      const meta = row.metadata as Record<string, unknown> | null;
+      if (meta && typeof meta["refId"] === "string") {
+        refIds.add(meta["refId"]);
+      }
+    }
+    return refIds;
+  }
+}
+
+export const notificationsRepository = new NotificationsRepository();

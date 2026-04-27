@@ -57,6 +57,7 @@ export class ShiftsRepository {
     openingBalance: Prisma.Decimal;
     notes?: string | null;
     externalId?: string | null;
+    clientCreatedAt?: Date | null;
   }): Promise<ShiftRecord> {
     return prisma.shift.create({
       data: {
@@ -66,6 +67,7 @@ export class ShiftsRepository {
         openingBalance: data.openingBalance,
         ...(data.notes != null ? { notes: data.notes } : {}),
         ...(data.externalId != null ? { externalId: data.externalId } : {}),
+        ...(data.clientCreatedAt != null ? { clientCreatedAt: data.clientCreatedAt } : {}),
       },
       include: shiftInclude,
     });
@@ -75,6 +77,7 @@ export class ShiftsRepository {
     shiftId: string,
     closingBalance: Prisma.Decimal,
     notes?: string | null,
+    clientClosedAt?: Date | null,
   ): Promise<ShiftRecord> {
     return prisma.shift.update({
       where: { id: shiftId },
@@ -83,6 +86,7 @@ export class ShiftsRepository {
         closingBalance,
         closedAt: new Date(),
         ...(notes !== undefined ? { notes } : {}),
+        ...(clientClosedAt != null ? { clientClosedAt } : {}),
       },
       include: shiftInclude,
     });

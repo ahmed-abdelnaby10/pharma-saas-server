@@ -1,0 +1,379 @@
+{
+  "info": {
+    "name": "Sync Module",
+    "_postman_id": "sync-module-v1",
+    "description": "Offline sync, device management, and device session endpoints for the pharmacy desktop POS client.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",   "value": "http://localhost:3000" },
+    { "key": "tenantJwt", "value": "<tenant-access-token>" },
+    { "key": "branchId",  "value": "<branch-cuid>" },
+    { "key": "deviceId",  "value": "<device-cuid>" },
+    { "key": "deviceToken", "value": "<plaintext-device-token>" }
+  ],
+  "item": [
+    {
+      "name": "Schema Version",
+      "item": [
+        {
+          "name": "GET schema-version (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/schema-version",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "schema-version"]
+            },
+            "description": "Returns the server's current schema version and the minimum desktop schema version it accepts. Called by the desktop before logging in to check compatibility. No authentication required."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"serverSchemaVersion\": 1,\n    \"minDesktopSchemaVersion\": 1\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bootstrap",
+      "item": [
+        {
+          "name": "GET bootstrap (full seed data)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/bootstrap?branchId={{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "bootstrap"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}", "description": "CUID of the branch this POS terminal belongs to" }
+              ]
+            },
+            "description": "Returns everything a fresh desktop install needs to operate offline: branch details, tenant settings, full catalog, inventory+batches, patients, active prescriptions, open shift, and the license envelope (validUntil, maxOfflineHours). Call once after first install or after a full cache wipe."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"schemaVersion\": 1,\n    \"branch\": {\n      \"id\": \"clbranchid\",\n      \"nameEn\": \"Main Branch\",\n      \"nameAr\": \"الفرع الرئيسي\",\n      \"address\": \"123 Pharma St\",\n      \"phone\": \"+201001234567\",\n      \"isDefault\": true\n    },\n    \"settings\": {\n      \"organizationName\": \"Al-Shifa Pharmacy\",\n      \"taxId\": \"123456789\",\n      \"vatPercentage\": \"14\",\n      \"receiptHeader\": \"Welcome!\",\n      \"receiptFooter\": \"Thank you for your visit\",\n      \"defaultLanguage\": \"ar\"\n    },\n    \"catalogItems\": [],\n    \"inventoryItems\": [],\n    \"patients\": [],\n    \"activePrescriptions\": [],\n    \"openShift\": null,\n    \"license\": {\n      \"issuedAt\": \"2026-04-26T00:00:00.000Z\",\n      \"validUntil\": \"2026-04-27T00:00:00.000Z\",\n      \"maxOfflineHours\": 24,\n      \"subscriptionStatus\": \"active\",\n      \"entitlements\": {}\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Branch Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"branch.not_found\", \"message\": \"Branch not found\" }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Delta Sync",
+      "item": [
+        {
+          "name": "GET delta (changes since timestamp)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/delta?branchId={{branchId}}&since=2026-04-25T00:00:00.000Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "delta"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}", "description": "Branch to scope inventory and prescriptions" },
+                { "key": "since", "value": "2026-04-25T00:00:00.000Z", "description": "ISO 8601 with offset — only records updated after this time are returned" }
+              ]
+            },
+            "description": "Returns only records that changed since the given timestamp. The desktop stores the `asOf` timestamp from each response and uses it as `since` in the next call. Records with `isActive: false` represent soft-deleted items."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"since\": \"2026-04-25T00:00:00.000Z\",\n    \"asOf\": \"2026-04-26T10:30:00.000Z\",\n    \"inventoryItems\": [],\n    \"patients\": [],\n    \"prescriptions\": [],\n    \"catalog\": []\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Push Batch",
+      "item": [
+        {
+          "name": "POST push — sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",       "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",         "value": "{{tenantId}}" },
+              { "key": "Content-Type",        "value": "application/json" },
+              { "key": "x-device-fingerprint","value": "DEVICE-FINGERPRINT-HEX", "description": "Optional — automatically updates device.lastSyncAt" },
+              { "key": "Idempotency-Key",     "value": "push-batch-{{$guid}}", "description": "Recommended for push calls" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"externalId\": \"sale-uuid-1\",\n      \"type\": \"sale\",\n      \"payload\": {\n        \"branchId\": \"{{branchId}}\",\n        \"shiftId\": \"clshiftid\",\n        \"saleNumber\": \"POS-2026-00042\",\n        \"clientCreatedAt\": \"2026-04-26T08:15:00.000Z\",\n        \"subtotal\": \"100.00\",\n        \"discountAmount\": \"0\",\n        \"taxAmount\": \"14.00\",\n        \"totalAmount\": \"114.00\",\n        \"paymentMethod\": \"CASH\",\n        \"amountPaid\": \"114.00\",\n        \"changeAmount\": \"0\",\n        \"items\": [\n          {\n            \"inventoryItemId\": \"clinventoryid\",\n            \"batchId\": \"clbatchid\",\n            \"quantity\": 2,\n            \"unitPrice\": \"50.00\",\n            \"totalPrice\": \"100.00\"\n          }\n        ]\n      }\n    }\n  ]\n}"
+            },
+            "description": "Pushes a batch of offline operations. Operations are processed sequentially in received order — the desktop is responsible for ordering (e.g. shift_open before sale). Each item gets an independent ok/error result. Up to 100 operations per call."
+          },
+          "response": [
+            {
+              "name": "200 OK — all succeeded",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"results\": [\n      { \"externalId\": \"sale-uuid-1\", \"status\": \"ok\", \"id\": \"clsaleid\" }\n    ]\n  }\n}"
+            },
+            {
+              "name": "200 OK — partial errors",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"results\": [\n      { \"externalId\": \"sale-uuid-1\", \"status\": \"ok\", \"id\": \"clsaleid\" },\n      { \"externalId\": \"sale-uuid-2\", \"status\": \"error\", \"code\": \"conflict\", \"error\": \"Sale with this externalId already exists\" }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST push — shift open",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",   "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",     "value": "{{tenantId}}" },
+              { "key": "Content-Type",    "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "push-shift-open-{{$guid}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"externalId\": \"shift-open-uuid-1\",\n      \"type\": \"shift_open\",\n      \"payload\": {\n        \"branchId\": \"{{branchId}}\",\n        \"openingBalance\": \"500.00\",\n        \"clientCreatedAt\": \"2026-04-26T06:00:00.000Z\"\n      }\n    }\n  ]\n}"
+            },
+            "description": "Open a shift from an offline operation."
+          },
+          "response": []
+        },
+        {
+          "name": "POST push — shift close",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",   "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",     "value": "{{tenantId}}" },
+              { "key": "Content-Type",    "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "push-shift-close-{{$guid}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"externalId\": \"shift-close-uuid-1\",\n      \"type\": \"shift_close\",\n      \"payload\": {\n        \"shiftId\": \"clshiftid\",\n        \"closingBalance\": \"714.00\",\n        \"notes\": \"Normal close\",\n        \"clientClosedAt\": \"2026-04-26T22:00:00.000Z\"\n      }\n    }\n  ]\n}"
+            },
+            "description": "Close a shift from an offline operation."
+          },
+          "response": []
+        },
+        {
+          "name": "POST push — stock movement",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization",   "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",     "value": "{{tenantId}}" },
+              { "key": "Content-Type",    "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "push-movement-{{$guid}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"externalId\": \"movement-uuid-1\",\n      \"type\": \"stock_movement\",\n      \"payload\": {\n        \"branchId\": \"{{branchId}}\",\n        \"inventoryItemId\": \"clinventoryid\",\n        \"movementType\": \"ADJUSTMENT_IN\",\n        \"quantity\": 10,\n        \"reason\": \"Stock count correction\",\n        \"clientCreatedAt\": \"2026-04-26T09:00:00.000Z\"\n      }\n    }\n  ]\n}"
+            },
+            "description": "Record a stock movement from an offline operation. Use RECONCILIATION_IN / RECONCILIATION_OUT for oversell reconciliation."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Device Management",
+      "item": [
+        {
+          "name": "GET devices (list)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "devices"]
+            },
+            "description": "Returns all registered POS devices for this tenant, sorted by lastSyncAt descending."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"cldeviceid\",\n      \"tenantId\": \"cltenantid\",\n      \"branchId\": \"clbranchid\",\n      \"fingerprint\": \"abc123def456\",\n      \"label\": \"Cashier 1\",\n      \"isActive\": true,\n      \"lastSyncAt\": \"2026-04-26T10:00:00.000Z\",\n      \"createdAt\": \"2026-04-01T00:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST devices (register)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"fingerprint\": \"abc123def456abc123def456abc123de\",\n  \"label\": \"Cashier 1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "devices"]
+            },
+            "description": "Register a new POS terminal or re-activate an existing one (upsert on tenantId+fingerprint). The fingerprint is a stable hardware identifier generated by the desktop (8–256 chars). Label is optional and human-readable."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cldeviceid\",\n    \"tenantId\": \"cltenantid\",\n    \"branchId\": \"clbranchid\",\n    \"fingerprint\": \"abc123def456abc123def456abc123de\",\n    \"label\": \"Cashier 1\",\n    \"isActive\": true,\n    \"lastSyncAt\": \"2026-04-26T10:00:00.000Z\",\n    \"createdAt\": \"2026-04-26T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE devices/:deviceId (revoke)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/devices/{{deviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "devices", "{{deviceId}}"]
+            },
+            "description": "Deactivates a device and revokes all its active long-lived sessions. The device can no longer sync or exchange tokens until re-registered."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cldeviceid\",\n    \"isActive\": false\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"device.not_found\", \"message\": \"Device not found\" }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Device Sessions (Offline Token)",
+      "item": [
+        {
+          "name": "POST devices/:deviceId/session (issue token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantJwt}}" },
+              { "key": "x-tenant-id",   "value": "{{tenantId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/sync/devices/{{deviceId}}/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "sync", "devices", "{{deviceId}}", "session"]
+            },
+            "description": "Issues a long-lived device token for the authenticated user + device pair. The token is a 256-bit hex string shown ONCE — the desktop must store it securely (e.g. OS keychain). Previous sessions for this device+user are automatically revoked. The expiry matches the license `validUntil` from the current subscription."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"deviceToken\": \"a3f8c2d1e4b5...(64 hex chars)...\",\n    \"expiresAt\": \"2026-04-27T00:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "404 Device Not Found / Inactive",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"device.not_found\", \"message\": \"Device not found\" }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /tenant/auth/device-refresh (exchange token for JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceToken\": \"{{deviceToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tenant/auth/device-refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tenant", "auth", "device-refresh"]
+            },
+            "description": "No authentication required. Called by the desktop when its short-lived JWT has expired and the device is offline (or coming back online). Validates the device token, checks the session is not revoked or expired, verifies the user and tenant are active, and returns a fresh short-lived JWT access token. Also bumps device.lastSyncAt."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Token refreshed\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  }\n}"
+            },
+            {
+              "name": "401 Invalid token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"auth.device_token_invalid\", \"message\": \"Invalid device token\" }\n}"
+            },
+            {
+              "name": "401 Revoked token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"auth.device_token_revoked\", \"message\": \"Device token has been revoked\" }\n}"
+            },
+            {
+              "name": "401 Expired token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"auth.device_token_expired\", \"message\": \"Device token has expired — please log in again\" }\n}"
+            },
+            {
+              "name": "401 User or tenant inactive",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": { \"code\": \"auth.user_inactive\", \"message\": \"User account is inactive\" }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -16,6 +16,7 @@ const createOrderSchema = z.object({
   orderNumber: z.string().min(1).max(64).optional(),
   notes: z.string().max(500).nullable().optional(),
   expectedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  externalId: z.string().max(128).nullish(),
 });
 
 const updateOrderSchema = z
