@@ -2,7 +2,7 @@ import path from "path";
 import { Prisma, OcrDocumentStatus } from "@prisma/client";
 import { OcrJobData } from "../queues";
 import { ocrRepository } from "../../../modules/tenant/ocr/repository/ocr.repository";
-import { stubPrescriptionExtractor } from "../../../modules/tenant/ocr/extractor/stub-prescription.extractor";
+import { anthropicPrescriptionExtractor } from "../../../modules/tenant/ocr/extractor/anthropic-prescription.extractor";
 import { logger } from "../../logger/logger";
 
 /**
@@ -20,7 +20,7 @@ export async function handleOcrPrescription(data: OcrJobData): Promise<void> {
     const doc = await ocrRepository.findById(tenantId, documentId);
     if (!doc) throw new Error(`Document ${documentId} not found for tenant ${tenantId}`);
 
-    const extracted = await stubPrescriptionExtractor.extract(absoluteFilePath, mimeType);
+    const extracted = await anthropicPrescriptionExtractor.extract(absoluteFilePath, mimeType);
 
     await ocrRepository.updateExtractedData(
       documentId,

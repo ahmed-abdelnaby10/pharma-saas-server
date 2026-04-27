@@ -4,7 +4,7 @@ import { Prisma, OcrDocumentStatus, OcrDocumentType } from "@prisma/client";
 import { bullmqConnection } from "../bullmq";
 import { OCR_QUEUE_NAME, OcrJobData } from "../queues";
 import { ocrRepository } from "../../../modules/tenant/ocr/repository/ocr.repository";
-import { stubInvoiceExtractor } from "../../../modules/tenant/ocr/extractor/stub-invoice.extractor";
+import { anthropicInvoiceExtractor } from "../../../modules/tenant/ocr/extractor/anthropic-invoice.extractor";
 import { handleOcrPrescription } from "./ocr-prescription.processor";
 import { logger } from "../../logger/logger";
 
@@ -19,7 +19,7 @@ async function handleOcrInvoice(data: OcrJobData): Promise<void> {
     const doc = await ocrRepository.findById(tenantId, documentId);
     if (!doc) throw new Error(`Document ${documentId} not found for tenant ${tenantId}`);
 
-    const extracted = await stubInvoiceExtractor.extract(absoluteFilePath, mimeType);
+    const extracted = await anthropicInvoiceExtractor.extract(absoluteFilePath, mimeType);
 
     await ocrRepository.updateExtractedData(
       documentId,

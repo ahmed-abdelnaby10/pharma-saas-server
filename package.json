@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/ahmed-abdelnaby10/pharma-saas-server#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@types/multer": "^2.1.0",
