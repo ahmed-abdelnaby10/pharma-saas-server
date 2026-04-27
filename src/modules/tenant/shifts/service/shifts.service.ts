@@ -32,6 +32,17 @@ export class ShiftsService {
   }
 
   async openShift(auth: TenantAuthContext, payload: OpenShiftDto): Promise<ShiftRecord> {
+    // 0. Data-level idempotency via externalId.
+    //    If the desktop retries after the Redis TTL has expired, the shift
+    //    already exists in the DB — return it without re-running any logic.
+    if (payload.externalId) {
+      const existing = await this.repository.findByExternalId(
+        auth.tenantId,
+        payload.externalId,
+      );
+      if (existing) return existing;
+    }
+
     await this.assertBranch(auth.tenantId, payload.branchId);
 
     const existing = await this.repository.findActiveByBranch(auth.tenantId, payload.branchId);
@@ -49,6 +60,7 @@ export class ShiftsService {
       userId: auth.userId,
       openingBalance: new Prisma.Decimal(payload.openingBalance),
       notes: payload.notes ?? null,
+      externalId: payload.externalId ?? null,
     });
   }
 
@@ -59,8 +71,11 @@ export class ShiftsService {
   ): Promise<ShiftRecord> {
     const shift = await this.getShift(auth, shiftId);
 
+    // Idempotent close: if the shift is already closed (e.g. desktop retry
+    // after Redis TTL expired), return the closed shift rather than erroring.
+    // The HTTP-level idempotency middleware handles the in-TTL case via Redis.
     if (shift.status === "CLOSED") {
-      throw new ConflictError("Shift is already closed", undefined, "shift.already_closed");
+      return shift;
     }
 
     return this.repository.close(

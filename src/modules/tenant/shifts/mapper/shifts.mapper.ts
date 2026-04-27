@@ -16,6 +16,8 @@ export interface ShiftResponse {
   openingBalance: string;
   closingBalance: string | null;
   notes: string | null;
+  /** Echoed back so the desktop can reconcile its local SQLite record. */
+  externalId: string | null;
   openedAt: Date;
   closedAt: Date | null;
   createdAt: Date;
@@ -37,6 +39,7 @@ export function mapShiftResponse(shift: ShiftRecord): ShiftResponse {
     openingBalance: shift.openingBalance.toString(),
     closingBalance: shift.closingBalance ? shift.closingBalance.toString() : null,
     notes: shift.notes,
+    externalId: shift.externalId ?? null,
     openedAt: shift.openedAt,
     closedAt: shift.closedAt,
     createdAt: shift.createdAt,

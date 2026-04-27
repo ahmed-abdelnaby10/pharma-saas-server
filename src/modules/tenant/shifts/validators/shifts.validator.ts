@@ -11,6 +11,8 @@ const openShiftSchema = z.object({
   branchId: z.string().cuid("Invalid branchId"),
   openingBalance: z.number().nonnegative("openingBalance must be >= 0"),
   notes: z.string().max(500).nullable().optional(),
+  // Offline sync: client-generated SQLite record ID for reconciliation.
+  externalId: z.string().max(128).nullish(),
 });
 
 const closeShiftSchema = z.object({

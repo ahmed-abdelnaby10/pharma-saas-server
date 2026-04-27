@@ -56,6 +56,21 @@ export class PosRepository {
     });
   }
 
+  /**
+   * Offline sync: look up a Sale by the client-generated externalId.
+   * Used for data-level idempotency — if the record already exists we return
+   * it instead of creating a duplicate, even if the Redis cache has expired.
+   */
+  async findByExternalId(
+    tenantId: string,
+    externalId: string,
+  ): Promise<SaleRecord | null> {
+    return prisma.sale.findUnique({
+      where: { tenantId_externalId: { tenantId, externalId } },
+      include: saleInclude,
+    });
+  }
+
   async createInTransaction(
     tx: Prisma.TransactionClient,
     data: {
@@ -68,6 +83,7 @@ export class PosRepository {
       vatAmount: Prisma.Decimal;
       total: Prisma.Decimal;
       notes?: string | null;
+      externalId?: string | null;
       items: Array<{
         inventoryItemId: string;
         quantity: Prisma.Decimal;
@@ -93,6 +109,7 @@ export class PosRepository {
         vatAmount: data.vatAmount,
         total: data.total,
         ...(data.notes != null ? { notes: data.notes } : {}),
+        ...(data.externalId != null ? { externalId: data.externalId } : {}),
         items: {
           create: data.items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
