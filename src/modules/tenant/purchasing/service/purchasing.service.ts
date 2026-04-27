@@ -1,9 +1,11 @@
-import { Prisma, PurchaseOrderStatus, StockMovementType } from "@prisma/client";
+import { NotificationType, Prisma, PurchaseOrderStatus, StockMovementType } from "@prisma/client";
 import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
+import { notificationsRepository } from "../../notifications/repository/notifications.repository";
+import { logger } from "../../../../core/logger/logger";
 import { CreatePurchaseOrderDto } from "../dto/create-purchase-order.dto";
 import { UpdatePurchaseOrderDto } from "../dto/update-purchase-order.dto";
 import { QueryPurchaseOrdersDto } from "../dto/query-purchase-orders.dto";
@@ -277,6 +279,8 @@ export class PurchasingService {
       }
     }
 
+    let finalStatus: PurchaseOrderStatus = order.status;
+
     await prisma.$transaction(async (tx) => {
       for (const line of payload.items) {
         const poItem = order.items.find((i) => i.id === line.purchaseOrderItemId)!;
@@ -364,11 +368,37 @@ export class PurchasingService {
         ? PurchaseOrderStatus.PARTIALLY_RECEIVED
         : order.status;
 
+      finalStatus = newStatus;
+
       await tx.purchaseOrder.update({
         where: { id: orderId },
         data: { status: newStatus },
       });
     });
+
+    // Fire-and-forget notification — runs after the transaction commits
+    if (finalStatus === PurchaseOrderStatus.RECEIVED) {
+      notificationsRepository
+        .create({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          type: NotificationType.PURCHASE_ORDER_RECEIVED,
+          title: "Purchase order received",
+          body: `Purchase order #${order.orderNumber} has been fully received.`,
+          metadata: {
+            refId: orderId,
+            purchaseOrderId: orderId,
+            orderNumber: order.orderNumber,
+            branchId: order.branchId,
+          },
+        })
+        .catch((err: unknown) => {
+          logger.error("purchasing: failed to create PURCHASE_ORDER_RECEIVED notification", {
+            orderId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+    }
 
     return this.repository.findById(auth.tenantId, orderId) as Promise<PurchaseOrderWithRelations>;
   }
