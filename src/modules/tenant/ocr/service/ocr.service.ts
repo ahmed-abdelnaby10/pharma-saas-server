@@ -56,6 +56,7 @@ export class OcrService {
 
   async triggerProcessing(
     tenantId: string,
+    userId: string,
     documentId: string,
     t: Translator,
   ): Promise<OcrDocumentRecord> {
@@ -79,6 +80,7 @@ export class OcrService {
     await ocrQueue.add(jobName, {
       documentId: doc.id,
       tenantId: doc.tenantId,
+      userId,
       filePath: doc.filePath,
       mimeType: doc.mimeType,
       documentType: doc.documentType,

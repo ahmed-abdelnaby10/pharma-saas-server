@@ -9,6 +9,7 @@ export const OCR_QUEUE_NAME = "ocr";
 export interface OcrJobData {
   documentId: string;
   tenantId: string;
+  userId: string;
   /** Relative path from process.cwd() (as stored in DB) */
   filePath: string;
   mimeType: string;

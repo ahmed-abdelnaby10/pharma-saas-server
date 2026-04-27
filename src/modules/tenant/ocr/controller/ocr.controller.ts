@@ -64,7 +64,7 @@ export class OcrController {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const documentId = parseDocumentIdParam(req.params);
-    const doc = await this.service.triggerProcessing(auth.tenantId, documentId, req.t!);
+    const doc = await this.service.triggerProcessing(auth.tenantId, auth.userId, documentId, req.t!);
     return res.status(202).json(
       successResponse(
         req.t?.("ocr.processing_started") || "Processing started",
