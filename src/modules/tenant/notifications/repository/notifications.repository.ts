@@ -73,6 +73,32 @@ export class NotificationsRepository {
     });
     return result.count;
   }
+
+  /**
+   * Returns the set of `metadata.refId` values from notifications of the given
+   * types created for this user within the last `withinHours` hours.
+   * Used by alert dispatch to skip already-notified items (dedup window).
+   */
+  async findRecentRefIds(
+    tenantId: string,
+    userId: string,
+    types: NotificationType[],
+    withinHours: number,
+  ): Promise<Set<string>> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000);
+    const rows = await prisma.notification.findMany({
+      where: { tenantId, userId, type: { in: types }, createdAt: { gte: since } },
+      select: { metadata: true },
+    });
+    const refIds = new Set<string>();
+    for (const row of rows) {
+      const meta = row.metadata as Record<string, unknown> | null;
+      if (meta && typeof meta["refId"] === "string") {
+        refIds.add(meta["refId"]);
+      }
+    }
+    return refIds;
+  }
 }
 
 export const notificationsRepository = new NotificationsRepository();
