@@ -18,4 +18,11 @@ router.get(
   asyncHandler(tenantAuthController.me),
 );
 
+router.post(
+  "/heartbeat",
+  authMiddleware,
+  tenantMiddleware,
+  asyncHandler(tenantAuthController.heartbeat),
+);
+
 export const tenantAuthRoutes = router;

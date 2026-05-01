@@ -1,0 +1,9 @@
+{
+  "signup.submitted": "Signup request submitted successfully. You will be notified when your account is reviewed.",
+  "signup.approved": "Signup request approved. Tenant account created.",
+  "signup.rejected": "Signup request rejected.",
+  "signup.not_found": "Signup request not found",
+  "signup.duplicate": "A pending signup request already exists for this email address",
+  "signup.not_pending": "Only pending requests can be reviewed",
+  "subscription.inactive": "Your subscription is inactive. Please renew to continue."
+}

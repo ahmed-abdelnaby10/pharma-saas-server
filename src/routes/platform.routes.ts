@@ -11,6 +11,8 @@ import { auditLogsRoutes } from "../modules/platform/audit-logs";
 import { dashboardRoutes } from "../modules/platform/dashboard";
 import { usageRoutes } from "../modules/platform/usage";
 import { featureOverridesRoutes } from "../modules/platform/feature-overrides";
+import { signupsRoutes } from "../modules/platform/signups";
+import { releasesRoutes } from "../modules/platform/releases";
 
 const router = Router();
 
@@ -26,5 +28,7 @@ router.use("/support/tickets", platformSupportRoutes);
 router.use("/metrics", metricsRoutes);
 router.use("/audit", auditLogsRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/signups", signupsRoutes);
+router.use("/releases", releasesRoutes);
 
 export const platformRoutes = router;

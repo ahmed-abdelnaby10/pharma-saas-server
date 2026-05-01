@@ -31,6 +31,8 @@ import enOcr from "./locales/en/ocr.json";
 import enInvoice from "./locales/en/invoice.json";
 import enSupport from "./locales/en/support.json";
 import enAudit from "./locales/en/audit.json";
+import enSignup from "./locales/en/signup.json";
+import enRelease from "./locales/en/release.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -57,6 +59,8 @@ import arOcr from "./locales/ar/ocr.json";
 import arInvoice from "./locales/ar/invoice.json";
 import arSupport from "./locales/ar/support.json";
 import arAudit from "./locales/ar/audit.json";
+import arSignup from "./locales/ar/signup.json";
+import arRelease from "./locales/ar/release.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -88,6 +92,8 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enInvoice,
     ...enSupport,
     ...enAudit,
+    ...enSignup,
+    ...enRelease,
   },
   ar: {
     ...arCommon,
@@ -116,6 +122,8 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arInvoice,
     ...arSupport,
     ...arAudit,
+    ...arSignup,
+    ...arRelease,
   },
 };
 
