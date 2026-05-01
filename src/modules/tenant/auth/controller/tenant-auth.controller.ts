@@ -41,6 +41,26 @@ export class TenantAuthController {
     );
   };
 
+  /**
+   * POST /tenant/auth/heartbeat
+   * Requires valid tenant JWT. Returns a fresh token with updated subscription claim.
+   */
+  heartbeat = async (req: Request, res: Response) => {
+    if (!isTenantAuthContext(req.auth)) {
+      return res.status(403).end();
+    }
+
+    const result = await this.service.heartbeat(req.auth);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        result,
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
   me = async (req: Request, res: Response) => {
     // req.auth is guaranteed to be a TenantAuthContext by tenantMiddleware
     const auth = req.auth!;

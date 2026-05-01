@@ -1,0 +1,6 @@
+{
+  "release.not_found": "الإصدار غير موجود",
+  "release.created": "تم إنشاء الإصدار بنجاح",
+  "release.updated": "تم تحديث الإصدار بنجاح",
+  "release.deleted": "تم حذف الإصدار بنجاح"
+}

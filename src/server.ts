@@ -4,10 +4,12 @@ import { appConfig } from "./core/config/app.config";
 import { connectRedis, disconnectRedis } from "./core/cache/redis";
 import { connectPrisma, disconnectPrisma } from "./core/db/prisma";
 import { startOcrInvoiceWorker } from "./core/queue/jobs/ocr-invoice.processor";
+import { startTrialReminderWorker } from "./core/queue/jobs/trial-reminder.processor";
 import { logger } from "./core/logger/logger";
 
 let isShuttingDown = false;
 let ocrWorker: Worker | undefined;
+let trialReminderWorker: Worker | undefined;
 
 const shutdown = async (signal: NodeJS.Signals) => {
   if (isShuttingDown) {
@@ -22,6 +24,7 @@ const shutdown = async (signal: NodeJS.Signals) => {
       disconnectRedis(),
       disconnectPrisma(),
       ocrWorker?.close(),
+      trialReminderWorker?.close(),
     ]);
     process.exit(0);
   } catch (error) {
@@ -36,6 +39,7 @@ const start = async () => {
     await connectRedis();
 
     ocrWorker = startOcrInvoiceWorker();
+    trialReminderWorker = startTrialReminderWorker();
 
     const app = createApp();
 

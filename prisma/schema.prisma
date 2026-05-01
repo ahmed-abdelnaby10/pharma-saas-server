@@ -136,7 +136,20 @@ enum NotificationType {
   SHIFT_OPENED
   SHIFT_CLOSED
   PURCHASE_ORDER_RECEIVED
+  TRIAL_EXPIRY_WARNING
+  SUBSCRIPTION_EXPIRED
   GENERAL
+}
+
+enum SignupRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReleaseChannel {
+  STABLE
+  BETA
 }
 
 model AuditLog {
@@ -205,6 +218,7 @@ model Tenant {
   notifications    Notification[]
   devices          Device[]
   deviceSessions   DeviceSession[]
+  signupRequests   TenantSignupRequest[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -244,8 +258,9 @@ model Plan {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  features      PlanFeature[]
-  subscriptions Subscription[]
+  features        PlanFeature[]
+  subscriptions   Subscription[]
+  signupRequests  TenantSignupRequest[]
 
   @@index([isActive])
   @@index([billingInterval, isActive])
@@ -889,4 +904,50 @@ model DeviceSession {
 
   @@index([tenantId])
   @@index([expiresAt])
+}
+
+/// Public signup request submitted by a pharmacy owner before an account is created.
+/// A platform admin reviews and approves or rejects it.
+model TenantSignupRequest {
+  id              String              @id @default(cuid())
+  planId          String
+  fullName        String
+  email           String
+  phone           String?
+  pharmacyNameEn  String
+  pharmacyNameAr  String
+  notes           String?
+  status          SignupRequestStatus @default(PENDING)
+  reviewedById    String? // PlatformAdmin id — soft reference
+  reviewedAt      DateTime?
+  rejectionReason String?
+  tenantId        String? // populated on approval
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  plan   Plan    @relation(fields: [planId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+/// Desktop application release published by the platform.
+/// Exposed publicly via GET /api/v1/downloads so clients can auto-update.
+model AppRelease {
+  id          String         @id @default(cuid())
+  version     String         @unique
+  channel     ReleaseChannel @default(STABLE)
+  notes       String?
+  windowsUrl  String?
+  macUrl      String?
+  linuxUrl    String?
+  isActive    Boolean        @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([channel, isActive])
+  @@index([publishedAt])
 }
