@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../../shared/middlewares/auth.middleware";
 import { tenantMiddleware } from "../../../../shared/middlewares/tenant.middleware";
+import { idempotencyMiddleware } from "../../../../shared/middlewares/idempotency.middleware";
 import { asyncHandler } from "../../../../shared/utils/async-handler";
 import { purchasingController } from "../controller/purchasing.controller";
 
@@ -10,7 +11,14 @@ router.use(authMiddleware, tenantMiddleware);
 
 // Purchase orders
 router.get("/orders", asyncHandler(purchasingController.listOrders));
-router.post("/orders", asyncHandler(purchasingController.createOrder));
+
+// idempotencyMiddleware ensures offline desktop clients can safely retry
+// order creation without producing duplicate purchase orders.
+router.post(
+  "/orders",
+  asyncHandler(idempotencyMiddleware),
+  asyncHandler(purchasingController.createOrder),
+);
 router.get("/orders/:orderId", asyncHandler(purchasingController.getOrder));
 router.patch("/orders/:orderId", asyncHandler(purchasingController.updateOrder));
 router.delete("/orders/:orderId", asyncHandler(purchasingController.cancelOrder));

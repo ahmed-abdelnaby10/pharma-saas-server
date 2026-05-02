@@ -1,0 +1,12 @@
+{
+  "ocr.uploaded": "Document uploaded successfully",
+  "ocr.not_found": "OCR document not found",
+  "ocr.file_required": "A file must be provided",
+  "ocr.invalid_file_type": "Invalid file type. Allowed: JPEG, PNG, WEBP, PDF",
+  "ocr.processing_started": "OCR processing has been queued",
+  "ocr.unsupported_type": "Document type does not support OCR processing",
+  "ocr.not_pending": "Document must be in PENDING status to start processing",
+  "ocr.reviewed": "Document reviewed successfully",
+  "ocr.not_completed": "Document must be in COMPLETED status to be reviewed",
+  "ocr.already_reviewed": "Document has already been reviewed"
+}

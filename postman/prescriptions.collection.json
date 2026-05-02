@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "Prescriptions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tenant prescription registry. Prescriptions are tenant + branch scoped, optionally linked to a patient, and can be dispensed against a completed sale."
+  },
+  "item": [
+    {
+      "name": "List prescriptions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions?branchId={{branchId}}&status=PENDING",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions"],
+          "query": [
+            { "key": "branchId", "value": "{{branchId}}", "description": "Filter by branch" },
+            { "key": "patientId", "value": "", "description": "Filter by patient", "disabled": true },
+            { "key": "status", "value": "PENDING", "description": "PENDING | DISPENSED | CANCELLED" },
+            { "key": "search", "value": "", "description": "Search prescriptionNumber, doctorName, doctorLicense, or item drugName", "disabled": true }
+          ]
+        },
+        "description": "Returns prescriptions for the tenant. Filter by branchId, patientId, status, or full-text search."
+      }
+    },
+    {
+      "name": "Get prescription",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions/{{prescriptionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions", "{{prescriptionId}}"]
+        }
+      }
+    },
+    {
+      "name": "Create prescription — full",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"patientId\": \"{{patientId}}\",\n  \"prescriptionNumber\": \"RX-20260425-001\",\n  \"doctorName\": \"Dr. Amr Khaled\",\n  \"doctorLicense\": \"LIC-12345\",\n  \"issuedAt\": \"2026-04-25T09:00:00.000Z\",\n  \"notes\": \"Take with food\",\n  \"items\": [\n    {\n      \"drugName\": \"Amoxicillin 500mg\",\n      \"quantity\": 21,\n      \"dosageInstructions\": \"1 capsule three times daily for 7 days\"\n    },\n    {\n      \"drugName\": \"Ibuprofen 400mg\",\n      \"quantity\": 10,\n      \"dosageInstructions\": \"1 tablet as needed for pain, max 3/day\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions"]
+        },
+        "description": "Create a prescription manually. branchId and items are required. All other fields are optional."
+      }
+    },
+    {
+      "name": "Create prescription — minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"items\": [\n    {\n      \"drugName\": \"Paracetamol 500mg\",\n      \"quantity\": 20\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions"]
+        },
+        "description": "Minimum required fields: branchId + at least one item."
+      }
+    },
+    {
+      "name": "Update prescription",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doctorName\": \"Dr. Sara Ahmed\",\n  \"notes\": \"Updated dosage instructions — take on empty stomach\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions/{{prescriptionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions", "{{prescriptionId}}"]
+        },
+        "description": "Only PENDING prescriptions can be updated. Provide any subset of fields. If items is provided, existing items are replaced entirely."
+      }
+    },
+    {
+      "name": "Dispense prescription",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"saleId\": \"{{saleId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions/{{prescriptionId}}/dispense",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions", "{{prescriptionId}}", "dispense"]
+        },
+        "description": "Link a completed sale to this prescription and mark it DISPENSED. The sale must belong to the same tenant. A sale can only be linked to one prescription."
+      }
+    },
+    {
+      "name": "Cancel prescription",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/prescriptions/{{prescriptionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "prescriptions", "{{prescriptionId}}"]
+        },
+        "description": "Cancel a PENDING prescription. DISPENSED prescriptions cannot be cancelled."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "prescriptionId", "value": "", "description": "Prescription ID from create response" }
+  ]
+}

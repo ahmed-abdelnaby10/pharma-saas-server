@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "Patients",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tenant patient registry. Patients are tenant-scoped and can be optionally linked to sales at the point of dispensing."
+  },
+  "item": [
+    {
+      "name": "List patients",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients?isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients"],
+          "query": [
+            { "key": "isActive", "value": "true", "description": "true | false" },
+            { "key": "search",   "value": "",      "description": "Search by name, phone, email, or nationalId", "disabled": true }
+          ]
+        },
+        "description": "Returns all active patients. Add ?search=ahmed to filter by name, phone, email, or national ID (case-insensitive)."
+      }
+    },
+    {
+      "name": "Search patients",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients?search=ahmed",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients"],
+          "query": [{ "key": "search", "value": "ahmed" }]
+        },
+        "description": "Full-text search across fullName, phone, email, and nationalId."
+      }
+    },
+    {
+      "name": "Get patient",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients/{{patientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients", "{{patientId}}"]
+        }
+      }
+    },
+    {
+      "name": "Create patient",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Ahmed Hassan\",\n  \"dateOfBirth\": \"1985-03-15T00:00:00.000Z\",\n  \"phone\": \"+201001234567\",\n  \"email\": \"ahmed@example.com\",\n  \"nationalId\": \"28503151234567\",\n  \"gender\": \"MALE\",\n  \"notes\": \"Allergic to penicillin\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients"]
+        },
+        "description": "nationalId must be unique per tenant. All fields except fullName are optional."
+      }
+    },
+    {
+      "name": "Create patient — minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Walk-in Customer\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients"]
+        },
+        "description": "Only fullName is required."
+      }
+    },
+    {
+      "name": "Update patient",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+201009999999\",\n  \"notes\": \"Allergic to penicillin and sulfa drugs\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients/{{patientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients", "{{patientId}}"]
+        }
+      }
+    },
+    {
+      "name": "Deactivate patient",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/patients/{{patientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "patients", "{{patientId}}"]
+        },
+        "description": "Soft delete — sets isActive: false. Patient history is preserved."
+      }
+    },
+    {
+      "name": "Create sale linked to patient",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"shiftId\": \"{{shiftId}}\",\n  \"patientId\": \"{{patientId}}\",\n  \"items\": [\n    {\n      \"inventoryItemId\": \"{{inventoryItemId}}\",\n      \"quantity\": 1,\n      \"unitPrice\": 75.00\n    }\n  ],\n  \"paymentMethod\": \"CASH\",\n  \"paymentAmount\": 75.00\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/pos",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "pos"]
+        },
+        "description": "POST /tenant/pos now accepts an optional patientId. The sale response includes patientId for reconciliation."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "patientId", "value": "", "description": "Patient ID from create response" }
+  ]
+}

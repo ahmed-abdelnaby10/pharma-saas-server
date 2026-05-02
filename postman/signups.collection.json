@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Signups",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Public signup request flow and platform admin review queue. Pharmacy owners submit a request; a platform admin approves or rejects it. Approval creates the tenant account."
+  },
+  "item": [
+    {
+      "name": "Submit signup request (public)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"fullName\": \"Ahmed Hassan\",\n  \"email\": \"ahmed@royalpharmacy.eg\",\n  \"phone\": \"+20100123456\",\n  \"pharmacyNameEn\": \"Royal Pharmacy\",\n  \"pharmacyNameAr\": \"الصيدلية الملكية\",\n  \"notes\": \"Two branches in Cairo\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/signups",
+          "host": ["{{baseUrl}}"],
+          "path": ["signups"]
+        },
+        "description": "No authentication required. Creates a PENDING signup request for admin review."
+      }
+    },
+    {
+      "name": "List signup requests",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/signups?status=PENDING",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "signups"],
+          "query": [
+            { "key": "status", "value": "PENDING", "description": "PENDING | APPROVED | REJECTED" },
+            { "key": "search", "value": "", "description": "Search by name, email, pharmacy name", "disabled": true }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get signup request",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/signups/{{signupId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "signups", "{{signupId}}"]
+        }
+      }
+    },
+    {
+      "name": "Approve signup request",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/signups/{{signupId}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "signups", "{{signupId}}", "approve"]
+        },
+        "description": "Creates a tenant account and a trialing subscription. Marks the request APPROVED and links the new tenantId."
+      }
+    },
+    {
+      "name": "Reject signup request",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rejectionReason\": \"Operating area is not supported in the current region.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/platform/signups/{{signupId}}/reject",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "signups", "{{signupId}}", "reject"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "signupId", "value": "", "description": "Signup request ID from submit response" }
+  ]
+}

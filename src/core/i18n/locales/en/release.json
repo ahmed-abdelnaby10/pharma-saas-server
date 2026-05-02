@@ -1,0 +1,6 @@
+{
+  "release.not_found": "Release not found",
+  "release.created": "Release created successfully",
+  "release.updated": "Release updated successfully",
+  "release.deleted": "Release deleted successfully"
+}

@@ -14,6 +14,13 @@ const orderInclude = {
 } satisfies Prisma.PurchaseOrderInclude;
 
 export class PurchasingRepository {
+  async findByExternalId(tenantId: string, externalId: string): Promise<PurchaseOrderWithRelations | null> {
+    return prisma.purchaseOrder.findUnique({
+      where: { tenantId_externalId: { tenantId, externalId } },
+      include: orderInclude,
+    });
+  }
+
   async list(tenantId: string, query: QueryPurchaseOrdersDto): Promise<PurchaseOrderWithRelations[]> {
     return prisma.purchaseOrder.findMany({
       where: {
@@ -52,6 +59,7 @@ export class PurchasingRepository {
       orderNumber: string;
       notes?: string | null;
       expectedAt?: Date | null;
+      externalId?: string | null;
     },
   ): Promise<PurchaseOrderWithRelations> {
     return prisma.purchaseOrder.create({
@@ -62,6 +70,7 @@ export class PurchasingRepository {
         orderNumber: data.orderNumber,
         ...(data.notes != null ? { notes: data.notes } : {}),
         ...(data.expectedAt != null ? { expectedAt: data.expectedAt } : {}),
+        ...(data.externalId != null ? { externalId: data.externalId } : {}),
       },
       include: orderInclude,
     });

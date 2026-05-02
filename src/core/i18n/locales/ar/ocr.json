@@ -1,0 +1,12 @@
+{
+  "ocr.uploaded": "تم رفع المستند بنجاح",
+  "ocr.not_found": "مستند OCR غير موجود",
+  "ocr.file_required": "يجب تقديم ملف",
+  "ocr.invalid_file_type": "نوع الملف غير صالح. المسموح به: JPEG، PNG، WEBP، PDF",
+  "ocr.processing_started": "تمت إضافة المستند إلى قائمة انتظار المعالجة",
+  "ocr.unsupported_type": "نوع المستند لا يدعم معالجة OCR",
+  "ocr.not_pending": "يجب أن يكون المستند في حالة PENDING لبدء المعالجة",
+  "ocr.reviewed": "تمت مراجعة المستند بنجاح",
+  "ocr.not_completed": "يجب أن يكون المستند في حالة COMPLETED ليتم مراجعته",
+  "ocr.already_reviewed": "تمت مراجعة هذا المستند مسبقاً"
+}

@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "Releases",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Platform release management and public download manifest. Admins publish versioned desktop releases; clients poll GET /downloads for the latest per channel."
+  },
+  "item": [
+    {
+      "name": "Get download manifest (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/downloads",
+          "host": ["{{baseUrl}}"],
+          "path": ["downloads"]
+        },
+        "description": "No authentication. Returns { stable: ReleaseOrNull, beta: ReleaseOrNull }. Desktop clients poll this to check for updates."
+      }
+    },
+    {
+      "name": "List releases (admin)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/releases?channel=STABLE&isActive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "releases"],
+          "query": [
+            { "key": "channel", "value": "STABLE", "description": "STABLE | BETA" },
+            { "key": "isActive", "value": "true", "description": "true | false" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create release",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"version\": \"1.2.0\",\n  \"channel\": \"STABLE\",\n  \"notes\": \"Bug fixes and performance improvements\",\n  \"windowsUrl\": \"https://cdn.example.com/releases/1.2.0/setup-win.exe\",\n  \"macUrl\": \"https://cdn.example.com/releases/1.2.0/setup-mac.dmg\",\n  \"linuxUrl\": \"https://cdn.example.com/releases/1.2.0/setup-linux.AppImage\",\n  \"publishedAt\": \"2026-05-01T10:00:00.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/platform/releases",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "releases"]
+        }
+      }
+    },
+    {
+      "name": "Update release",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isActive\": false,\n  \"notes\": \"Withdrawn due to critical bug\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/platform/releases/{{releaseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "releases", "{{releaseId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete release",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/platform/releases/{{releaseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "releases", "{{releaseId}}"]
+        }
+      }
+    },
+    {
+      "name": "Heartbeat (tenant JWT refresh)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/auth/heartbeat",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "auth", "heartbeat"]
+        },
+        "description": "Returns a fresh access token with updated subscription claim (status, trialEndsAt, offlineValidUntil). Desktop clients call this every ~15 min while online."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "releaseId", "value": "", "description": "Release ID from create response" }
+  ]
+}

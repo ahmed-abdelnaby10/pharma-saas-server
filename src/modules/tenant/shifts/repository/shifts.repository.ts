@@ -35,12 +35,29 @@ export class ShiftsRepository {
     });
   }
 
+  /**
+   * Offline sync: look up a Shift by the client-generated externalId.
+   * Used for data-level idempotency — if the record already exists we return
+   * it instead of creating a duplicate, even if the Redis cache has expired.
+   */
+  async findByExternalId(
+    tenantId: string,
+    externalId: string,
+  ): Promise<ShiftRecord | null> {
+    return prisma.shift.findUnique({
+      where: { tenantId_externalId: { tenantId, externalId } },
+      include: shiftInclude,
+    });
+  }
+
   async create(data: {
     tenantId: string;
     branchId: string;
     userId: string;
     openingBalance: Prisma.Decimal;
     notes?: string | null;
+    externalId?: string | null;
+    clientCreatedAt?: Date | null;
   }): Promise<ShiftRecord> {
     return prisma.shift.create({
       data: {
@@ -49,6 +66,8 @@ export class ShiftsRepository {
         userId: data.userId,
         openingBalance: data.openingBalance,
         ...(data.notes != null ? { notes: data.notes } : {}),
+        ...(data.externalId != null ? { externalId: data.externalId } : {}),
+        ...(data.clientCreatedAt != null ? { clientCreatedAt: data.clientCreatedAt } : {}),
       },
       include: shiftInclude,
     });
@@ -58,6 +77,7 @@ export class ShiftsRepository {
     shiftId: string,
     closingBalance: Prisma.Decimal,
     notes?: string | null,
+    clientClosedAt?: Date | null,
   ): Promise<ShiftRecord> {
     return prisma.shift.update({
       where: { id: shiftId },
@@ -66,6 +86,7 @@ export class ShiftsRepository {
         closingBalance,
         closedAt: new Date(),
         ...(notes !== undefined ? { notes } : {}),
+        ...(clientClosedAt != null ? { clientClosedAt } : {}),
       },
       include: shiftInclude,
     });

@@ -15,11 +15,18 @@ export interface PlatformAuthContext extends BaseAuthContext {
   isPlatformAdmin: true;
 }
 
+export interface SubscriptionClaim {
+  status: string; // SubscriptionStatus value or "none"
+  trialEndsAt: string | null; // ISO string
+  offlineValidUntil: string; // ISO string — 24 h window for offline auth
+}
+
 export interface TenantAuthContext extends BaseAuthContext {
   scope: "tenant";
   tenantId: string;
   branchId?: string | null;
   isPlatformAdmin?: false;
+  subscription?: SubscriptionClaim;
 }
 
 export type AuthContext = PlatformAuthContext | TenantAuthContext;

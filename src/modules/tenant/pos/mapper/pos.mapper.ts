@@ -59,6 +59,11 @@ export interface SaleResponse {
   vatAmount: string;
   total: string;
   notes: string | null;
+  /** Echoed back from the request so the desktop can reconcile SQLite ↔ server. */
+  externalId: string | null;
+  patientId: string | null;
+  /** When the sale was recorded on the desktop (offline timestamp). Null for online sales. */
+  clientCreatedAt: Date | null;
   items: SaleItemResponse[];
   payments: PaymentResponse[];
   createdAt: Date;
@@ -175,6 +180,9 @@ export function mapSaleResponse(sale: SaleRecord): SaleResponse {
     vatAmount: sale.vatAmount.toString(),
     total: sale.total.toString(),
     notes: sale.notes,
+    externalId: sale.externalId ?? null,
+    patientId: sale.patientId ?? null,
+    clientCreatedAt: sale.clientCreatedAt ?? null,
     items: sale.items.map((item) => ({
       id: item.id,
       inventoryItemId: item.inventoryItemId,

@@ -27,6 +27,12 @@ import enAlert from "./locales/en/alert.json";
 import enReport from "./locales/en/report.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enAnalytics from "./locales/en/analytics.json";
+import enOcr from "./locales/en/ocr.json";
+import enInvoice from "./locales/en/invoice.json";
+import enSupport from "./locales/en/support.json";
+import enAudit from "./locales/en/audit.json";
+import enSignup from "./locales/en/signup.json";
+import enRelease from "./locales/en/release.json";
 import arAdmin from "./locales/ar/admin.json";
 import arAuth from "./locales/ar/auth.json";
 import arCommon from "./locales/ar/common.json";
@@ -49,6 +55,12 @@ import arAlert from "./locales/ar/alert.json";
 import arReport from "./locales/ar/report.json";
 import arDashboard from "./locales/ar/dashboard.json";
 import arAnalytics from "./locales/ar/analytics.json";
+import arOcr from "./locales/ar/ocr.json";
+import arInvoice from "./locales/ar/invoice.json";
+import arSupport from "./locales/ar/support.json";
+import arAudit from "./locales/ar/audit.json";
+import arSignup from "./locales/ar/signup.json";
+import arRelease from "./locales/ar/release.json";
 
 type TranslationCatalog = Record<string, string>;
 
@@ -76,6 +88,12 @@ const translations: Record<Language, TranslationCatalog> = {
     ...enReport,
     ...enDashboard,
     ...enAnalytics,
+    ...enOcr,
+    ...enInvoice,
+    ...enSupport,
+    ...enAudit,
+    ...enSignup,
+    ...enRelease,
   },
   ar: {
     ...arCommon,
@@ -100,6 +118,12 @@ const translations: Record<Language, TranslationCatalog> = {
     ...arReport,
     ...arDashboard,
     ...arAnalytics,
+    ...arOcr,
+    ...arInvoice,
+    ...arSupport,
+    ...arAudit,
+    ...arSignup,
+    ...arRelease,
   },
 };
 

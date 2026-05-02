@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "Notifications",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "In-app notification centre for tenant users. Notifications are scoped to the authenticated user — each user sees only their own. The write path (creating notifications) is internal; this API covers the read path only."
+  },
+  "item": [
+    {
+      "name": "List notifications",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/notifications?isRead=false&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "notifications"],
+          "query": [
+            { "key": "isRead", "value": "false", "description": "true | false — omit for all" },
+            { "key": "limit",  "value": "20",    "description": "Page size 1–100, default 20" },
+            { "key": "cursor", "value": "",       "description": "createdAt ISO string of the last item — use for next page", "disabled": true }
+          ]
+        },
+        "description": "Returns notifications for the authenticated user, newest first. Use ?isRead=false for unread-only. Paginate with cursor = createdAt of the last item."
+      }
+    },
+    {
+      "name": "Unread count (badge)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/notifications/unread-count",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "notifications", "unread-count"]
+        },
+        "description": "Cheap count for notification badge. Returns { count: N }."
+      }
+    },
+    {
+      "name": "Mark one read",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/notifications/{{notificationId}}/read",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "notifications", "{{notificationId}}", "read"]
+        },
+        "description": "Mark a single notification as read. Idempotent — safe to call on an already-read notification."
+      }
+    },
+    {
+      "name": "Mark all read",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/tenant/notifications/read-all",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "notifications", "read-all"]
+        },
+        "description": "Mark all unread notifications as read for the authenticated user. Returns { count: N } — number of notifications updated."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "notificationId", "value": "", "description": "Notification ID from list response" }
+  ]
+}

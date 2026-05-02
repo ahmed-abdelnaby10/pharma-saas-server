@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "Feature Overrides",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Platform admin API for per-tenant feature overrides. Overrides supersede the plan's PlanFeature rows for specific tenants. Reflected immediately in GET /tenant/subscription and GET /platform/tenants/:id/usage."
+  },
+  "item": [
+    {
+      "name": "Platform — manage overrides",
+      "item": [
+        {
+          "name": "List overrides for a tenant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/feature-overrides",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "feature-overrides"]
+            },
+            "description": "Returns all active overrides for the tenant. Empty array when none are set."
+          }
+        },
+        {
+          "name": "Grant OCR access (feature flag override)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"reason\": \"Trial OCR access granted by sales team\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/feature-overrides/ocr_enabled",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "feature-overrides", "ocr_enabled"]
+            },
+            "description": "Upsert: enables the ocr_enabled feature for this tenant even if their plan does not include it. After this call, GET /tenant/subscription will show isOverride: true for ocr_enabled."
+          }
+        },
+        {
+          "name": "Raise branch limit (count override)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"limitValue\": 10,\n  \"reason\": \"Customer requested 10 branches during expansion\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/feature-overrides/max_branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "feature-overrides", "max_branches"]
+            },
+            "description": "Raises the max_branches limit to 10 for this tenant, overriding the plan default. The enforcement in BranchesService.createBranch now uses 10 instead of the plan value."
+          }
+        },
+        {
+          "name": "Disable a feature (override to false)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": false,\n  \"reason\": \"Compliance hold — pending review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/feature-overrides/sales_returns_enabled",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "feature-overrides", "sales_returns_enabled"]
+            },
+            "description": "Disables sales_returns_enabled for this tenant regardless of plan. Useful for compliance holds or temporary suspensions of a single feature."
+          }
+        },
+        {
+          "name": "Remove override (revert to plan)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/feature-overrides/ocr_enabled",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "feature-overrides", "ocr_enabled"]
+            },
+            "description": "Removes the override. The tenant's effective entitlement for ocr_enabled reverts to whatever their plan defines."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant — verify entitlements",
+      "item": [
+        {
+          "name": "Get subscription (shows isOverride flags)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenant/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "subscription"]
+            },
+            "description": "After setting an override, this endpoint shows the merged entitlements. Features with isOverride: true were granted/restricted by a platform admin outside of the normal plan."
+          }
+        }
+      ]
+    }
+  ]
+}

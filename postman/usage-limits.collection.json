@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "Usage & Limits",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Plan-limit enforcement and entitlement visibility. Demonstrates 402 errors on limit breach, tenant's own plan view, and platform admin usage dashboard."
+  },
+  "item": [
+    {
+      "name": "Tenant",
+      "item": [
+        {
+          "name": "Get current subscription + entitlements",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenant/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "subscription"]
+            },
+            "description": "Returns the tenant's active plan, subscription status, and all feature entitlements (enabled flag + limitValue for each PlanFeature row)."
+          }
+        },
+        {
+          "name": "Create branch — within limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Cairo Branch\",\n  \"nameAr\": \"فرع القاهرة\",\n  \"address\": \"123 Tahrir Sq\",\n  \"phone\": \"+20111111111\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "branches"]
+            },
+            "description": "Succeeds when the tenant is below their max_branches plan limit."
+          }
+        },
+        {
+          "name": "Create branch — limit exceeded (402)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Extra Branch\",\n  \"nameAr\": \"فرع إضافي\",\n  \"address\": \"1 Extra St\",\n  \"phone\": \"+20122222222\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "branches"]
+            },
+            "description": "Returns 402 PAYMENT_REQUIRED with details.featureKey = 'max_branches' when the plan limit is reached. Run this after filling the branch quota."
+          }
+        },
+        {
+          "name": "Create user — within limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pharmacist@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"fullName\": \"Ahmed Hassan\",\n  \"branchId\": \"{{branchId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "users"]
+            },
+            "description": "Succeeds when the tenant is below their max_users plan limit."
+          }
+        },
+        {
+          "name": "Create user — limit exceeded (402)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"extra@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"fullName\": \"Extra User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenant", "users"]
+            },
+            "description": "Returns 402 PAYMENT_REQUIRED with details.featureKey = 'max_users' when the plan limit is reached."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Platform",
+      "item": [
+        {
+          "name": "Get tenant usage vs limits",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["platform", "tenants", "{{tenantId}}", "usage"]
+            },
+            "description": "Returns the tenant's plan features with currentValue populated for count-limited keys (max_branches, max_users). Feature flag keys have no currentValue."
+          }
+        }
+      ]
+    }
+  ]
+}

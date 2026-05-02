@@ -1,6 +1,9 @@
+import { NotificationType } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
+import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { Translator } from "../../../../shared/types/locale.types";
 import { settingsRepository } from "../../settings/repository/settings.repository";
+import { notificationsRepository } from "../../notifications/repository/notifications.repository";
 import { QueryLowStockDto, QueryExpiringDto } from "../dto/query-alerts.dto";
 
 export interface LowStockAlert {
@@ -114,6 +117,114 @@ export class AlertsService {
         daysUntilExpiry,
       };
     });
+  }
+
+  /** Combined helper — returns both low-stock and expiry alerts in one call. */
+  async getAll(
+    tenantId: string,
+    query: QueryLowStockDto & { days?: number },
+    t: Translator,
+  ) {
+    const [lowStock, expiring] = await Promise.all([
+      this.getLowStockAlerts(tenantId, { branchId: query.branchId }, t),
+      this.getExpiringAlerts(tenantId, { branchId: query.branchId, days: query.days ?? 30 }, t),
+    ]);
+    return { lowStock, expiring };
+  }
+
+  /**
+   * Dispatches Notification records into the current user's inbox for every
+   * active alert. Skips items already notified within the last 48 hours to
+   * avoid spam. Returns a summary of created vs skipped counts.
+   */
+  async dispatchAlertNotifications(
+    auth: TenantAuthContext,
+    branchId: string,
+    days = 30,
+  ): Promise<{ created: number; skipped: number }> {
+    const t: Translator = (key) => key;
+
+    const [lowStockAlerts, expiryAlerts, recentLowStockRefs, recentExpiryRefs] =
+      await Promise.all([
+        this.getLowStockAlerts(auth.tenantId, { branchId }, t),
+        this.getExpiringAlerts(auth.tenantId, { branchId, days }, t),
+        notificationsRepository.findRecentRefIds(
+          auth.tenantId,
+          auth.userId,
+          [NotificationType.LOW_STOCK],
+          48,
+        ),
+        notificationsRepository.findRecentRefIds(
+          auth.tenantId,
+          auth.userId,
+          [NotificationType.EXPIRY_ALERT],
+          48,
+        ),
+      ]);
+
+    let created = 0;
+    let skipped = 0;
+
+    // ── Low-stock notifications ──────────────────────────────────────────────
+    for (const alert of lowStockAlerts) {
+      if (recentLowStockRefs.has(alert.inventoryItemId)) {
+        skipped++;
+        continue;
+      }
+      await notificationsRepository.create({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        type: NotificationType.LOW_STOCK,
+        title: `Low stock: ${alert.catalogNameEn}`,
+        body: `Quantity on hand (${alert.quantityOnHand}) is at or below reorder level (${alert.reorderLevel}).`,
+        metadata: {
+          refId: alert.inventoryItemId,
+          inventoryItemId: alert.inventoryItemId,
+          branchId: alert.branchId,
+          catalogItemId: alert.catalogItemId,
+          catalogNameEn: alert.catalogNameEn,
+          catalogNameAr: alert.catalogNameAr,
+          quantityOnHand: alert.quantityOnHand,
+          reorderLevel: alert.reorderLevel,
+        },
+      });
+      created++;
+    }
+
+    // ── Expiry notifications ─────────────────────────────────────────────────
+    for (const alert of expiryAlerts) {
+      if (recentExpiryRefs.has(alert.batchId)) {
+        skipped++;
+        continue;
+      }
+      const urgency = alert.daysUntilExpiry <= 0 ? "EXPIRED" : `${alert.daysUntilExpiry}d`;
+      await notificationsRepository.create({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        type: NotificationType.EXPIRY_ALERT,
+        title: `Expiry alert [${urgency}]: ${alert.catalogNameEn}`,
+        body:
+          alert.daysUntilExpiry <= 0
+            ? `Batch ${alert.batchNumber} has expired. Qty: ${alert.quantityOnHand}.`
+            : `Batch ${alert.batchNumber} expires in ${alert.daysUntilExpiry} day(s). Qty: ${alert.quantityOnHand}.`,
+        metadata: {
+          refId: alert.batchId,
+          batchId: alert.batchId,
+          inventoryItemId: alert.inventoryItemId,
+          branchId: alert.branchId,
+          catalogItemId: alert.catalogItemId,
+          catalogNameEn: alert.catalogNameEn,
+          catalogNameAr: alert.catalogNameAr,
+          batchNumber: alert.batchNumber,
+          expiryDate: alert.expiryDate.toISOString(),
+          daysUntilExpiry: alert.daysUntilExpiry,
+          quantityOnHand: alert.quantityOnHand,
+        },
+      });
+      created++;
+    }
+
+    return { created, skipped };
   }
 }
 

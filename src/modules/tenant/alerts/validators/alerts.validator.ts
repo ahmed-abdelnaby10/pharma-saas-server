@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ValidationError } from "../../../../shared/errors/validation-error";
-import { QueryLowStockDto, QueryExpiringDto } from "../dto/query-alerts.dto";
+import { QueryLowStockDto, QueryExpiringDto, QueryAllAlertsDto } from "../dto/query-alerts.dto";
 
 const queryLowStockSchema = z.object({
   branchId: z.string().cuid(),
@@ -25,6 +25,17 @@ export function parseQueryLowStock(query: unknown): QueryLowStockDto {
 
 export function parseQueryExpiring(query: unknown): QueryExpiringDto {
   const result = queryExpiringSchema.safeParse(query);
+  if (!result.success) {
+    throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
+  }
+  return result.data;
+}
+
+// Same shape as expiring — branchId required, days optional (default 30)
+const queryAllAlertsSchema = queryExpiringSchema;
+
+export function parseQueryAllAlerts(query: unknown): QueryAllAlertsDto {
+  const result = queryAllAlertsSchema.safeParse(query);
   if (!result.success) {
     throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
   }

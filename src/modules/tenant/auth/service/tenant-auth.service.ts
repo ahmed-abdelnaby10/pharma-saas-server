@@ -3,7 +3,9 @@ import { signAccessToken } from "../../../../core/security/jwt";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
 import { Language } from "../../../../shared/types/locale.types";
+import { SubscriptionClaim, TenantAuthContext } from "../../../../shared/types/auth.types";
 import { rolesRepository } from "../../roles/repository/roles.repository";
+import { subscriptionsRepository } from "../../../platform/subscriptions/repository/subscriptions.repository";
 import { TenantLoginDto } from "../dto/tenant-login.dto";
 import {
   tenantAuthRepository,
@@ -19,6 +21,11 @@ export type TenantLoginResult = {
     tenantId: string;
     preferredLanguage: Language;
   };
+};
+
+export type HeartbeatResult = {
+  accessToken: string;
+  subscription: SubscriptionClaim;
 };
 
 export class TenantAuthService {
@@ -79,6 +86,18 @@ export class TenantAuthService {
     const { roleCodes, permissions } =
       await rolesRepository.resolveUserRolesAndPermissions(record.id);
 
+    // Embed lightweight subscription claim so clients can enforce hard-lock
+    // without a round-trip on every action.
+    const currentSub = await subscriptionsRepository.findCurrentByTenant(record.tenantId);
+    const offlineValidUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const subscription: SubscriptionClaim = currentSub
+      ? {
+          status: currentSub.status,
+          trialEndsAt: currentSub.trialEndsAt?.toISOString() ?? null,
+          offlineValidUntil,
+        }
+      : { status: "none", trialEndsAt: null, offlineValidUntil };
+
     const accessToken = signAccessToken({
       scope: "tenant",
       userId: record.id,
@@ -86,6 +105,7 @@ export class TenantAuthService {
       roleCodes,
       permissions,
       preferredLanguage,
+      subscription,
     });
 
     return {
@@ -98,6 +118,36 @@ export class TenantAuthService {
         preferredLanguage,
       },
     };
+  }
+
+  /**
+   * Heartbeat — refreshes the subscription claim inside the JWT without a
+   * full re-login. Called by the desktop client every ~15 min while online.
+   * Returns a fresh access token so the offline window stays current.
+   */
+  async heartbeat(auth: TenantAuthContext): Promise<HeartbeatResult> {
+    const currentSub = await subscriptionsRepository.findCurrentByTenant(auth.tenantId);
+    const offlineValidUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const subscription: SubscriptionClaim = currentSub
+      ? {
+          status: currentSub.status,
+          trialEndsAt: currentSub.trialEndsAt?.toISOString() ?? null,
+          offlineValidUntil,
+        }
+      : { status: "none", trialEndsAt: null, offlineValidUntil };
+
+    const accessToken = signAccessToken({
+      scope: "tenant",
+      userId: auth.userId,
+      tenantId: auth.tenantId,
+      roleCodes: auth.roleCodes,
+      permissions: auth.permissions,
+      preferredLanguage: auth.preferredLanguage,
+      branchId: auth.branchId,
+      subscription,
+    });
+
+    return { accessToken, subscription };
   }
 }
 

@@ -20,6 +20,12 @@ const createSaleSchema = z.object({
   paymentAmount: z.number().nonnegative(),
   paymentReference: z.string().max(100).nullish(),
   notes: z.string().max(500).nullish(),
+  externalId: z.string().max(128).nullish(),
+  // Client-generated receipt number. Server uses verbatim if unique; falls back to generated.
+  saleNumber: z.string().max(100).nullish(),
+  // When the sale was recorded on the desktop (offline timestamp).
+  clientCreatedAt: z.string().datetime({ offset: true }).nullish(),
+  patientId: z.string().cuid("Invalid patientId").nullish(),
 });
 
 const querySalesSchema = z.object({

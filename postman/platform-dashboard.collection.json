@@ -1,0 +1,23 @@
+{
+  "info": {
+    "name": "Platform Dashboard",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/platform/dashboard",
+          "host": ["{{baseUrl}}"],
+          "path": ["platform", "dashboard"]
+        },
+        "description": "Returns the full platform admin dashboard payload in a single call: KPIs (tenants, revenue, tickets), subscription health breakdown, 6-month revenue trend, 6-month tenant growth trend, and the 10 most recent audit log entries."
+      }
+    }
+  ]
+}
