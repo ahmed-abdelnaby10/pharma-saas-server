@@ -4,7 +4,7 @@ import { NotificationType, Prisma, OcrDocumentStatus, OcrDocumentType } from "@p
 import { bullmqConnection } from "../bullmq";
 import { OCR_QUEUE_NAME, OcrJobData } from "../queues";
 import { ocrRepository } from "../../../modules/tenant/ocr/repository/ocr.repository";
-import { anthropicInvoiceExtractor } from "../../../modules/tenant/ocr/extractor/anthropic-invoice.extractor";
+import { geminiInvoiceExtractor } from "../../../modules/tenant/ocr/extractor/gemini-invoice.extractor";
 import { notificationsRepository } from "../../../modules/tenant/notifications/repository/notifications.repository";
 import { handleOcrPrescription } from "./ocr-prescription.processor";
 import { logger } from "../../logger/logger";
@@ -20,7 +20,7 @@ async function handleOcrInvoice(data: OcrJobData): Promise<void> {
     const doc = await ocrRepository.findById(tenantId, documentId);
     if (!doc) throw new Error(`Document ${documentId} not found for tenant ${tenantId}`);
 
-    const extracted = await anthropicInvoiceExtractor.extract(absoluteFilePath, mimeType);
+    const extracted = await geminiInvoiceExtractor.extract(absoluteFilePath, mimeType);
 
     await ocrRepository.updateExtractedData(
       documentId,
@@ -37,7 +37,7 @@ async function handleOcrInvoice(data: OcrJobData): Promise<void> {
         type: NotificationType.OCR_COMPLETED,
         title: "Invoice OCR completed",
         body:
-          extracted.confidence >= 0.6
+          extracted.confidence >= 0.85 // Gemini 2.5 Flash calibration — 0.85 reflects reliable extraction
             ? `Invoice processed successfully (confidence: ${Math.round(extracted.confidence * 100)}%).`
             : `Invoice processed but confidence is low (${Math.round(extracted.confidence * 100)}%). Please review the extracted data.`,
         metadata: {
