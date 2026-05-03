@@ -7,8 +7,6 @@ import { PrescriptionExtractedData } from "./prescription-extracted-data.type";
 import { env } from "../../../../core/config/env";
 import { logger } from "../../../../core/logger/logger";
 
-// ── Zod schema mirroring PrescriptionExtractedData ──────────────────────────
-
 const MedicationSchema = z.object({
   name: z.string().describe("Drug name as written on the prescription"),
   dosage: z.string().describe("e.g. 500mg, 10mg/5ml"),
@@ -39,8 +37,6 @@ const PrescriptionSchema = z.object({
     .describe("Your overall extraction confidence from 0 to 1"),
 });
 
-// ── Stable system prompt (cached) ───────────────────────────────────────────
-
 const PRESCRIPTION_SYSTEM_PROMPT = `You are a pharmacy prescription OCR specialist.
 Extract structured data from the provided prescription document (image or PDF).
 
@@ -48,25 +44,16 @@ Rules:
 - Extract EVERY medication listed; do not skip or merge entries.
 - Dates must be returned as ISO 8601 (YYYY-MM-DD). If the year is ambiguous use the most plausible one.
 - dosage: include units (mg, ml, etc.) exactly as written.
-- frequency: normalise common abbreviations — "BD" to "twice daily", "TDS" to "three times daily", "QDS" to "four times daily", "PRN" to "as needed".
+- frequency: normalise common abbreviations - "BD" to "twice daily", "TDS" to "three times daily", "QDS" to "four times daily", "PRN" to "as needed".
 - quantity: numeric units count (e.g. 30 tablets). Return null if not stated.
 - If a field is not present or illegible, return null.
 - confidence: a float from 0 (nothing readable) to 1 (perfect clarity). Be honest.
-- Respond ONLY with the JSON object matching the schema — no prose, no markdown fences.`;
+- Respond ONLY with the JSON object matching the schema - no prose, no markdown fences.`;
 
-// ── Extractor ────────────────────────────────────────────────────────────────
-
-export class AnthropicPrescriptionExtractor implements PrescriptionExtractor {
-  private client: Anthropic;
-
-  constructor() {
-    if (!env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        "ANTHROPIC_API_KEY is not set — cannot use AnthropicPrescriptionExtractor",
-      );
-    }
-    this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-  }
+export class AnthropicPrescriptionExtractor
+  implements PrescriptionExtractor
+{
+  private client: Anthropic | null = null;
 
   async extract(
     absoluteFilePath: string,
@@ -82,7 +69,7 @@ export class AnthropicPrescriptionExtractor implements PrescriptionExtractor {
       fileSizeBytes: fileBuffer.length,
     });
 
-    const response = await this.client.messages.parse({
+    const response = await this.getClient().messages.parse({
       model: "claude-opus-4-7",
       max_tokens: 2048,
       thinking: { type: "adaptive" },
@@ -90,7 +77,6 @@ export class AnthropicPrescriptionExtractor implements PrescriptionExtractor {
         {
           type: "text",
           text: PRESCRIPTION_SYSTEM_PROMPT,
-          // Prompt caching — stable system prompt is cached across calls
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -149,6 +135,22 @@ export class AnthropicPrescriptionExtractor implements PrescriptionExtractor {
       },
     };
   }
+
+  private getClient(): Anthropic {
+    if (this.client) {
+      return this.client;
+    }
+
+    if (!env.ANTHROPIC_API_KEY) {
+      throw new Error(
+        "ANTHROPIC_API_KEY is not set - cannot process OCR with Anthropic",
+      );
+    }
+
+    this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    return this.client;
+  }
 }
 
-export const anthropicPrescriptionExtractor = new AnthropicPrescriptionExtractor();
+export const anthropicPrescriptionExtractor =
+  new AnthropicPrescriptionExtractor();
