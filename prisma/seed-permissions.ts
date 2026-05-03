@@ -1,12 +1,26 @@
+/// <reference types="node" />
 /**
  * Seeds the Permission table with all platform-defined permission codes.
  * Run with: npx ts-node prisma/seed-permissions.ts
  *
  * Idempotent: uses upsert on `code`, safe to re-run.
  */
+import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { createPrismaPgAdapter } from "../src/core/db/pg-adapter";
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const prisma = new PrismaClient({
+  adapter: createPrismaPgAdapter({
+    connectionString: process.env.DATABASE_URL ?? "",
+    poolMax: Number(process.env.DATABASE_POOL_MAX ?? 5),
+    idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT_MS ?? 30_000),
+    connectionTimeoutMillis: Number(
+      process.env.DATABASE_POOL_CONNECTION_TIMEOUT_MS ?? 10_000,
+    ),
+  }),
+});
 
 const PERMISSIONS = [
   // Branches

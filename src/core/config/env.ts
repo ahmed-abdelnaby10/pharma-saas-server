@@ -93,7 +93,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  const errors = parsed.error.flatten().fieldErrors;
+  const errors = z.treeifyError(parsed.error);
 
   console.error("Invalid environment variables:", errors);
   process.exit(1);

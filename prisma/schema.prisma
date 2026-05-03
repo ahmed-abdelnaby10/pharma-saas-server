@@ -258,9 +258,9 @@ model Plan {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  features        PlanFeature[]
-  subscriptions   Subscription[]
-  signupRequests  TenantSignupRequest[]
+  features       PlanFeature[]
+  subscriptions  Subscription[]
+  signupRequests TenantSignupRequest[]
 
   @@index([isActive])
   @@index([billingInterval, isActive])
