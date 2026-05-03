@@ -7,6 +7,8 @@ import { InvoiceExtractedData } from "./invoice-extracted-data.type";
 import { env } from "../../../../core/config/env";
 import { logger } from "../../../../core/logger/logger";
 
+// ── Zod schema mirroring InvoiceExtractedData ────────────────────────────────
+
 const LineItemSchema = z.object({
   description: z.string(),
   quantity: z.number(),
@@ -31,6 +33,8 @@ const InvoiceSchema = z.object({
     .describe("Your overall extraction confidence from 0 to 1"),
 });
 
+// ── Stable system prompt (cached) ───────────────────────────────────────────
+
 const INVOICE_SYSTEM_PROMPT = `You are a pharmacy invoice OCR specialist.
 Extract structured data from the provided invoice document (image or PDF).
 
@@ -41,10 +45,21 @@ Rules:
 - currency: return the ISO 4217 code (e.g. SAR, USD, EUR). Default to SAR if unclear.
 - If a field is not present or illegible, return null.
 - confidence: a float from 0 (nothing readable) to 1 (perfect clarity). Be honest.
-- Respond ONLY with the JSON object matching the schema - no prose, no markdown fences.`;
+- Respond ONLY with the JSON object matching the schema — no prose, no markdown fences.`;
+
+// ── Extractor ────────────────────────────────────────────────────────────────
 
 export class AnthropicInvoiceExtractor implements InvoiceExtractor {
-  private client: Anthropic | null = null;
+  private client: Anthropic;
+
+  constructor() {
+    if (!env.ANTHROPIC_API_KEY) {
+      throw new Error(
+        "ANTHROPIC_API_KEY is not set — cannot use AnthropicInvoiceExtractor",
+      );
+    }
+    this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  }
 
   async extract(
     absoluteFilePath: string,
@@ -60,7 +75,9 @@ export class AnthropicInvoiceExtractor implements InvoiceExtractor {
       fileSizeBytes: fileBuffer.length,
     });
 
-    const response = await this.getClient().messages.parse({
+    // messages.parse() validates the response against the Zod schema
+    // and exposes parsed_output directly
+    const response = await this.client.messages.parse({
       model: "claude-opus-4-7",
       max_tokens: 2048,
       thinking: { type: "adaptive" },
@@ -68,6 +85,7 @@ export class AnthropicInvoiceExtractor implements InvoiceExtractor {
         {
           type: "text",
           text: INVOICE_SYSTEM_PROMPT,
+          // Prompt caching — stable system prompt is cached across calls
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -105,7 +123,9 @@ export class AnthropicInvoiceExtractor implements InvoiceExtractor {
   private buildFileContent(
     base64Data: string,
     mimeType: string,
-  ): Anthropic.Messages.ImageBlockParam | Anthropic.Messages.DocumentBlockParam {
+  ):
+    | Anthropic.Messages.ImageBlockParam
+    | Anthropic.Messages.DocumentBlockParam {
     if (mimeType === "application/pdf") {
       return {
         type: "document",
@@ -117,29 +137,19 @@ export class AnthropicInvoiceExtractor implements InvoiceExtractor {
       };
     }
 
+    // image/jpeg | image/png | image/gif | image/webp
     return {
       type: "image",
       source: {
         type: "base64",
-        media_type: mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+        media_type: mimeType as
+          | "image/jpeg"
+          | "image/png"
+          | "image/gif"
+          | "image/webp",
         data: base64Data,
       },
     };
-  }
-
-  private getClient(): Anthropic {
-    if (this.client) {
-      return this.client;
-    }
-
-    if (!env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        "ANTHROPIC_API_KEY is not set - cannot process OCR with Anthropic",
-      );
-    }
-
-    this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-    return this.client;
   }
 }
 
