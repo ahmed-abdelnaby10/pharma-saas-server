@@ -11,9 +11,20 @@ export class PlatformAuthRepository {
     email: string,
   ): Promise<PlatformAdminAuthRecord | null> {
     return prisma.platformAdmin.findUnique({
-      where: {
-        email,
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        fullName: true,
+        isActive: true,
       },
+    });
+  }
+
+  async findAdminById(id: string): Promise<PlatformAdminAuthRecord | null> {
+    return prisma.platformAdmin.findUnique({
+      where: { id },
       select: {
         id: true,
         email: true,

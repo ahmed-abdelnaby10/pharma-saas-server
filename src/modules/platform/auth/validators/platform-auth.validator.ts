@@ -6,6 +6,10 @@ const platformLoginSchema = z.object({
   password: z.string().trim().min(1),
 });
 
+const platformRefreshSchema = z.object({
+  refreshToken: z.string().trim().min(1),
+});
+
 export const parsePlatformLoginDto = (input: unknown): PlatformLoginDto => {
   const result = platformLoginSchema.parse(input);
 
@@ -13,4 +17,8 @@ export const parsePlatformLoginDto = (input: unknown): PlatformLoginDto => {
     email: result.email.toLowerCase(),
     password: result.password,
   };
+};
+
+export const parsePlatformRefreshDto = (input: unknown): { refreshToken: string } => {
+  return platformRefreshSchema.parse(input);
 };
