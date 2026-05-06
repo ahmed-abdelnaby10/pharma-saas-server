@@ -85,13 +85,21 @@ export class SubscriptionsRepository {
 
   /**
    * Cancel the current subscription and create a new one for the new plan
-   * in a single transaction. Carries over trial status when the tenant is
-   * still within its trial window.
+   * in a single transaction.
+   *
+   * Trial carry-over rules:
+   * - New plan trialDays === 0  → trial ends immediately regardless of how
+   *   much time was left; Tenant.isTrialActive is cleared, Tenant.trialEndsAt
+   *   is set to now, new subscription status is "active".
+   * - New plan trialDays > 0 AND tenant is still within its trial window
+   *   → original trialEndsAt is carried over (clock is NOT reset).
+   * - Tenant not in trial → new subscription is "active" regardless.
    */
   async changePlanWithTransaction(data: {
     tenantId: string;
     currentSubscriptionId: string;
     newPlanId: string;
+    newPlanTrialDays: number;
     tenantIsTrialActive: boolean;
     tenantTrialEndsAt: Date | null;
   }): Promise<SubscriptionWithRelations> {
@@ -108,16 +116,28 @@ export class SubscriptionsRepository {
         },
       });
 
-      // 2. Determine status for the new subscription
+      // 2. Determine whether the tenant stays in trial.
+      //    If the new plan has no trial days, force-end the trial even when
+      //    the tenant is still within their original window.
       const stillInTrial =
+        data.newPlanTrialDays > 0 &&
         data.tenantIsTrialActive &&
         data.tenantTrialEndsAt !== null &&
         data.tenantTrialEndsAt > now;
 
+      // 3. If the trial is being cut short, clear tenant trial fields so other
+      //    parts of the system (auth token, access checks) see the correct state.
+      if (!stillInTrial && data.tenantIsTrialActive) {
+        await tx.tenant.update({
+          where: { id: data.tenantId },
+          data: { isTrialActive: false, trialEndsAt: now },
+        });
+      }
+
+      // 4. Create new subscription
       const newStatus: SubscriptionStatus = stillInTrial ? "trialing" : "active";
       const newTrialEndsAt = stillInTrial ? data.tenantTrialEndsAt! : undefined;
 
-      // 3. Create new subscription
       return tx.subscription.create({
         data: {
           tenantId: data.tenantId,
