@@ -1,4 +1,5 @@
 export { plansRoutes } from "./routes/plans.routes";
+export { publicPlansRoutes } from "./routes/public-plans.routes";
 export { plansController } from "./controller/plans.controller";
 export { plansService } from "./service/plans.service";
 export { plansRepository } from "./repository/plans.repository";

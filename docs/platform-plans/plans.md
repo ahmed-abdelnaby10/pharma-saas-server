@@ -17,7 +17,7 @@ Manage SaaS plans and their feature definitions from the platform side before su
 
 Creates a plan with optional feature definitions.
 
-### `GET /api/v1/platform/plans`
+### `GET /api/v1/plans`
 
 Lists plans with optional filtering by activity, billing interval, or text search.
 
@@ -30,6 +30,12 @@ Returns a single plan with features.
 Updates plan fields and optionally replaces the full feature set.
 
 ## Headers
+
+### Public list endpoint (`GET /api/v1/plans`)
+
+- `Accept-Language` optional
+
+### Protected platform endpoints (`POST`, `GET /:planId`, `PATCH`)
 
 - `Authorization: Bearer <platform-access-token>` required
 - `Accept-Language` optional
@@ -136,7 +142,8 @@ Update example:
 
 ## Permissions Required
 
-- Platform access token required
+- `GET /api/v1/plans` is public (no token required)
+- Platform access token required for create, get by id, and update
 
 ## Tenant / Branch Scope Rules
 

@@ -46,20 +46,15 @@
         "method": "GET",
         "header": [
           {
-            "key": "Authorization",
-            "value": "Bearer {{platformAccessToken}}",
-            "type": "text"
-          },
-          {
             "key": "Accept-Language",
             "value": "en",
             "type": "text"
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/platform/plans?isActive=true&billingInterval=monthly&search=starter",
+          "raw": "{{baseUrl}}/api/v1/plans?isActive=true&billingInterval=monthly&search=starter",
           "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "platform", "plans"],
+          "path": ["api", "v1", "plans"],
           "query": [
             {
               "key": "isActive",
@@ -75,7 +70,7 @@
             }
           ]
         },
-        "description": "Lists plans with optional filters."
+        "description": "Public endpoint that lists plans with optional filters."
       },
       "response": []
     },
