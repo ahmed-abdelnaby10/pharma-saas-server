@@ -2,47 +2,77 @@
   "info": {
     "name": "Signups",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Public signup request flow and platform admin review queue. Pharmacy owners submit a request; a platform admin approves or rejects it. Approval creates the tenant account."
+    "description": "Public signup request flow and platform admin review queue. Pharmacy owners submit a request; a platform admin approves or rejects it. Approval creates the tenant account atomically, then fires a fire-and-forget audit log entry and notification stubs."
   },
   "item": [
     {
       "name": "Submit signup request (public)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en", "description": "en or ar" }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"fullName\": \"Ahmed Hassan\",\n  \"email\": \"ahmed@royalpharmacy.eg\",\n  \"phone\": \"+20100123456\",\n  \"pharmacyNameEn\": \"Royal Pharmacy\",\n  \"pharmacyNameAr\": \"الصيدلية الملكية\",\n  \"notes\": \"Two branches in Cairo\"\n}"
+          "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"fullName\": \"Ahmed Hassan\",\n  \"email\": \"ahmed@royalpharmacy.eg\",\n  \"phone\": \"+20100123456\",\n  \"pharmacyNameEn\": \"Royal Pharmacy\",\n  \"pharmacyNameAr\": \"الصيدلية الملكية\",\n  \"preferredLanguage\": \"en\",\n  \"notes\": \"Two branches in Cairo\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/signups",
           "host": ["{{baseUrl}}"],
           "path": ["signups"]
         },
-        "description": "No authentication required. Creates a PENDING signup request for admin review."
+        "description": "No authentication required. Creates a PENDING signup request for admin review.\n\n`preferredLanguage` is optional (default: `en`). The value is stored on the request and forwarded to the new Tenant and TenantSettings rows on approval."
+      }
+    },
+    {
+      "name": "Submit signup request — Arabic preference",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "ar" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"fullName\": \"محمد علي\",\n  \"email\": \"mo@nilecare.eg\",\n  \"phone\": \"+20111987654\",\n  \"pharmacyNameEn\": \"Nile Care Pharmacy\",\n  \"pharmacyNameAr\": \"صيدلية نايل كير\",\n  \"preferredLanguage\": \"ar\",\n  \"notes\": \"فرع واحد في الإسكندرية\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/signups",
+          "host": ["{{baseUrl}}"],
+          "path": ["signups"]
+        },
+        "description": "Same endpoint with Arabic preferred language. On approval, Tenant.preferredLanguage and TenantSettings.defaultLanguage will both be set to `ar`."
       }
     },
     {
       "name": "List signup requests",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
         "url": {
           "raw": "{{baseUrl}}/platform/signups?status=PENDING",
           "host": ["{{baseUrl}}"],
           "path": ["platform", "signups"],
           "query": [
             { "key": "status", "value": "PENDING", "description": "PENDING | APPROVED | REJECTED" },
-            { "key": "search", "value": "", "description": "Search by name, email, pharmacy name", "disabled": true }
+            { "key": "search", "value": "", "description": "Search by fullName, email, pharmacyNameEn, pharmacyNameAr", "disabled": true }
           ]
-        }
+        },
+        "description": "Returns all requests matching the filter. Response includes `preferredLanguage` and the plan's `trialDays`."
       }
     },
     {
       "name": "Get signup request",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
         "url": {
           "raw": "{{baseUrl}}/platform/signups/{{signupId}}",
           "host": ["{{baseUrl}}"],
@@ -54,13 +84,16 @@
       "name": "Approve signup request",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+          { "key": "Accept-Language", "value": "en" }
+        ],
         "url": {
           "raw": "{{baseUrl}}/platform/signups/{{signupId}}/approve",
           "host": ["{{baseUrl}}"],
           "path": ["platform", "signups", "{{signupId}}", "approve"]
         },
-        "description": "Creates a tenant account and a trialing subscription. Marks the request APPROVED and links the new tenantId."
+        "description": "Approves a PENDING request. Side effects (in order):\n\n1. **Atomic transaction** — creates Tenant, TenantSettings, and Subscription.\n   - `Tenant.preferredLanguage` = request.preferredLanguage (not hardcoded)\n   - `TenantSettings.defaultLanguage` = request.preferredLanguage\n   - `Subscription.trialEndsAt` = now + plan.trialDays (not hardcoded 14)\n2. Links `TenantSignupRequest.tenantId` to the new tenant.\n3. **Fire-and-forget audit log** — records `signup.approve` in AuditLog.\n4. **Fire-and-forget notification stubs** — logs intent to send welcome email to applicant and confirmation to platform team (will call real mailer once email service is wired up).\n\nReturns 400 if the request is not PENDING."
       }
     },
     {
@@ -69,7 +102,8 @@
         "method": "POST",
         "header": [
           { "key": "Authorization", "value": "Bearer {{platformToken}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept-Language", "value": "en" }
         ],
         "body": {
           "mode": "raw",
@@ -79,11 +113,12 @@
           "raw": "{{baseUrl}}/platform/signups/{{signupId}}/reject",
           "host": ["{{baseUrl}}"],
           "path": ["platform", "signups", "{{signupId}}", "reject"]
-        }
+        },
+        "description": "Rejects a PENDING request. Records rejectionReason and fires a fire-and-forget audit log entry (`signup.reject`). Returns 400 if the request is not PENDING."
       }
     }
   ],
   "variable": [
-    { "key": "signupId", "value": "", "description": "Signup request ID from submit response" }
+    { "key": "signupId", "value": "", "description": "Signup request ID from submit or list response" }
   ]
 }
