@@ -6,7 +6,10 @@ import { UpdatePlanDto } from "../dto/update-plan.dto";
 import { PlanWithFeatures } from "../mapper/plans.mapper";
 
 const planInclude = {
-  features: true,
+  features: {
+    include: { definition: true },
+    orderBy: { featureKey: "asc" },
+  },
 } satisfies Prisma.PlanInclude;
 
 const buildCreatePlanData = (

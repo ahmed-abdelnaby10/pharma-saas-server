@@ -13,6 +13,7 @@ import { usageRoutes } from "../modules/platform/usage";
 import { featureOverridesRoutes } from "../modules/platform/feature-overrides";
 import { signupsRoutes } from "../modules/platform/signups";
 import { releasesRoutes } from "../modules/platform/releases";
+import { featureDefinitionsRoutes } from "../modules/platform/feature-definitions";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/audit", auditLogsRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/signups", signupsRoutes);
 router.use("/releases", releasesRoutes);
+router.use("/features", featureDefinitionsRoutes);
 
 export const platformRoutes = router;

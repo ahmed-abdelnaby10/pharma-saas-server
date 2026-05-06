@@ -13,11 +13,11 @@ export class PlansController {
 
   create = async (req: Request, res: Response) => {
     const payload = parseCreatePlanDto(req.body);
-    const plan = await this.service.createPlan(payload);
+    const plan = await this.service.createPlan(payload, req.lang ?? "en");
 
     return res.status(201).json(
       successResponse(
-        req.t?.("plan.created") || "Plan created successfully",
+        req.t?.("plan.created") ?? "Plan created successfully",
         plan,
         undefined,
         req.requestId,
@@ -27,11 +27,11 @@ export class PlansController {
 
   list = async (req: Request, res: Response) => {
     const query = parseQueryPlansDto(req.query);
-    const plans = await this.service.listPlans(query);
+    const plans = await this.service.listPlans(query, req.lang ?? "en");
 
     return res.status(200).json(
       successResponse(
-        req.t?.("common.ok") || "OK",
+        req.t?.("common.ok") ?? "OK",
         plans,
         undefined,
         req.requestId,
@@ -41,11 +41,11 @@ export class PlansController {
 
   getById = async (req: Request, res: Response) => {
     const planId = parsePlanIdParam(req.params);
-    const plan = await this.service.getPlan(planId);
+    const plan = await this.service.getPlan(planId, req.lang ?? "en");
 
     return res.status(200).json(
       successResponse(
-        req.t?.("common.ok") || "OK",
+        req.t?.("common.ok") ?? "OK",
         plan,
         undefined,
         req.requestId,
@@ -56,11 +56,11 @@ export class PlansController {
   update = async (req: Request, res: Response) => {
     const planId = parsePlanIdParam(req.params);
     const payload = parseUpdatePlanDto(req.body);
-    const plan = await this.service.updatePlan(planId, payload);
+    const plan = await this.service.updatePlan(planId, payload, req.lang ?? "en");
 
     return res.status(200).json(
       successResponse(
-        req.t?.("plan.updated") || "Plan updated successfully",
+        req.t?.("plan.updated") ?? "Plan updated successfully",
         plan,
         undefined,
         req.requestId,
