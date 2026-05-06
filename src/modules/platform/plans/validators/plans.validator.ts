@@ -1,12 +1,23 @@
 import { z } from "zod";
+import { VALID_FEATURE_KEYS } from "../../../../core/features/feature-registry";
 import { CreatePlanDto } from "../dto/create-plan.dto";
 import { QueryPlansDto } from "../dto/query-plan.dto";
 import { UpdatePlanDto } from "../dto/update-plan.dto";
 
 const featureSchema = z.object({
-  featureKey: z.string().trim().min(2).max(120),
+  featureKey: z
+    .string()
+    .trim()
+    .min(2)
+    .max(120)
+    .refine(
+      (key) => VALID_FEATURE_KEYS.has(key.trim().toLowerCase()),
+      {
+        message: `Unknown feature key. Must be one of: ${[...VALID_FEATURE_KEYS].join(", ")}`,
+      },
+    ),
   enabled: z.boolean().default(true),
-  limitValue: z.number().int().positive().optional(),
+  limitValue: z.number().int().nonnegative().optional(),
 });
 
 const normalizeCode = (value: string) => value.trim().toLowerCase();
