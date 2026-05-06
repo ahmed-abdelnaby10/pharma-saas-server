@@ -8,6 +8,7 @@ const signupRequestSelect = {
   phone: true,
   pharmacyNameEn: true,
   pharmacyNameAr: true,
+  preferredLanguage: true,
   notes: true,
   status: true,
   reviewedById: true,
@@ -16,7 +17,7 @@ const signupRequestSelect = {
   tenantId: true,
   createdAt: true,
   updatedAt: true,
-  plan: { select: { id: true, code: true, name: true } },
+  plan: { select: { id: true, code: true, name: true, trialDays: true } },
 } satisfies Prisma.TenantSignupRequestSelect;
 
 export type SignupRequestRecord = Prisma.TenantSignupRequestGetPayload<{
@@ -35,6 +36,7 @@ export function mapSignupRequestResponse(record: SignupRequestRecord) {
     phone: record.phone,
     pharmacyNameEn: record.pharmacyNameEn,
     pharmacyNameAr: record.pharmacyNameAr,
+    preferredLanguage: record.preferredLanguage,
     notes: record.notes,
     status: record.status,
     reviewedById: record.reviewedById,

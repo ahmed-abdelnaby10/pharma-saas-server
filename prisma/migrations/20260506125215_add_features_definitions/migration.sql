@@ -1,0 +1,2 @@
+-- This migration was applied directly to the database and is recorded here for history consistency.
+-- The feature_definitions table was created via 20260506123320_add_feature_definitions.
