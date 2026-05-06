@@ -25,6 +25,7 @@ export const FEATURE_KEYS = {
   USERS_MAX:            "users.max",
 
   // ── Catalog ───────────────────────────────────────────────────────────────
+  CATALOG_MEDICINES:     "catalog.medicines",
   CATALOG_PRODUCTS_MAX:  "catalog.products_max",
   CATALOG_GLOBAL_ACCESS: "catalog.global_access",
 
@@ -171,6 +172,17 @@ export const FEATURE_REGISTRY: FeatureMeta[] = [
   },
 
   // ── Catalog ───────────────────────────────────────────────────────────────
+  {
+    key: FEATURE_KEYS.CATALOG_MEDICINES,
+    type: "boolean",
+    labelEn: "Medicine Catalog",
+    labelAr: "كتالوج الأدوية",
+    descriptionEn: "Access to medicine catalog features",
+    descriptionAr: "الوصول إلى خصائص كتالوج الأدوية",
+    module: "catalog",
+    requiresKeys: [],
+    isActive: true,
+  },
   {
     key: FEATURE_KEYS.CATALOG_PRODUCTS_MAX,
     type: "limit",

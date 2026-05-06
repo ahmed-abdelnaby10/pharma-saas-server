@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "seed:platform-admin": "tsx prisma/seed-platform-admin.ts",
+    "seed:plans-definitions": "tsx prisma/seed-feature-definitions.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",

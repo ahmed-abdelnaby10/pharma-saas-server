@@ -58,6 +58,38 @@ ON CONFLICT ("key") DO UPDATE SET
   "isActive"      = EXCLUDED."isActive",
   "updatedAt"     = NOW();
 
+-- Backfill any legacy keys already present in data so FK creation never fails.
+INSERT INTO "feature_definitions" (
+  "key",
+  "type",
+  "labelEn",
+  "labelAr",
+  "descriptionEn",
+  "descriptionAr",
+  "module",
+  "requiresKeys",
+  "isActive",
+  "updatedAt"
+)
+SELECT
+  legacy_keys."key",
+  'boolean',
+  legacy_keys."key",
+  legacy_keys."key",
+  'Backfilled legacy feature key to satisfy foreign key integrity.',
+  'Legacy key backfilled to satisfy foreign key integrity.',
+  split_part(legacy_keys."key", '.', 1),
+  '{}'::TEXT[],
+  false,
+  NOW()
+FROM (
+  SELECT DISTINCT "featureKey" AS "key" FROM "PlanFeature"
+  UNION
+  SELECT DISTINCT "featureKey" AS "key" FROM "TenantFeatureOverride"
+) AS legacy_keys
+LEFT JOIN "feature_definitions" fd ON fd."key" = legacy_keys."key"
+WHERE fd."key" IS NULL;
+
 -- AddForeignKey (safe now — all valid keys exist in feature_definitions)
 ALTER TABLE "PlanFeature" ADD CONSTRAINT "PlanFeature_featureKey_fkey" FOREIGN KEY ("featureKey") REFERENCES "feature_definitions"("key") ON DELETE RESTRICT ON UPDATE CASCADE;
 
