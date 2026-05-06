@@ -7,6 +7,7 @@ export const createSignupRequestSchema = z.object({
   phone: z.string().trim().optional(),
   pharmacyNameEn: z.string().min(2).max(120),
   pharmacyNameAr: z.string().min(2).max(120),
+  preferredLanguage: z.enum(["en", "ar"]).optional().default("en"),
   notes: z.string().max(1000).optional(),
 });
 
