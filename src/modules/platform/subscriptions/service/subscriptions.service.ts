@@ -134,6 +134,7 @@ export class SubscriptionsService {
       tenantId,
       currentSubscriptionId: current.id,
       newPlanId: newPlan.id,
+      newPlanTrialDays: newPlan.trialDays,
       tenantIsTrialActive: tenant.isTrialActive,
       tenantTrialEndsAt: tenant.trialEndsAt,
     });
