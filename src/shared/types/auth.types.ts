@@ -35,6 +35,20 @@ export type AccessTokenPayload = AuthContext & {
   tokenType: "access";
 };
 
+/** Minimal payload stored in the platform admin refresh token. */
+export interface PlatformRefreshTokenPayload {
+  adminId: string;
+  tokenType: "platform_refresh";
+}
+
+export const isPlatformRefreshTokenPayload = (
+  value: unknown,
+): value is PlatformRefreshTokenPayload => {
+  if (!value || typeof value !== "object") return false;
+  const c = value as Partial<PlatformRefreshTokenPayload>;
+  return c.tokenType === "platform_refresh" && typeof c.adminId === "string";
+};
+
 const isStringArray = (value: unknown): value is string[] => {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 };

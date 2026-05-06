@@ -5,5 +5,6 @@ import { platformAuthController } from "../controller/platform-auth.controller";
 const router = Router();
 
 router.post("/login", asyncHandler(platformAuthController.login));
+router.post("/refresh", asyncHandler(platformAuthController.refresh));
 
 export const platformAuthRoutes = router;
