@@ -9,7 +9,7 @@ const signupRequestSelect = {
   pharmacyNameEn: true,
   pharmacyNameAr: true,
   preferredLanguage: true,
-  passwordHash: true, // read internally for approval; never included in response
+  passwordHash: true, // internal only; never returned by response mapper
   notes: true,
   status: true,
   reviewedById: true,
@@ -28,7 +28,6 @@ export type SignupRequestRecord = Prisma.TenantSignupRequestGetPayload<{
 export { signupRequestSelect };
 
 export function mapSignupRequestResponse(record: SignupRequestRecord) {
-  // passwordHash is intentionally excluded — it is internal only
   return {
     id: record.id,
     planId: record.planId,
