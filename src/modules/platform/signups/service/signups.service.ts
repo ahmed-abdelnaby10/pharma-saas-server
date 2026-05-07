@@ -31,9 +31,17 @@ export class SignupsService {
       throw new ConflictError("Plan is not active", { planId: payload.planId }, "plan.inactive");
     }
 
-    // Prevent duplicate pending requests from the same email
-    const existing = await this.repository.findByEmail(payload.email);
-    if (existing) {
+    // Block resubmission when a PENDING or APPROVED request already exists.
+    // REJECTED requests are allowed through so applicants can reapply.
+    const blocking = await this.repository.findBlockingByEmail(payload.email);
+    if (blocking) {
+      if (blocking.status === "APPROVED") {
+        throw new ConflictError(
+          "An account already exists for this email. Please log in instead.",
+          { email: payload.email },
+          "signup.already_approved",
+        );
+      }
       throw new ConflictError(
         "A pending signup request already exists for this email",
         { email: payload.email },
