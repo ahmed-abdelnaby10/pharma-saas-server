@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
-import { parseQueryLowStock, parseQueryExpiring, parseQueryAllAlerts } from "../validators/alerts.validator";
+import { parseQueryLowStock, parseQueryExpiring, parseQueryAllAlerts, parseNotifyBody } from "../validators/alerts.validator";
 import { alertsService, AlertsService } from "../service/alerts.service";
 
 export class AlertsController {
@@ -63,8 +63,8 @@ export class AlertsController {
   notify = async (req: Request, res: Response) => {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
-    const query = parseQueryAllAlerts(req.query);
-    const result = await this.service.dispatchAlertNotifications(auth, query.branchId, query.days);
+    const body = parseNotifyBody(req.body);
+    const result = await this.service.dispatchAlertNotifications(auth, body.branchId, body.days);
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",

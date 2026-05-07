@@ -41,3 +41,17 @@ export function parseQueryAllAlerts(query: unknown): QueryAllAlertsDto {
   }
   return result.data;
 }
+
+// notify is a POST — branchId comes from body, days is optional
+const notifyBodySchema = z.object({
+  branchId: z.string().cuid(),
+  days: z.number().int().min(1).max(365).optional().default(30),
+});
+
+export function parseNotifyBody(body: unknown): QueryAllAlertsDto {
+  const result = notifyBodySchema.safeParse(body);
+  if (!result.success) {
+    throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
+  }
+  return result.data;
+}
