@@ -8,6 +8,8 @@ const createBranchSchema = z.object({
   nameAr: z.string().trim().min(2).max(120),
   address: z.string().trim().min(2).max(500).optional(),
   phone: z.string().trim().min(5).max(30).optional(),
+  email: z.string().trim().email().optional(),
+  isActive: z.boolean().default(true),
   isDefault: z.boolean().default(false),
 });
 
@@ -17,6 +19,8 @@ const updateBranchSchema = z
     nameAr: z.string().trim().min(2).max(120).optional(),
     address: z.string().trim().min(2).max(500).optional(),
     phone: z.string().trim().min(5).max(30).optional(),
+    email: z.string().trim().email().optional(),
+    isActive: z.boolean().optional(),
     isDefault: z.boolean().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {

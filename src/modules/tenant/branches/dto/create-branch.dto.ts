@@ -3,5 +3,7 @@ export type CreateBranchDto = {
   nameAr: string;
   address?: string;
   phone?: string;
+  email?: string;
+  isActive: boolean;
   isDefault: boolean;
 };

@@ -60,6 +60,8 @@ export class BranchesRepository {
         nameAr: payload.nameAr,
         address: payload.address ?? null,
         phone: payload.phone ?? null,
+        email: payload.email ?? null,
+        isActive: payload.isActive,
         isDefault: payload.isDefault,
       },
     });
@@ -84,6 +86,8 @@ export class BranchesRepository {
           nameAr: payload.nameAr,
           address: payload.address ?? null,
           phone: payload.phone ?? null,
+          email: payload.email ?? null,
+          isActive: payload.isActive,
           isDefault: true,
         },
       });
@@ -97,10 +101,12 @@ export class BranchesRepository {
   ): Promise<BranchRecord> {
     const data: Prisma.BranchUncheckedUpdateInput = {};
 
-    if (payload.nameEn !== undefined) data.nameEn = payload.nameEn;
-    if (payload.nameAr !== undefined) data.nameAr = payload.nameAr;
-    if ("address" in payload) data.address = payload.address ?? null;
-    if ("phone" in payload) data.phone = payload.phone ?? null;
+    if (payload.nameEn !== undefined)   data.nameEn   = payload.nameEn;
+    if (payload.nameAr !== undefined)   data.nameAr   = payload.nameAr;
+    if ("address" in payload)           data.address  = payload.address ?? null;
+    if ("phone" in payload)             data.phone    = payload.phone   ?? null;
+    if ("email" in payload)             data.email    = payload.email   ?? null;
+    if (payload.isActive !== undefined) data.isActive = payload.isActive;
     if (payload.isDefault !== undefined) data.isDefault = payload.isDefault;
 
     return prisma.branch.update({
@@ -124,10 +130,12 @@ export class BranchesRepository {
       });
 
       const data: Prisma.BranchUncheckedUpdateInput = { isDefault: true };
-      if (payload.nameEn !== undefined) data.nameEn = payload.nameEn;
-      if (payload.nameAr !== undefined) data.nameAr = payload.nameAr;
-      if ("address" in payload) data.address = payload.address ?? null;
-      if ("phone" in payload) data.phone = payload.phone ?? null;
+      if (payload.nameEn !== undefined)   data.nameEn   = payload.nameEn;
+      if (payload.nameAr !== undefined)   data.nameAr   = payload.nameAr;
+      if ("address" in payload)           data.address  = payload.address ?? null;
+      if ("phone" in payload)             data.phone    = payload.phone   ?? null;
+      if ("email" in payload)             data.email    = payload.email   ?? null;
+      if (payload.isActive !== undefined) data.isActive = payload.isActive;
 
       return tx.branch.update({
         where: { id: branchId, tenantId },
