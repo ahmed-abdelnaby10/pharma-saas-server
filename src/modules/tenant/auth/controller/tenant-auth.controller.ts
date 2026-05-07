@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
-import { parseTenantLoginDto, parseDeviceRefreshDto } from "../validators/tenant-auth.validator";
+import { parseTenantLoginDto, parseTenantRefreshDto, parseDeviceRefreshDto } from "../validators/tenant-auth.validator";
 import {
   tenantAuthService,
   TenantAuthService,
@@ -17,6 +17,24 @@ export class TenantAuthController {
     return res.status(200).json(
       successResponse(
         req.t?.("auth.login_success") || "Login successful",
+        result,
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  /**
+   * POST /tenant/auth/refresh  (no auth — called when JWT has expired)
+   * Validates the refresh token, confirms the account is still active,
+   * and issues a fresh access token + rotated refresh token.
+   */
+  refresh = async (req: Request, res: Response) => {
+    const { refreshToken } = parseTenantRefreshDto(req.body);
+    const result = await this.service.refresh(refreshToken);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("auth.token_refreshed") || "Token refreshed",
         result,
         undefined,
         req.requestId,
