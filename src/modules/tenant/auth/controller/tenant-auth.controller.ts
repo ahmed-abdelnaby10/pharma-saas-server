@@ -62,23 +62,21 @@ export class TenantAuthController {
   };
 
   me = async (req: Request, res: Response) => {
-    // req.auth is guaranteed to be a TenantAuthContext by tenantMiddleware
-    const auth = req.auth!;
-
-    if (!isTenantAuthContext(auth)) {
-      // Should never reach here after tenantMiddleware
+    if (!isTenantAuthContext(req.auth)) {
       return res.status(403).end();
     }
+
+    const lang = (req.auth.preferredLanguage ?? req.lang ?? "en") as "en" | "ar";
+    const result = await this.service.getMe(req.auth, lang);
 
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",
         {
-          userId: auth.userId,
-          tenantId: auth.tenantId,
-          preferredLanguage: auth.preferredLanguage ?? null,
-          roleCodes: auth.roleCodes,
-          permissions: auth.permissions,
+          ...result,
+          // attach JWT-level fields the client always needs alongside profile
+          roleCodes: req.auth.roleCodes,
+          permissions: req.auth.permissions,
         },
         undefined,
         req.requestId,
