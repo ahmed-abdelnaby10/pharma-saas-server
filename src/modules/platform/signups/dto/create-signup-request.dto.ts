@@ -8,6 +8,7 @@ export const createSignupRequestSchema = z.object({
   pharmacyNameEn: z.string().min(2).max(120),
   pharmacyNameAr: z.string().min(2).max(120),
   preferredLanguage: z.enum(["en", "ar"]).optional().default("en"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   notes: z.string().max(1000).optional(),
 });
 

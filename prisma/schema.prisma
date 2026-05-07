@@ -942,6 +942,7 @@ model TenantSignupRequest {
   pharmacyNameEn    String
   pharmacyNameAr    String
   preferredLanguage PreferredLanguage   @default(en)
+  passwordHash      String              // hashed on submission, used once on approval to create the owner TenantUser
   notes             String?
   status            SignupRequestStatus @default(PENDING)
   reviewedById      String? // PlatformAdmin id — soft reference

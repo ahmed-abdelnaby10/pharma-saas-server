@@ -38,7 +38,9 @@ export class SignupsRepository {
     });
   }
 
-  async create(data: CreateSignupRequestDto): Promise<SignupRequestRecord> {
+  async create(
+    data: Omit<CreateSignupRequestDto, "password"> & { passwordHash: string },
+  ): Promise<SignupRequestRecord> {
     return prisma.tenantSignupRequest.create({
       data,
       select: signupRequestSelect,
