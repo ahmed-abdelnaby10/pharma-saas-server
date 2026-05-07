@@ -59,6 +59,7 @@ export class TenantsRepository {
         data: {
           nameEn: payload.nameEn,
           nameAr: payload.nameAr,
+          slug: payload.slug,
           preferredLanguage: payload.preferredLanguage,
           isTrialActive: true,
           trialEndsAt,

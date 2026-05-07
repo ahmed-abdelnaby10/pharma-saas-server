@@ -20,6 +20,7 @@ export const mapTenantResponse = (tenant: TenantWithRelations) => {
     id: tenant.id,
     nameEn: tenant.nameEn,
     nameAr: tenant.nameAr,
+    slug: tenant.slug,
     preferredLanguage: tenant.preferredLanguage,
     status: tenant.status,
     isTrialActive: tenant.isTrialActive,

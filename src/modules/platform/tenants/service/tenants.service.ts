@@ -1,5 +1,6 @@
 import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
+import { generateUniqueTenantSlug } from "../../../../shared/utils/slug";
 import { plansRepository, PlansRepository } from "../../plans/repository/plans.repository";
 import { CreateTenantDto } from "../dto/create-tenant.dto";
 import { QueryTenantsDto } from "../dto/query-tenant.dto";
@@ -32,10 +33,12 @@ export class TenantsService {
       );
     }
 
-    const tenant = await this.repository.createWithTransaction(payload, {
-      id: plan.id,
-      trialDays: plan.trialDays,
-    });
+    const slug = await generateUniqueTenantSlug(payload.nameEn);
+
+    const tenant = await this.repository.createWithTransaction(
+      { ...payload, slug },
+      { id: plan.id, trialDays: plan.trialDays },
+    );
 
     return mapTenantResponse(tenant);
   }

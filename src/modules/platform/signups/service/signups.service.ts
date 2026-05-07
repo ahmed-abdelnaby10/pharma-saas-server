@@ -3,6 +3,7 @@ import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
 import { hashPassword } from "../../../../core/security/password";
+import { generateUniqueTenantSlug } from "../../../../shared/utils/slug";
 import { logAudit } from "../../../../core/audit/audit-logger";
 import { notifySignupApproval } from "../../../../core/notifications/notification-sender";
 import { plansRepository, PlansRepository } from "../../plans/repository/plans.repository";
@@ -82,10 +83,13 @@ export class SignupsService {
       );
     }
 
+    const slug = await generateUniqueTenantSlug(request.pharmacyNameEn);
+
     const tenant = await this.tenants.createWithTransaction(
       {
         nameEn: request.pharmacyNameEn,
         nameAr: request.pharmacyNameAr,
+        slug,
         preferredLanguage: request.preferredLanguage,
         planId: request.planId,
       },

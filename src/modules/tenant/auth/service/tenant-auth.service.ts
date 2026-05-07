@@ -32,8 +32,8 @@ export class TenantAuthService {
   constructor(private readonly repository: TenantAuthRepository) {}
 
   async login(payload: TenantLoginDto): Promise<TenantLoginResult> {
-    const record = await this.repository.findUserByTenantAndEmail(
-      payload.tenantId,
+    const record = await this.repository.findUserBySlugAndEmail(
+      payload.slug,
       payload.email,
     );
 
