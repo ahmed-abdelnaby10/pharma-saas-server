@@ -1,5 +1,10 @@
 import { comparePassword } from "../../../../core/security/password";
-import { signAccessToken, REMEMBER_ME_EXPIRES_IN } from "../../../../core/security/jwt";
+import {
+  signAccessToken,
+  signTenantRefreshToken,
+  verifyTenantRefreshToken,
+  REMEMBER_ME_EXPIRES_IN,
+} from "../../../../core/security/jwt";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
@@ -16,6 +21,7 @@ import {
 
 export type TenantLoginResult = {
   accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     email: string;
@@ -23,6 +29,11 @@ export type TenantLoginResult = {
     tenantId: string;
     preferredLanguage: Language;
   };
+};
+
+export type TenantRefreshResult = {
+  accessToken: string;
+  refreshToken: string;
 };
 
 export type HeartbeatResult = {
@@ -198,6 +209,8 @@ export class TenantAuthService {
         }
       : { status: "none", trialEndsAt: null, offlineValidUntil };
 
+    const tokenExpiry = payload.rememberMe ? REMEMBER_ME_EXPIRES_IN : undefined;
+
     const accessToken = signAccessToken(
       {
         scope: "tenant",
@@ -208,11 +221,18 @@ export class TenantAuthService {
         preferredLanguage,
         subscription,
       },
-      payload.rememberMe ? REMEMBER_ME_EXPIRES_IN : undefined,
+      tokenExpiry,
+    );
+
+    const refreshToken = signTenantRefreshToken(
+      record.id,
+      record.tenantId,
+      tokenExpiry,
     );
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: record.id,
         email: record.email,
@@ -221,6 +241,67 @@ export class TenantAuthService {
         preferredLanguage,
       },
     };
+  }
+
+  /**
+   * POST /refresh — validates the incoming refresh token, re-fetches the user
+   * to confirm the account is still active, then issues a fresh access token
+   * and a new refresh token (rotation).
+   */
+  async refresh(rawRefreshToken: string): Promise<TenantRefreshResult> {
+    const tokenPayload = verifyTenantRefreshToken(rawRefreshToken);
+
+    const user = await this.repository.findUserById(
+      tokenPayload.userId,
+      tokenPayload.tenantId,
+    );
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError(
+        "Refresh token is no longer valid",
+        undefined,
+        "auth.refresh_token_invalid",
+      );
+    }
+
+    if (user.tenant.status !== "active") {
+      throw new ForbiddenError(
+        "Tenant account is suspended",
+        undefined,
+        "user.tenant_suspended",
+      );
+    }
+
+    const { roleCodes, permissions } =
+      await rolesRepository.resolveUserRolesAndPermissions(user.id);
+
+    const preferredLanguage: Language =
+      (user.preferredLanguage as Language | null) ??
+      (user.tenant.preferredLanguage as Language);
+
+    const currentSub = await subscriptionsRepository.findCurrentByTenant(user.tenantId);
+    const offlineValidUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const subscription: SubscriptionClaim = currentSub
+      ? {
+          status: currentSub.status,
+          trialEndsAt: currentSub.trialEndsAt?.toISOString() ?? null,
+          offlineValidUntil,
+        }
+      : { status: "none", trialEndsAt: null, offlineValidUntil };
+
+    const accessToken = signAccessToken({
+      scope: "tenant",
+      userId: user.id,
+      tenantId: user.tenantId,
+      roleCodes,
+      permissions,
+      preferredLanguage,
+      subscription,
+    });
+
+    const refreshToken = signTenantRefreshToken(user.id, user.tenantId);
+
+    return { accessToken, refreshToken };
   }
 
   /**

@@ -49,6 +49,25 @@ export const isPlatformRefreshTokenPayload = (
   return c.tokenType === "platform_refresh" && typeof c.adminId === "string";
 };
 
+/** Minimal payload stored in the tenant user refresh token. */
+export interface TenantRefreshTokenPayload {
+  userId: string;
+  tenantId: string;
+  tokenType: "tenant_refresh";
+}
+
+export const isTenantRefreshTokenPayload = (
+  value: unknown,
+): value is TenantRefreshTokenPayload => {
+  if (!value || typeof value !== "object") return false;
+  const c = value as Partial<TenantRefreshTokenPayload>;
+  return (
+    c.tokenType === "tenant_refresh" &&
+    typeof c.userId === "string" &&
+    typeof c.tenantId === "string"
+  );
+};
+
 const isStringArray = (value: unknown): value is string[] => {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 };

@@ -7,6 +7,8 @@ import {
   toAuthContext,
   PlatformRefreshTokenPayload,
   isPlatformRefreshTokenPayload,
+  TenantRefreshTokenPayload,
+  isTenantRefreshTokenPayload,
 } from "../../shared/types/auth.types";
 import { UnauthorizedError } from "../../shared/errors/unauthorized-error";
 
@@ -66,6 +68,53 @@ export const verifyPlatformRefreshToken = (
     const payload = jwt.verify(token, env.JWT_REFRESH_SECRET);
 
     if (!isPlatformRefreshTokenPayload(payload)) {
+      throw new UnauthorizedError(
+        "Invalid refresh token",
+        undefined,
+        "auth.token_invalid",
+      );
+    }
+
+    return payload;
+  } catch (err) {
+    if (err instanceof UnauthorizedError) throw err;
+
+    throw new UnauthorizedError(
+      "Refresh token is invalid or expired",
+      undefined,
+      "auth.refresh_token_invalid",
+    );
+  }
+};
+
+/** Issues a long-lived refresh token for a tenant user. */
+export const signTenantRefreshToken = (
+  userId: string,
+  tenantId: string,
+  expiresIn?: string | number,
+): string => {
+  const payload: TenantRefreshTokenPayload = {
+    userId,
+    tenantId,
+    tokenType: "tenant_refresh",
+  };
+
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    expiresIn: (expiresIn ?? env.JWT_REFRESH_EXPIRES_IN) as jwt.SignOptions["expiresIn"],
+  });
+};
+
+/**
+ * Verifies a tenant refresh token and returns its payload.
+ * Throws `UnauthorizedError` for any failure — expired, tampered, wrong type.
+ */
+export const verifyTenantRefreshToken = (
+  token: string,
+): TenantRefreshTokenPayload => {
+  try {
+    const payload = jwt.verify(token, env.JWT_REFRESH_SECRET);
+
+    if (!isTenantRefreshTokenPayload(payload)) {
       throw new UnauthorizedError(
         "Invalid refresh token",
         undefined,

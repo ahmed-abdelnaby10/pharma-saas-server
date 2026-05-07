@@ -19,6 +19,14 @@ export const parseTenantLoginDto = (input: unknown): TenantLoginDto => {
   };
 };
 
+const refreshSchema = z.object({
+  refreshToken: z.string().trim().min(1),
+});
+
+export const parseTenantRefreshDto = (input: unknown): { refreshToken: string } => {
+  return refreshSchema.parse(input);
+};
+
 const deviceRefreshSchema = z.object({
   deviceToken: z.string().min(1),
 });

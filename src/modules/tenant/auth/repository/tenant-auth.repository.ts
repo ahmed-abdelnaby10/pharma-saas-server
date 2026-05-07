@@ -104,6 +104,19 @@ export class TenantAuthRepository {
   }
 
   /**
+   * Refresh flow — find user by id + tenantId to verify account is still active.
+   */
+  async findUserById(
+    userId: string,
+    tenantId: string,
+  ): Promise<TenantUserAuthRecord | null> {
+    return prisma.tenantUser.findUnique({
+      where: { id: userId, tenantId },
+      select: tenantUserAuthSelect,
+    });
+  }
+
+  /**
    * /me — full profile query: user + tenant + current subscription + plan.
    * Single round-trip via nested includes.
    */

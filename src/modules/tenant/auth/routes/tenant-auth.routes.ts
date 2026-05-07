@@ -8,6 +8,7 @@ const router = Router();
 
 // Public
 router.post("/login", asyncHandler(tenantAuthController.login));
+router.post("/refresh", asyncHandler(tenantAuthController.refresh));
 router.post("/device-refresh", asyncHandler(tenantAuthController.deviceRefresh));
 
 // Protected — tenant JWT required
