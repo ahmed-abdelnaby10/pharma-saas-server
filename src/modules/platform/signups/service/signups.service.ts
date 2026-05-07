@@ -2,6 +2,7 @@ import { ActorType } from "@prisma/client";
 import { ConflictError } from "../../../../shared/errors/conflict-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { BadRequestError } from "../../../../shared/errors/bad-request-error";
+import { hashPassword } from "../../../../core/security/password";
 import { logAudit } from "../../../../core/audit/audit-logger";
 import { notifySignupApproval } from "../../../../core/notifications/notification-sender";
 import { plansRepository, PlansRepository } from "../../plans/repository/plans.repository";
@@ -39,7 +40,10 @@ export class SignupsService {
       );
     }
 
-    const request = await this.repository.create(payload);
+    const { password, ...rest } = payload;
+    const passwordHash = await hashPassword(password);
+
+    const request = await this.repository.create({ ...rest, passwordHash });
     return mapSignupRequestResponse(request);
   }
 
@@ -78,8 +82,6 @@ export class SignupsService {
       );
     }
 
-    // ── Gap #1: use the plan's actual trialDays (was hardcoded to 14) ────────
-    // ── Gap #2: use the applicant's preferredLanguage (was hardcoded "en") ──
     const tenant = await this.tenants.createWithTransaction(
       {
         nameEn: request.pharmacyNameEn,
@@ -88,6 +90,14 @@ export class SignupsService {
         planId: request.planId,
       },
       { id: request.plan.id, trialDays: request.plan.trialDays },
+      // Owner TenantUser — created inside the same transaction so approval
+      // is fully atomic: if user creation fails the tenant is rolled back too.
+      {
+        email: request.email,
+        passwordHash: request.passwordHash,
+        fullName: request.fullName,
+        preferredLanguage: request.preferredLanguage,
+      },
     );
 
     const updated = await this.repository.approve(id, reviewedById, tenant.id);

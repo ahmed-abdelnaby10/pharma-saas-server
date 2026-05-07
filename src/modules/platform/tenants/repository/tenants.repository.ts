@@ -1,5 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, PreferredLanguage } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
+import { TENANT_ROLES } from "../../../tenant/roles/constants/roles.constants";
 import { CreateTenantDto } from "../dto/create-tenant.dto";
 import { UpdateTenantDto } from "../dto/update-tenant.dto";
 import { QueryTenantsDto } from "../dto/query-tenant.dto";
@@ -34,6 +35,18 @@ export class TenantsRepository {
   async createWithTransaction(
     payload: CreateTenantDto,
     plan: { id: string; trialDays: number },
+    /**
+     * When provided (signup flow), the owner TenantUser + tenant_owner Role
+     * are created atomically in the same transaction.
+     * Omit when creating a tenant directly via platform admin API — the owner
+     * user can be added separately through the users module.
+     */
+    owner?: {
+      email: string;
+      passwordHash: string;
+      fullName: string;
+      preferredLanguage: PreferredLanguage;
+    },
   ): Promise<TenantWithRelations> {
     const now = new Date();
     const trialEndsAt = new Date(
@@ -41,7 +54,8 @@ export class TenantsRepository {
     );
 
     return prisma.$transaction(async (tx) => {
-      return tx.tenant.create({
+      // 1. Create Tenant + TenantSettings + Subscription
+      const tenant = await tx.tenant.create({
         data: {
           nameEn: payload.nameEn,
           nameAr: payload.nameAr,
@@ -64,6 +78,34 @@ export class TenantsRepository {
         },
         include: tenantInclude,
       });
+
+      // 2–4. Owner user setup — only when coming from the signup flow
+      if (owner) {
+        const ownerRole = await tx.role.create({
+          data: {
+            tenantId: tenant.id,
+            code: TENANT_ROLES.OWNER,
+            nameEn: "Owner",
+            nameAr: "المالك",
+          },
+        });
+
+        const ownerUser = await tx.tenantUser.create({
+          data: {
+            tenantId: tenant.id,
+            email: owner.email,
+            passwordHash: owner.passwordHash,
+            fullName: owner.fullName,
+            preferredLanguage: owner.preferredLanguage,
+          },
+        });
+
+        await tx.userRole.create({
+          data: { userId: ownerUser.id, roleId: ownerRole.id },
+        });
+      }
+
+      return tenant;
     });
   }
 
