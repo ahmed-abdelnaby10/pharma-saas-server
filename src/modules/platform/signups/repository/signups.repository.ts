@@ -11,10 +11,17 @@ export class SignupsRepository {
     });
   }
 
-  async findByEmail(email: string): Promise<SignupRequestRecord | null> {
+  /**
+   * Returns the most recent request for this email that blocks a new submission:
+   *   PENDING  → already under review
+   *   APPROVED → tenant already exists for this email (should log in instead)
+   * REJECTED requests are intentionally excluded so the applicant can reapply.
+   */
+  async findBlockingByEmail(email: string): Promise<SignupRequestRecord | null> {
     return prisma.tenantSignupRequest.findFirst({
-      where: { email, status: "PENDING" },
+      where: { email, status: { in: ["PENDING", "APPROVED"] } },
       select: signupRequestSelect,
+      orderBy: { createdAt: "desc" },
     });
   }
 
