@@ -6,6 +6,7 @@ const tenantLoginSchema = z.object({
   slug: z.string().trim().min(1),
   email: z.string().trim().email(),
   password: z.string().trim().min(1),
+  rememberMe: z.boolean().default(false),
 });
 
 export const parseTenantLoginDto = (input: unknown): TenantLoginDto => {
@@ -14,6 +15,7 @@ export const parseTenantLoginDto = (input: unknown): TenantLoginDto => {
     slug: result.slug.toLowerCase(),
     email: result.email.toLowerCase(),
     password: result.password,
+    rememberMe: result.rememberMe,
   };
 };
 
