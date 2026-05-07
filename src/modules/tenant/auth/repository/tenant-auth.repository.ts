@@ -22,6 +22,55 @@ export type TenantUserAuthRecord = Prisma.TenantUserGetPayload<{
   select: typeof tenantUserAuthSelect;
 }>;
 
+const meSelect = {
+  id: true,
+  tenantId: true,
+  email: true,
+  fullName: true,
+  isActive: true,
+  preferredLanguage: true,
+  branchId: true,
+  createdAt: true,
+  tenant: {
+    select: {
+      id: true,
+      nameEn: true,
+      nameAr: true,
+      slug: true,
+      status: true,
+      isTrialActive: true,
+      trialEndsAt: true,
+      createdAt: true,
+      subscriptions: {
+        where: { status: { in: ["trialing", "active", "past_due"] } },
+        orderBy: { createdAt: "desc" as const },
+        take: 1,
+        select: {
+          id: true,
+          status: true,
+          startsAt: true,
+          endsAt: true,
+          trialEndsAt: true,
+          plan: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              billingInterval: true,
+              price: true,
+              currency: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.TenantUserSelect;
+
+export type TenantMeRecord = Prisma.TenantUserGetPayload<{
+  select: typeof meSelect;
+}>;
+
 export class TenantAuthRepository {
   /** Used internally and by the refresh flow where we already have the tenantId. */
   async findUserByTenantAndEmail(
@@ -51,6 +100,20 @@ export class TenantAuthRepository {
     return prisma.tenantUser.findUnique({
       where: { tenantId_email: { tenantId: tenant.id, email } },
       select: tenantUserAuthSelect,
+    });
+  }
+
+  /**
+   * /me — full profile query: user + tenant + current subscription + plan.
+   * Single round-trip via nested includes.
+   */
+  async findMeData(
+    userId: string,
+    tenantId: string,
+  ): Promise<TenantMeRecord | null> {
+    return prisma.tenantUser.findUnique({
+      where: { id: userId, tenantId },
+      select: meSelect,
     });
   }
 }

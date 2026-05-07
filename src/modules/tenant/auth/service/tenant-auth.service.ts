@@ -2,6 +2,7 @@ import { comparePassword } from "../../../../core/security/password";
 import { signAccessToken } from "../../../../core/security/jwt";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
+import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { Language } from "../../../../shared/types/locale.types";
 import { SubscriptionClaim, TenantAuthContext } from "../../../../shared/types/auth.types";
 import { rolesRepository } from "../../roles/repository/roles.repository";
@@ -10,6 +11,7 @@ import { TenantLoginDto } from "../dto/tenant-login.dto";
 import {
   tenantAuthRepository,
   TenantAuthRepository,
+  TenantMeRecord,
 } from "../repository/tenant-auth.repository";
 
 export type TenantLoginResult = {
@@ -27,6 +29,104 @@ export type HeartbeatResult = {
   accessToken: string;
   subscription: SubscriptionClaim;
 };
+
+export type MeResult = {
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+    preferredLanguage: string | null;
+    isActive: boolean;
+    branchId: string | null;
+    memberSince: string;
+  };
+  tenant: {
+    id: string;
+    name: string; // localized: nameEn or nameAr
+    nameEn: string;
+    nameAr: string;
+    slug: string;
+    status: string;
+    isTrialActive: boolean;
+    trialEndsAt: string | null;
+    memberSince: string;
+  };
+  subscription: {
+    id: string;
+    status: string;
+    startsAt: string;
+    endsAt: string | null;
+    trialEndsAt: string | null;
+    plan: {
+      id: string;
+      code: string;
+      name: string;
+      billingInterval: string;
+      price: string;
+      currency: string;
+    };
+  } | null;
+  accountStatus: "active" | "trialing" | "past_due" | "inactive" | "suspended";
+};
+
+function buildMeResult(record: TenantMeRecord, lang: Language): MeResult {
+  const sub = record.tenant.subscriptions[0] ?? null;
+
+  // Derive a single "accountStatus" the client can display directly
+  let accountStatus: MeResult["accountStatus"];
+  if (record.tenant.status !== "active") {
+    accountStatus = "suspended";
+  } else if (!record.isActive) {
+    accountStatus = "inactive";
+  } else if (sub?.status === "trialing") {
+    accountStatus = "trialing";
+  } else if (sub?.status === "past_due") {
+    accountStatus = "past_due";
+  } else {
+    accountStatus = "active";
+  }
+
+  return {
+    user: {
+      id: record.id,
+      email: record.email,
+      fullName: record.fullName,
+      preferredLanguage: record.preferredLanguage ?? null,
+      isActive: record.isActive,
+      branchId: record.branchId ?? null,
+      memberSince: record.createdAt.toISOString(),
+    },
+    tenant: {
+      id: record.tenant.id,
+      name: lang === "ar" ? record.tenant.nameAr : record.tenant.nameEn,
+      nameEn: record.tenant.nameEn,
+      nameAr: record.tenant.nameAr,
+      slug: record.tenant.slug,
+      status: record.tenant.status,
+      isTrialActive: record.tenant.isTrialActive,
+      trialEndsAt: record.tenant.trialEndsAt?.toISOString() ?? null,
+      memberSince: record.tenant.createdAt.toISOString(),
+    },
+    subscription: sub
+      ? {
+          id: sub.id,
+          status: sub.status,
+          startsAt: sub.startsAt.toISOString(),
+          endsAt: sub.endsAt?.toISOString() ?? null,
+          trialEndsAt: sub.trialEndsAt?.toISOString() ?? null,
+          plan: {
+            id: sub.plan.id,
+            code: sub.plan.code,
+            name: sub.plan.name,
+            billingInterval: sub.plan.billingInterval,
+            price: sub.plan.price.toString(),
+            currency: sub.plan.currency,
+          },
+        }
+      : null,
+    accountStatus,
+  };
+}
 
 export class TenantAuthService {
   constructor(private readonly repository: TenantAuthRepository) {}
@@ -118,6 +218,18 @@ export class TenantAuthService {
         preferredLanguage,
       },
     };
+  }
+
+  /**
+   * GET /me — returns the full profile of the currently logged-in tenant user.
+   * One DB round-trip: TenantUser → Tenant + current Subscription + Plan.
+   */
+  async getMe(auth: TenantAuthContext, lang: Language): Promise<MeResult> {
+    const record = await this.repository.findMeData(auth.userId, auth.tenantId);
+    if (!record) {
+      throw new NotFoundError("User not found", undefined, "user.not_found");
+    }
+    return buildMeResult(record, lang);
   }
 
   /**
