@@ -3,7 +3,7 @@ import { ValidationError } from "../../../../shared/errors/validation-error";
 import { TenantLoginDto } from "../dto/tenant-login.dto";
 
 const tenantLoginSchema = z.object({
-  tenantId: z.string().trim().min(1),
+  slug: z.string().trim().min(1),
   email: z.string().trim().email(),
   password: z.string().trim().min(1),
 });
@@ -11,7 +11,7 @@ const tenantLoginSchema = z.object({
 export const parseTenantLoginDto = (input: unknown): TenantLoginDto => {
   const result = tenantLoginSchema.parse(input);
   return {
-    tenantId: result.tenantId,
+    slug: result.slug.toLowerCase(),
     email: result.email.toLowerCase(),
     password: result.password,
   };

@@ -188,6 +188,7 @@ model Tenant {
   id                String            @id @default(cuid())
   nameEn            String
   nameAr            String
+  slug              String            @unique // human-readable login identifier e.g. "green-valley-pharmacy"
   preferredLanguage PreferredLanguage @default(en)
   status            TenantStatus      @default(active)
   isTrialActive     Boolean           @default(true)
