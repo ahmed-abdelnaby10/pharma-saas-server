@@ -129,6 +129,15 @@ export class BranchesService {
       );
     }
 
+    // If this branch is the default, atomically promote the next oldest active
+    // branch to default before deactivating.
+    if (branch.isDefault) {
+      return branchesRepository.deactivateAndPromoteNextDefault(
+        auth.tenantId,
+        branchId,
+      );
+    }
+
     return branchesRepository.deactivate(auth.tenantId, branchId);
   }
 }

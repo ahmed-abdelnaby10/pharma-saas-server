@@ -153,6 +153,43 @@ export class BranchesRepository {
       data: { isActive: false, isDefault: false },
     });
   }
+
+  /**
+   * Deactivate a branch that is currently the default.
+   * Within the same transaction, promote the next active branch (oldest by
+   * createdAt) to default. If no other active branch exists, the tenant is
+   * left with no default (edge-case: single branch).
+   */
+  async deactivateAndPromoteNextDefault(
+    tenantId: string,
+    branchId: string,
+  ): Promise<BranchRecord> {
+    return prisma.$transaction(async (tx) => {
+      // Find the oldest active branch that is not the one being removed
+      const next = await tx.branch.findFirst({
+        where: {
+          tenantId,
+          isActive: true,
+          id: { not: branchId },
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      // Promote it first (if any) so the tenant is never left without a default
+      if (next) {
+        await tx.branch.update({
+          where: { id: next.id },
+          data: { isDefault: true },
+        });
+      }
+
+      // Deactivate the outgoing default branch
+      return tx.branch.update({
+        where: { id: branchId, tenantId },
+        data: { isActive: false, isDefault: false },
+      });
+    });
+  }
 }
 
 export const branchesRepository = new BranchesRepository();
