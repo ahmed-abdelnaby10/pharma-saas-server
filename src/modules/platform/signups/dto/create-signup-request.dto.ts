@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createSignupRequestSchema = z.object({
   planId: z.string().min(1),
   fullName: z.string().min(2).max(120),
-  email: z.string().email(),
+  email: z.email(),
   phone: z.string().trim().optional(),
   pharmacyNameEn: z.string().min(2).max(120),
   pharmacyNameAr: z.string().min(2).max(120),
