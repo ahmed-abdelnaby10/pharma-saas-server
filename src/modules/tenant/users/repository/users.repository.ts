@@ -1,18 +1,20 @@
 import { PreferredLanguage } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { QueryUsersDto } from "../dto/query-users.dto";
-import { UserRecord } from "../mapper/users.mapper";
+import { UserRecord, userWithRolesInclude } from "../mapper/users.mapper";
 
 export class UsersRepository {
   async findById(tenantId: string, userId: string): Promise<UserRecord | null> {
     return prisma.tenantUser.findFirst({
       where: { id: userId, tenantId },
+      include: userWithRolesInclude,
     });
   }
 
   async findByEmail(tenantId: string, email: string): Promise<UserRecord | null> {
     return prisma.tenantUser.findUnique({
       where: { tenantId_email: { tenantId, email } },
+      include: userWithRolesInclude,
     });
   }
 
@@ -23,6 +25,7 @@ export class UsersRepository {
         ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
         ...(query.branchId ? { branchId: query.branchId } : {}),
       },
+      include: userWithRolesInclude,
       orderBy: [{ createdAt: "asc" }],
     });
   }
@@ -46,6 +49,7 @@ export class UsersRepository {
           ? { preferredLanguage: payload.preferredLanguage }
           : {}),
       },
+      include: userWithRolesInclude,
     });
   }
 
@@ -71,6 +75,7 @@ export class UsersRepository {
           ? { preferredLanguage: payload.preferredLanguage }
           : {}),
       },
+      include: userWithRolesInclude,
     });
   }
 
@@ -82,6 +87,7 @@ export class UsersRepository {
     return prisma.tenantUser.update({
       where: { id: userId },
       data: { isActive: false },
+      include: userWithRolesInclude,
     });
   }
 }
