@@ -3,6 +3,7 @@ import {
   signAccessToken,
   signPlatformRefreshToken,
   verifyPlatformRefreshToken,
+  REMEMBER_ME_EXPIRES_IN,
 } from "../../../../core/security/jwt";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
 import { PlatformLoginDto } from "../dto/platform-login.dto";
@@ -53,8 +54,9 @@ export class PlatformAuthService {
       );
     }
 
-    const accessToken = this.buildAccessToken(admin.id);
-    const refreshToken = signPlatformRefreshToken(admin.id);
+    const expiresIn = payload.rememberMe ? REMEMBER_ME_EXPIRES_IN : undefined;
+    const accessToken = this.buildAccessToken(admin.id, expiresIn);
+    const refreshToken = signPlatformRefreshToken(admin.id, expiresIn);
 
     return {
       accessToken,
@@ -97,14 +99,17 @@ export class PlatformAuthService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  private buildAccessToken(adminId: string): string {
-    return signAccessToken({
-      userId: adminId,
-      scope: "platform",
-      isPlatformAdmin: true,
-      roleCodes: ["platform_admin"],
-      permissions: [],
-    });
+  private buildAccessToken(adminId: string, expiresIn?: string): string {
+    return signAccessToken(
+      {
+        userId: adminId,
+        scope: "platform",
+        isPlatformAdmin: true,
+        roleCodes: ["platform_admin"],
+        permissions: [],
+      },
+      expiresIn,
+    );
   }
 }
 

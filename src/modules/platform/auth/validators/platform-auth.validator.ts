@@ -4,6 +4,7 @@ import { PlatformLoginDto } from "../dto/platform-login.dto";
 const platformLoginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().trim().min(1),
+  rememberMe: z.boolean().default(false),
 });
 
 const platformRefreshSchema = z.object({
@@ -16,6 +17,7 @@ export const parsePlatformLoginDto = (input: unknown): PlatformLoginDto => {
   return {
     email: result.email.toLowerCase(),
     password: result.password,
+    rememberMe: result.rememberMe,
   };
 };
 

@@ -1,5 +1,5 @@
 import { comparePassword } from "../../../../core/security/password";
-import { signAccessToken } from "../../../../core/security/jwt";
+import { signAccessToken, REMEMBER_ME_EXPIRES_IN } from "../../../../core/security/jwt";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { UnauthorizedError } from "../../../../shared/errors/unauthorized-error";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
@@ -198,15 +198,18 @@ export class TenantAuthService {
         }
       : { status: "none", trialEndsAt: null, offlineValidUntil };
 
-    const accessToken = signAccessToken({
-      scope: "tenant",
-      userId: record.id,
-      tenantId: record.tenantId,
-      roleCodes,
-      permissions,
-      preferredLanguage,
-      subscription,
-    });
+    const accessToken = signAccessToken(
+      {
+        scope: "tenant",
+        userId: record.id,
+        tenantId: record.tenantId,
+        roleCodes,
+        permissions,
+        preferredLanguage,
+        subscription,
+      },
+      payload.rememberMe ? REMEMBER_ME_EXPIRES_IN : undefined,
+    );
 
     return {
       accessToken,
