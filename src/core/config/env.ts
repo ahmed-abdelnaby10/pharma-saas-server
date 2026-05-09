@@ -79,6 +79,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().trim().optional(),
   SMTP_PASS: z.string().trim().optional(),
   EMAIL_FROM: z.string().trim().optional(),
+  // Gmail app-password transport (shorthand alternative to full SMTP_* config)
+  EMAIL_SERVICE_USER: z.string().trim().optional(),
+  EMAIL_SERVICE_PASSWORD: z.string().trim().optional(),
   DEFAULT_LANGUAGE: z.enum(["en", "ar"]).default("en"),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().positive().default(10),
 
