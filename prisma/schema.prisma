@@ -233,9 +233,11 @@ model TenantSettings {
   taxId                String?
   phone                String?
   email                String?
-  lowStockAlerts       Boolean           @default(true)
-  expiryAlerts         Boolean           @default(true)
-  purchaseOrderUpdates Boolean           @default(true)
+  lowStockAlerts          Boolean           @default(true)
+  lowStockThresholdDays   Int               @default(7)
+  expiryAlerts            Boolean           @default(true)
+  expiryAlertWindowDays   Int               @default(30)
+  purchaseOrderUpdates    Boolean           @default(true)
   receiptHeader        String?
   receiptFooter        String?
   vatPercentage        Decimal           @default(0) @db.Decimal(5, 2)

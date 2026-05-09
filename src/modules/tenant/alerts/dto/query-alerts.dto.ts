@@ -4,10 +4,12 @@ export interface QueryLowStockDto {
 
 export interface QueryExpiringDto {
   branchId: string;
-  days: number; // look-ahead window in days (default 30)
+  /** Look-ahead window in days. Omit to use tenant's expiryAlertWindowDays setting. */
+  days?: number;
 }
 
 export interface QueryAllAlertsDto {
   branchId: string;
-  days: number; // expiry look-ahead window (default 30)
+  /** Expiry look-ahead window in days. Omit to use tenant's expiryAlertWindowDays setting. */
+  days?: number;
 }

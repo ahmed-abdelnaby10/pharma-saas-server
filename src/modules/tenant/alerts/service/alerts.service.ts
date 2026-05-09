@@ -2,6 +2,8 @@ import { NotificationType } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { Translator } from "../../../../shared/types/locale.types";
+import { sendEmail } from "../../../../core/email/email.service";
+import { buildAlertSummaryEmail } from "../../../../core/email/templates/alert-summary.template";
 import { settingsRepository } from "../../settings/repository/settings.repository";
 import { notificationsRepository } from "../../notifications/repository/notifications.repository";
 import { QueryLowStockDto, QueryExpiringDto } from "../dto/query-alerts.dto";
@@ -40,7 +42,6 @@ export class AlertsService {
       return [];
     }
 
-    // Fetch all active items that have a reorderLevel set
     const items = await prisma.inventoryItem.findMany({
       where: {
         tenantId,
@@ -53,7 +54,6 @@ export class AlertsService {
       },
     });
 
-    // Filter in-memory: quantityOnHand <= reorderLevel
     return items
       .filter((item) => item.reorderLevel !== null && item.quantityOnHand.lte(item.reorderLevel))
       .map((item) => ({
@@ -77,8 +77,11 @@ export class AlertsService {
       return [];
     }
 
+    // Use explicit query days, falling back to the tenant's configured window
+    const windowDays = query.days ?? settings.expiryAlertWindowDays;
+
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() + query.days);
+    cutoff.setDate(cutoff.getDate() + windowDays);
     const now = new Date();
 
     const batches = await prisma.inventoryBatch.findMany({
@@ -127,7 +130,7 @@ export class AlertsService {
   ) {
     const [lowStock, expiring] = await Promise.all([
       this.getLowStockAlerts(tenantId, { branchId: query.branchId }, t),
-      this.getExpiringAlerts(tenantId, { branchId: query.branchId, days: query.days ?? 30 }, t),
+      this.getExpiringAlerts(tenantId, { branchId: query.branchId, days: query.days }, t),
     ]);
     return { lowStock, expiring };
   }
@@ -135,19 +138,28 @@ export class AlertsService {
   /**
    * Dispatches Notification records into the current user's inbox for every
    * active alert. Skips items already notified within the last 48 hours to
-   * avoid spam. Returns a summary of created vs skipped counts.
+   * avoid spam.
+   *
+   * After creating notifications, sends a summary email to the tenant_owner
+   * user(s) — fire-and-forget, never blocks the response.
+   *
+   * Returns a summary of created vs skipped counts.
    */
   async dispatchAlertNotifications(
     auth: TenantAuthContext,
     branchId: string,
-    days = 30,
+    days?: number,
   ): Promise<{ created: number; skipped: number }> {
     const t: Translator = (key) => key;
+
+    // Load settings once — drives both the expiry window and the email payload
+    const settings = await settingsRepository.findByTenant(auth.tenantId);
+    const expiryWindowDays = days ?? settings?.expiryAlertWindowDays ?? 30;
 
     const [lowStockAlerts, expiryAlerts, recentLowStockRefs, recentExpiryRefs] =
       await Promise.all([
         this.getLowStockAlerts(auth.tenantId, { branchId }, t),
-        this.getExpiringAlerts(auth.tenantId, { branchId, days }, t),
+        this.getExpiringAlerts(auth.tenantId, { branchId, days: expiryWindowDays }, t),
         notificationsRepository.findRecentRefIds(
           auth.tenantId,
           auth.userId,
@@ -224,7 +236,65 @@ export class AlertsService {
       created++;
     }
 
+    // ── Email summary to tenant owner(s) — fire-and-forget ──────────────────
+    if (created > 0) {
+      void this.sendAlertEmailToOwners(
+        auth.tenantId,
+        settings?.tenant.nameEn ?? "",
+        settings?.tenant.nameAr ?? "",
+        lowStockAlerts.filter((a) => !recentLowStockRefs.has(a.inventoryItemId)),
+        expiryAlerts.filter((a) => !recentExpiryRefs.has(a.batchId)),
+      );
+    }
+
     return { created, skipped };
+  }
+
+  /**
+   * Finds all users with the tenant_owner role and sends each of them
+   * a bilingual alert summary email. Fire-and-forget — never throws.
+   */
+  private async sendAlertEmailToOwners(
+    tenantId: string,
+    pharmacyNameEn: string,
+    pharmacyNameAr: string,
+    lowStockItems: LowStockAlert[],
+    expiryItems: ExpiryAlert[],
+  ): Promise<void> {
+    try {
+      const ownerRole = await prisma.role.findFirst({
+        where: { tenantId, code: "tenant_owner", isActive: true },
+        include: {
+          userRoles: {
+            include: {
+              user: {
+                select: { email: true, fullName: true, preferredLanguage: true, isActive: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!ownerRole) return;
+
+      const ownerUsers = ownerRole.userRoles
+        .map((ur) => ur.user)
+        .filter((u) => u.isActive);
+
+      for (const owner of ownerUsers) {
+        const lang = (owner.preferredLanguage ?? "en") as "en" | "ar";
+        const { subject, html } = buildAlertSummaryEmail({
+          pharmacyNameEn,
+          pharmacyNameAr,
+          lowStockItems,
+          expiryItems,
+          lang,
+        });
+        await sendEmail({ to: owner.email, subject, html });
+      }
+    } catch {
+      // Never block the caller — email is best-effort
+    }
   }
 }
 

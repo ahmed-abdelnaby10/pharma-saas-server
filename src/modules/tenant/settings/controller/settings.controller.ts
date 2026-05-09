@@ -1,20 +1,23 @@
-import { TenantSettings } from "@prisma/client";
 import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { parseUpdateSettingsDto } from "../validators/settings.validator";
-import { settingsService, SettingsService } from "../service/settings.service";
+import { settingsService, SettingsService, SettingsResponse } from "../service/settings.service";
 
-const mapSettingsResponse = (s: TenantSettings) => ({
+const mapSettingsResponse = (s: SettingsResponse) => ({
   id: s.id,
   tenantId: s.tenantId,
+  nameEn: s.nameEn,
+  nameAr: s.nameAr,
   organizationName: s.organizationName,
   taxId: s.taxId,
   phone: s.phone,
   email: s.email,
   lowStockAlerts: s.lowStockAlerts,
+  lowStockThresholdDays: s.lowStockThresholdDays,
   expiryAlerts: s.expiryAlerts,
+  expiryAlertWindowDays: s.expiryAlertWindowDays,
   purchaseOrderUpdates: s.purchaseOrderUpdates,
   receiptHeader: s.receiptHeader,
   receiptFooter: s.receiptFooter,

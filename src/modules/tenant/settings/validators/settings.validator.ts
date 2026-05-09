@@ -3,12 +3,17 @@ import { ValidationError } from "../../../../shared/errors/validation-error";
 
 const updateSettingsSchema = z
   .object({
+    /** Pharmacy display names — updates Tenant.nameEn / Tenant.nameAr */
+    nameEn: z.string().min(2).max(255).optional(),
+    nameAr: z.string().min(2).max(255).optional(),
     organizationName: z.string().min(1).max(255).nullable().optional(),
     taxId: z.string().min(1).max(64).nullable().optional(),
     phone: z.string().min(5).max(30).nullable().optional(),
     email: z.string().email().max(255).nullable().optional(),
     lowStockAlerts: z.boolean().optional(),
+    lowStockThresholdDays: z.number().int().min(1).max(365).optional(),
     expiryAlerts: z.boolean().optional(),
+    expiryAlertWindowDays: z.number().int().min(1).max(365).optional(),
     purchaseOrderUpdates: z.boolean().optional(),
     receiptHeader: z.string().max(1000).nullable().optional(),
     receiptFooter: z.string().max(1000).nullable().optional(),

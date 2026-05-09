@@ -8,11 +8,12 @@ const queryLowStockSchema = z.object({
 
 const queryExpiringSchema = z.object({
   branchId: z.string().cuid(),
+  // days is optional — omit to let the service fall back to expiryAlertWindowDays from settings
   days: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : 30))
-    .pipe(z.number().int().min(1).max(365)),
+    .transform((v) => (v !== undefined ? parseInt(v, 10) : undefined))
+    .pipe(z.number().int().min(1).max(365).optional()),
 });
 
 export function parseQueryLowStock(query: unknown): QueryLowStockDto {
@@ -31,7 +32,6 @@ export function parseQueryExpiring(query: unknown): QueryExpiringDto {
   return result.data;
 }
 
-// Same shape as expiring — branchId required, days optional (default 30)
 const queryAllAlertsSchema = queryExpiringSchema;
 
 export function parseQueryAllAlerts(query: unknown): QueryAllAlertsDto {
@@ -42,10 +42,10 @@ export function parseQueryAllAlerts(query: unknown): QueryAllAlertsDto {
   return result.data;
 }
 
-// notify is a POST — branchId comes from body, days is optional
+// notify is a POST — branchId comes from body, days is optional (falls back to settings)
 const notifyBodySchema = z.object({
   branchId: z.string().cuid(),
-  days: z.number().int().min(1).max(365).optional().default(30),
+  days: z.number().int().min(1).max(365).optional(),
 });
 
 export function parseNotifyBody(body: unknown): QueryAllAlertsDto {
