@@ -6,6 +6,8 @@ import { hashPassword } from "../../../../core/security/password";
 import { usageLimitService } from "../../../../core/usage/usage-limit.service";
 import { FeatureKey } from "../../../../shared/constants/feature-keys";
 import { branchesRepository } from "../../branches/repository/branches.repository";
+import { sendEmail } from "../../../../core/email/email.service";
+import { buildWelcomeUserEmail } from "../../../../core/email/templates/welcome-user.template";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { QueryUsersDto } from "../dto/query-users.dto";
@@ -73,7 +75,7 @@ export class UsersService {
 
     const passwordHash = await hashPassword(payload.password);
 
-    return usersRepository.create({
+    const user = await usersRepository.create({
       tenantId: auth.tenantId,
       email: payload.email,
       passwordHash,
@@ -81,6 +83,18 @@ export class UsersService {
       branchId: payload.branchId,
       preferredLanguage: payload.preferredLanguage,
     });
+
+    // Fire-and-forget welcome email — never blocks the response
+    const lang = (payload.preferredLanguage === "ar" ? "ar" : "en") as "en" | "ar";
+    const { subject, html } = buildWelcomeUserEmail({
+      fullName: payload.fullName,
+      email: payload.email,
+      password: payload.password, // plain-text, shown once before hashing
+      lang,
+    });
+    void sendEmail({ to: payload.email, subject, html });
+
+    return user;
   }
 
   async updateUser(
