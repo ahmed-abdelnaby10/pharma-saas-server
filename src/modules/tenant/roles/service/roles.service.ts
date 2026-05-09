@@ -8,6 +8,7 @@ import { CreateRoleDto } from "../dto/create-role.dto";
 import { UpdateRoleDto } from "../dto/update-role.dto";
 import { RoleWithPermissions } from "../mapper/roles.mapper";
 import { rolesRepository } from "../repository/roles.repository";
+import { DEFAULT_ROLE_PERMISSIONS } from "../constants/roles.constants";
 
 export class RolesService {
   // ── Roles CRUD ─────────────────────────────────────────────────────────────
@@ -43,12 +44,17 @@ export class RolesService {
       );
     }
 
-    return rolesRepository.create({
-      tenantId: auth.tenantId,
-      code: payload.code,
-      nameEn: payload.nameEn,
-      nameAr: payload.nameAr,
-    });
+    const defaultPerms = DEFAULT_ROLE_PERMISSIONS[payload.code] ?? [];
+
+    return rolesRepository.createWithDefaultPermissions(
+      {
+        tenantId: auth.tenantId,
+        code: payload.code,
+        nameEn: payload.nameEn,
+        nameAr: payload.nameAr,
+      },
+      defaultPerms,
+    );
   }
 
   async updateRole(
