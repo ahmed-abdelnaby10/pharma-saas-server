@@ -80,8 +80,9 @@ export class TenantsRepository {
         include: tenantInclude,
       });
 
-      // 2–4. Owner user setup — only when coming from the signup flow
+      // 2–5. Owner user setup — only when coming from the signup flow
       if (owner) {
+        // 2. Create the tenant_owner role
         const ownerRole = await tx.role.create({
           data: {
             tenantId: tenant.id,
@@ -91,6 +92,23 @@ export class TenantsRepository {
           },
         });
 
+        // 3. Assign ALL permissions to tenant_owner
+        //    Pull every permission ID in the same transaction so the list
+        //    is always in sync with whatever is seeded in the Permission table.
+        const allPermissions = await tx.permission.findMany({
+          select: { id: true },
+        });
+        if (allPermissions.length > 0) {
+          await tx.rolePermission.createMany({
+            data: allPermissions.map((p) => ({
+              roleId: ownerRole.id,
+              permissionId: p.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        // 4. Create the owner user
         const ownerUser = await tx.tenantUser.create({
           data: {
             tenantId: tenant.id,
@@ -101,6 +119,7 @@ export class TenantsRepository {
           },
         });
 
+        // 5. Link user ↔ role
         await tx.userRole.create({
           data: { userId: ownerUser.id, roleId: ownerRole.id },
         });
