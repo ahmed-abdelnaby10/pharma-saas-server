@@ -22,6 +22,7 @@ const updateUserSchema = z
     password: z.string().min(8).max(128).optional(),
     branchId: z.string().cuid("Invalid branch ID").nullable().optional(),
     preferredLanguage: preferredLanguageEnum.nullable().optional(),
+    role: z.enum(tenantRoleValues).nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",
