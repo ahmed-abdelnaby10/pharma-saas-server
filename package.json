@@ -7,6 +7,7 @@
     "dev": "nodemon",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "seed:platform-admin": "tsx prisma/seed-platform-admin.ts",
     "backfill:role-permissions": "tsx prisma/backfill-role-permissions.ts",

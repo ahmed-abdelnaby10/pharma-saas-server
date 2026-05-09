@@ -40,7 +40,10 @@ export class SettingsRepository {
     });
   }
 
-  async update(tenantId: string, payload: UpdateSettingsDto): Promise<SettingsRecord> {
+  async update(
+    tenantId: string,
+    payload: UpdateSettingsDto,
+  ): Promise<SettingsRecord> {
     const { nameEn, nameAr, ...settingsPayload } = payload;
 
     // If nameEn or nameAr are being updated, patch the Tenant record atomically
@@ -61,9 +64,15 @@ export class SettingsRepository {
           ...(settingsPayload.organizationName !== undefined
             ? { organizationName: settingsPayload.organizationName }
             : {}),
-          ...(settingsPayload.taxId !== undefined ? { taxId: settingsPayload.taxId } : {}),
-          ...(settingsPayload.phone !== undefined ? { phone: settingsPayload.phone } : {}),
-          ...(settingsPayload.email !== undefined ? { email: settingsPayload.email } : {}),
+          ...(settingsPayload.taxId !== undefined
+            ? { taxId: settingsPayload.taxId }
+            : {}),
+          ...(settingsPayload.phone !== undefined
+            ? { phone: settingsPayload.phone }
+            : {}),
+          ...(settingsPayload.email !== undefined
+            ? { email: settingsPayload.email }
+            : {}),
           ...(settingsPayload.lowStockAlerts !== undefined
             ? { lowStockAlerts: settingsPayload.lowStockAlerts }
             : {}),
@@ -86,7 +95,11 @@ export class SettingsRepository {
             ? { receiptFooter: settingsPayload.receiptFooter }
             : {}),
           ...(settingsPayload.vatPercentage !== undefined
-            ? { vatPercentage: new Prisma.Decimal(settingsPayload.vatPercentage) }
+            ? {
+                vatPercentage: new Prisma.Decimal(
+                  settingsPayload.vatPercentage,
+                ),
+              }
             : {}),
           ...(settingsPayload.defaultLanguage !== undefined
             ? { defaultLanguage: settingsPayload.defaultLanguage }
