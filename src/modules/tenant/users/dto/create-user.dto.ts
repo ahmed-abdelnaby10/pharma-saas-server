@@ -4,6 +4,7 @@ export type CreateUserDto = {
   email: string;
   password: string;
   fullName: string;
+  phone?: string;
   branchId?: string;
   preferredLanguage?: PreferredLanguage;
   /** Optional role code to assign immediately on creation (e.g. "pharmacist") */

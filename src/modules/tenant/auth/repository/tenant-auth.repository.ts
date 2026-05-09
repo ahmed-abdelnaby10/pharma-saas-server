@@ -7,6 +7,7 @@ const tenantUserAuthSelect = {
   email: true,
   passwordHash: true,
   fullName: true,
+  phone: true,
   isActive: true,
   preferredLanguage: true,
   tenant: {
@@ -27,6 +28,7 @@ const meSelect = {
   tenantId: true,
   email: true,
   fullName: true,
+  phone: true,
   isActive: true,
   preferredLanguage: true,
   branchId: true,

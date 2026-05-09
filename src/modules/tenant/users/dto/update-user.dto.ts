@@ -3,6 +3,7 @@ import { PreferredLanguage } from "@prisma/client";
 export type UpdateUserDto = {
   fullName?: string;
   password?: string;
+  phone?: string | null;
   branchId?: string | null;
   preferredLanguage?: PreferredLanguage | null;
   /** Replace the user's current role with this role code */

@@ -35,6 +35,7 @@ export class UsersRepository {
     email: string;
     passwordHash: string;
     fullName: string;
+    phone?: string;
     branchId?: string;
     preferredLanguage?: PreferredLanguage;
   }): Promise<UserRecord> {
@@ -44,6 +45,7 @@ export class UsersRepository {
         email: payload.email,
         passwordHash: payload.passwordHash,
         fullName: payload.fullName,
+        ...(payload.phone !== undefined ? { phone: payload.phone } : {}),
         ...(payload.branchId ? { branchId: payload.branchId } : {}),
         ...(payload.preferredLanguage
           ? { preferredLanguage: payload.preferredLanguage }
@@ -59,6 +61,7 @@ export class UsersRepository {
     payload: {
       fullName?: string;
       passwordHash?: string;
+      phone?: string | null;
       branchId?: string | null;
       preferredLanguage?: PreferredLanguage | null;
     },
@@ -70,6 +73,7 @@ export class UsersRepository {
         ...(payload.passwordHash !== undefined
           ? { passwordHash: payload.passwordHash }
           : {}),
+        ...(payload.phone !== undefined ? { phone: payload.phone } : {}),
         ...(payload.branchId !== undefined ? { branchId: payload.branchId } : {}),
         ...(payload.preferredLanguage !== undefined
           ? { preferredLanguage: payload.preferredLanguage }
