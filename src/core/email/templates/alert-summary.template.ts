@@ -1,3 +1,22 @@
+import * as fs from "fs";
+import * as path from "path";
+
+function loadLogoDataUri(): string | null {
+  try {
+    const logoPath = path.join(process.cwd(), "src", "assets", "yomdix-app-icon.webp");
+    const buffer = fs.readFileSync(logoPath);
+    return `data:image/webp;base64,${buffer.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+const logoDataUri = loadLogoDataUri();
+const logoImg = logoDataUri
+  ? `<img src="${logoDataUri}" alt="Yomdix" width="40" height="40"
+       style="border-radius:8px;display:block;margin-bottom:10px;" />`
+  : "";
+
 interface LowStockItem {
   catalogNameEn: string;
   catalogNameAr: string;
@@ -107,6 +126,7 @@ export function buildAlertSummaryEmail(opts: AlertSummaryEmailOptions): {
 
         <!-- Header -->
         <tr><td style="background:#1a365d;padding:24px 32px;">
+          ${logoImg}
           <p style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${pharmacyName}</p>
           <p style="margin:6px 0 0;color:#bee3f8;font-size:13px;">
             ${isAr ? "تقرير تنبيهات المخزون" : "Inventory Alert Report"}

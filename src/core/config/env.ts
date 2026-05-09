@@ -85,7 +85,7 @@ const envSchema = z.object({
   DEFAULT_LANGUAGE: z.enum(["en", "ar"]).default("en"),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().positive().default(10),
 
-  APP_NAME: z.string().default("Pharmacy SaaS"),
+  APP_NAME: z.string().default("Yomdix"),
   APP_URL: z.string().url().default("http://localhost:8080"),
 
   // Google Gemini — required for real OCR extraction

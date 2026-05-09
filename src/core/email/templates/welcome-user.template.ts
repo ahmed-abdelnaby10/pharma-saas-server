@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import { env } from "../../config/env";
 
 export interface WelcomeUserTemplateData {
@@ -15,18 +17,36 @@ export interface EmailTemplate {
 const appName = env.APP_NAME;
 const appUrl  = env.APP_URL;
 
+// ── Logo — read once at module load, inline as base64 data URI ────────────────
+function loadLogoDataUri(): string | null {
+  try {
+    const logoPath = path.join(process.cwd(), "src", "assets", "yomdix-app-icon.webp");
+    const buffer = fs.readFileSync(logoPath);
+    return `data:image/webp;base64,${buffer.toString("base64")}`;
+  } catch {
+    return null; // logo file missing — fall back to text-only header
+  }
+}
+
+const logoDataUri = loadLogoDataUri();
+
+const logoImg = logoDataUri
+  ? `<img src="${logoDataUri}" alt="${appName}" width="48" height="48"
+       style="border-radius:10px;display:block;margin-bottom:12px;" />`
+  : "";
+
 // ── Shared styles ─────────────────────────────────────────────────────────────
 
 const COLORS = {
-  brand:      "#2563EB",   // blue-600
-  brandDark:  "#1D4ED8",   // blue-700
-  text:       "#1F2937",   // gray-800
-  muted:      "#6B7280",   // gray-500
-  bg:         "#F9FAFB",   // gray-50
+  brand:      "#2563EB",
+  brandDark:  "#1D4ED8",
+  text:       "#1F2937",
+  muted:      "#6B7280",
+  bg:         "#F9FAFB",
   card:       "#FFFFFF",
-  border:     "#E5E7EB",   // gray-200
-  warning:    "#92400E",   // amber-800
-  warningBg:  "#FEF3C7",   // amber-100
+  border:     "#E5E7EB",
+  warning:    "#92400E",
+  warningBg:  "#FEF3C7",
 };
 
 function layout(content: string, dir: "ltr" | "rtl"): string {
@@ -36,7 +56,6 @@ function layout(content: string, dir: "ltr" | "rtl"): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
   <title>${appName}</title>
   <style>
     body, html { margin:0; padding:0; background:${COLORS.bg}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
@@ -49,20 +68,15 @@ function layout(content: string, dir: "ltr" | "rtl"): string {
     .email-body h2 { margin:0 0 8px; color:${COLORS.text}; font-size:18px; }
     .email-body p  { margin:0 0 20px; color:${COLORS.text}; font-size:15px; line-height:1.6; }
     .credential-box { background:${COLORS.bg}; border:1px solid ${COLORS.border}; border-radius:8px; padding:20px 24px; margin:20px 0; }
-    .credential-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid ${COLORS.border}; direction:ltr; }
-    .credential-row:last-child { border-bottom:none; padding-bottom:0; }
-    .credential-label { font-size:13px; color:${COLORS.muted}; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-    .credential-value { font-size:15px; color:${COLORS.text}; font-weight:600; font-family:monospace; word-break:break-all; }
+    .credential-item { padding:10px 0; border-bottom:1px solid ${COLORS.border}; }
+    .credential-item:last-child { border-bottom:none; padding-bottom:0; }
+    .credential-label { display:block; font-size:11px; color:${COLORS.muted}; font-weight:700; text-transform:uppercase; letter-spacing:.7px; margin-bottom:4px; }
+    .credential-value { display:block; font-size:15px; color:${COLORS.text}; font-weight:600; font-family:monospace; word-break:break-all; }
     .warning-box { background:${COLORS.warningBg}; border-radius:8px; padding:14px 18px; margin:20px 0; color:${COLORS.warning}; font-size:14px; line-height:1.5; direction:${dir}; text-align:${dir === "rtl" ? "right" : "left"}; }
     .cta-btn { display:inline-block; background:${COLORS.brand}; color:#fff !important; text-decoration:none; padding:13px 28px; border-radius:8px; font-size:15px; font-weight:600; margin:8px 0 24px; }
     .cta-btn:hover { background:${COLORS.brandDark}; }
     .email-footer { border-top:1px solid ${COLORS.border}; padding:20px 32px; text-align:center; }
     .email-footer p { margin:0; font-size:12px; color:${COLORS.muted}; line-height:1.6; }
-    @media (max-width:600px) {
-      .email-body, .email-header { padding:20px; }
-      .email-footer { padding:16px 20px; }
-      .credential-row { flex-direction:column; align-items:flex-start; gap:4px; }
-    }
   </style>
 </head>
 <body>
@@ -82,6 +96,7 @@ function buildEn(data: WelcomeUserTemplateData): EmailTemplate {
 
   const html = layout(`
     <div class="email-header">
+      ${logoImg}
       <h1>${appName}</h1>
       <p>Pharmacy Management Platform</p>
     </div>
@@ -93,11 +108,11 @@ function buildEn(data: WelcomeUserTemplateData): EmailTemplate {
       </p>
 
       <div class="credential-box">
-        <div class="credential-row">
+        <div class="credential-item">
           <span class="credential-label">Email</span>
           <span class="credential-value">${data.email}</span>
         </div>
-        <div class="credential-row">
+        <div class="credential-item">
           <span class="credential-label">Password</span>
           <span class="credential-value">${data.password}</span>
         </div>
@@ -132,6 +147,7 @@ function buildAr(data: WelcomeUserTemplateData): EmailTemplate {
 
   const html = layout(`
     <div class="email-header">
+      ${logoImg}
       <h1>${appName}</h1>
       <p>منصة إدارة الصيدليات</p>
     </div>
@@ -143,11 +159,11 @@ function buildAr(data: WelcomeUserTemplateData): EmailTemplate {
       </p>
 
       <div class="credential-box">
-        <div class="credential-row">
+        <div class="credential-item">
           <span class="credential-label">البريد الإلكتروني</span>
           <span class="credential-value">${data.email}</span>
         </div>
-        <div class="credential-row">
+        <div class="credential-item">
           <span class="credential-label">كلمة المرور</span>
           <span class="credential-value">${data.password}</span>
         </div>
