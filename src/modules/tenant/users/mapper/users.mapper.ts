@@ -1,6 +1,13 @@
 import { Prisma } from "@prisma/client";
 
 export const userWithRolesInclude = {
+  branch: {
+    select: {
+      id: true,
+      nameEn: true,
+      nameAr: true,
+    },
+  },
   userRoles: {
     include: {
       role: {
@@ -23,12 +30,14 @@ export type UserRecord = Prisma.TenantUserGetPayload<{
 export const mapUserResponse = (user: UserRecord) => ({
   id: user.id,
   tenantId: user.tenantId,
-  branchId: user.branchId,
   email: user.email,
   fullName: user.fullName,
   phone: user.phone ?? null,
   isActive: user.isActive,
   preferredLanguage: user.preferredLanguage,
+  branch: user.branch
+    ? { id: user.branch.id, nameEn: user.branch.nameEn, nameAr: user.branch.nameAr }
+    : null,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
   roles: user.userRoles
