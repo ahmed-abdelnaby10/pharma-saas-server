@@ -26,6 +26,7 @@ export const mapUserResponse = (user: UserRecord) => ({
   branchId: user.branchId,
   email: user.email,
   fullName: user.fullName,
+  phone: user.phone ?? null,
   isActive: user.isActive,
   preferredLanguage: user.preferredLanguage,
   createdAt: user.createdAt,

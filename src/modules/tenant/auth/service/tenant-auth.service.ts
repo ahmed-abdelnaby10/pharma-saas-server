@@ -26,6 +26,7 @@ export type TenantLoginResult = {
     id: string;
     email: string;
     fullName: string;
+    phone: string | null;
     tenantId: string;
     preferredLanguage: Language;
   };
@@ -46,6 +47,7 @@ export type MeResult = {
     id: string;
     email: string;
     fullName: string;
+    phone: string | null;
     preferredLanguage: string | null;
     isActive: boolean;
     branchId: string | null;
@@ -102,6 +104,7 @@ function buildMeResult(record: TenantMeRecord, lang: Language): MeResult {
       id: record.id,
       email: record.email,
       fullName: record.fullName,
+      phone: record.phone ?? null,
       preferredLanguage: record.preferredLanguage ?? null,
       isActive: record.isActive,
       branchId: record.branchId ?? null,
@@ -237,6 +240,7 @@ export class TenantAuthService {
         id: record.id,
         email: record.email,
         fullName: record.fullName,
+        phone: record.phone ?? null,
         tenantId: record.tenantId,
         preferredLanguage,
       },

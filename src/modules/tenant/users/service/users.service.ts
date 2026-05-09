@@ -81,6 +81,7 @@ export class UsersService {
       email: payload.email,
       passwordHash,
       fullName: payload.fullName,
+      phone: payload.phone,
       branchId: payload.branchId,
       preferredLanguage: payload.preferredLanguage,
     });
@@ -146,6 +147,7 @@ export class UsersService {
     const updated = await usersRepository.update(auth.tenantId, userId, {
       fullName: payload.fullName,
       passwordHash,
+      phone: payload.phone,
       branchId: payload.branchId,
       preferredLanguage: payload.preferredLanguage,
     });

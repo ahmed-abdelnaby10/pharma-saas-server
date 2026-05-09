@@ -7,10 +7,18 @@ const preferredLanguageEnum = z.enum(["en", "ar"]);
 // Derive the enum from the constants so adding a role here is the only change needed
 const tenantRoleValues = Object.values(TENANT_ROLES) as [string, ...string[]];
 
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(7, "Phone number is too short")
+  .max(20, "Phone number is too long")
+  .regex(/^\+?[\d\s\-().]+$/, "Invalid phone number format");
+
 const createUserSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(120),
+  phone: phoneSchema.optional(),
   branchId: z.string().cuid("Invalid branch ID").optional(),
   preferredLanguage: preferredLanguageEnum.optional(),
   role: z.enum(tenantRoleValues).optional(),
@@ -20,6 +28,7 @@ const updateUserSchema = z
   .object({
     fullName: z.string().min(2).max(120).optional(),
     password: z.string().min(8).max(128).optional(),
+    phone: phoneSchema.nullable().optional(),
     branchId: z.string().cuid("Invalid branch ID").nullable().optional(),
     preferredLanguage: preferredLanguageEnum.nullable().optional(),
     role: z.enum(tenantRoleValues).nullable().optional(),

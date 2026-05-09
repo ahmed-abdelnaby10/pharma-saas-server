@@ -405,6 +405,7 @@ model TenantUser {
   email             String
   passwordHash      String
   fullName          String
+  phone             String?
   isActive          Boolean            @default(true)
   preferredLanguage PreferredLanguage?
   createdAt         DateTime           @default(now())
