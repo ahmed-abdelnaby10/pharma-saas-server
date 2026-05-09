@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { ValidationError } from "../../../../shared/errors/validation-error";
+import { TENANT_ROLES } from "../../roles/constants/roles.constants";
 
 const preferredLanguageEnum = z.enum(["en", "ar"]);
+
+// Derive the enum from the constants so adding a role here is the only change needed
+const tenantRoleValues = Object.values(TENANT_ROLES) as [string, ...string[]];
 
 const createUserSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
@@ -9,6 +13,7 @@ const createUserSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(120),
   branchId: z.string().cuid("Invalid branch ID").optional(),
   preferredLanguage: preferredLanguageEnum.optional(),
+  role: z.enum(tenantRoleValues).optional(),
 });
 
 const updateUserSchema = z
