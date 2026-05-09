@@ -143,12 +143,40 @@ export class UsersService {
       ? await hashPassword(payload.password)
       : undefined;
 
-    return usersRepository.update(auth.tenantId, userId, {
+    const updated = await usersRepository.update(auth.tenantId, userId, {
       fullName: payload.fullName,
       passwordHash,
       branchId: payload.branchId,
       preferredLanguage: payload.preferredLanguage,
     });
+
+    // Replace role when provided
+    if (payload.role !== undefined) {
+      // Remove all existing roles first
+      const currentRoleIds = user.userRoles.map((ur) => ur.role.id);
+      if (currentRoleIds.length > 0) {
+        await rolesRepository.removeRolesFromUser(userId, currentRoleIds);
+      }
+
+      // Assign the new role (null means "remove role, leave unassigned")
+      if (payload.role !== null) {
+        const role = await rolesRepository.findByCode(auth.tenantId, payload.role);
+        if (!role) {
+          throw new BadRequestError(
+            `Role "${payload.role}" does not exist for this tenant. Create it first.`,
+            undefined,
+            "role.not_found",
+          );
+        }
+        await rolesRepository.assignRolesToUser(userId, [role.id]);
+      }
+
+      // Reload to return accurate roles array
+      const reloaded = await usersRepository.findById(auth.tenantId, userId);
+      if (reloaded) return reloaded;
+    }
+
+    return updated;
   }
 
   async deactivateUser(
