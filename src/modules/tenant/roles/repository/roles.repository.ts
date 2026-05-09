@@ -45,6 +45,42 @@ export class RolesRepository {
     });
   }
 
+  /**
+   * Creates a role and atomically seeds the provided default permission codes.
+   * If `defaultPermCodes` is empty the role is created with no permissions.
+   * Unknown permission codes are silently skipped (safe against future removals).
+   */
+  async createWithDefaultPermissions(
+    payload: { tenantId: string; code: string; nameEn: string; nameAr: string },
+    defaultPermCodes: string[],
+  ): Promise<RoleWithPermissions> {
+    return prisma.$transaction(async (tx) => {
+      const role = await tx.role.create({
+        data: payload,
+        include: roleWithPermissionsInclude,
+      });
+
+      if (defaultPermCodes.length > 0) {
+        const perms = await tx.permission.findMany({
+          where: { code: { in: defaultPermCodes } },
+          select: { id: true },
+        });
+
+        if (perms.length > 0) {
+          await tx.rolePermission.createMany({
+            data: perms.map((p) => ({ roleId: role.id, permissionId: p.id })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.role.findUniqueOrThrow({
+        where: { id: role.id },
+        include: roleWithPermissionsInclude,
+      });
+    });
+  }
+
   async update(
     tenantId: string,
     roleId: string,
