@@ -18,12 +18,24 @@ router.post(
   asyncHandler(idempotencyMiddleware),
   asyncHandler(shiftsController.open),
 );
-router.get("/:shiftId", permissionMiddleware(["shifts:read"]), asyncHandler(shiftsController.get));
+router.get("/:shiftId",  permissionMiddleware(["shifts:read"]),   asyncHandler(shiftsController.get));
 router.post(
   "/:shiftId/close",
   permissionMiddleware(["shifts:manage"]),
   asyncHandler(idempotencyMiddleware),
   asyncHandler(shiftsController.close),
+);
+
+// ── Cash adjustments ─────────────────────────────────────────────────────────
+router.post(
+  "/:shiftId/cash-adjustments",
+  permissionMiddleware(["shifts:manage"]),
+  asyncHandler(shiftsController.addCashAdjustment),
+);
+router.get(
+  "/:shiftId/cash-adjustments",
+  permissionMiddleware(["shifts:read"]),
+  asyncHandler(shiftsController.listCashAdjustments),
 );
 
 export const shiftsRoutes = router;

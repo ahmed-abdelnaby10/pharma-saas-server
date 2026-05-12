@@ -1,7 +1,19 @@
-import { Prisma, ShiftStatus } from "@prisma/client";
+import { CashAdjustmentType, Prisma, ShiftStatus } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { QueryShiftsDto } from "../dto/query-shifts.dto";
 import { ShiftRecord } from "../mapper/shifts.mapper";
+
+export type CashAdjustmentRecord = {
+  id:        string;
+  tenantId:  string;
+  shiftId:   string;
+  userId:    string;
+  type:      CashAdjustmentType;
+  amount:    Prisma.Decimal;
+  reason:    string | null;
+  createdAt: Date;
+  user: { id: string; fullName: string; email: string };
+};
 
 const shiftInclude = {
   user: { select: { id: true, fullName: true, email: true } },
@@ -89,6 +101,40 @@ export class ShiftsRepository {
         ...(clientClosedAt != null ? { clientClosedAt } : {}),
       },
       include: shiftInclude,
+    });
+  }
+
+  // ── Cash adjustments ────────────────────────────────────────────────────────
+
+  async createCashAdjustment(data: {
+    tenantId:  string;
+    shiftId:   string;
+    userId:    string;
+    type:      CashAdjustmentType;
+    amount:    Prisma.Decimal;
+    reason?:   string | null;
+  }): Promise<CashAdjustmentRecord> {
+    return prisma.shiftCashAdjustment.create({
+      data: {
+        tenantId: data.tenantId,
+        shiftId:  data.shiftId,
+        userId:   data.userId,
+        type:     data.type,
+        amount:   data.amount,
+        reason:   data.reason ?? null,
+      },
+      include: { user: { select: { id: true, fullName: true, email: true } } },
+    });
+  }
+
+  async listCashAdjustments(
+    tenantId: string,
+    shiftId:  string,
+  ): Promise<CashAdjustmentRecord[]> {
+    return prisma.shiftCashAdjustment.findMany({
+      where: { tenantId, shiftId },
+      include: { user: { select: { id: true, fullName: true, email: true } } },
+      orderBy: [{ createdAt: "asc" }],
     });
   }
 }

@@ -8,8 +8,10 @@ import {
   parseCloseShiftDto,
   parseQueryShiftsDto,
   parseShiftIdParam,
+  parseCashAdjustmentDto,
 } from "../validators/shifts.validator";
 import { mapShiftResponse } from "../mapper/shifts.mapper";
+import { CashAdjustmentRecord } from "../repository/shifts.repository";
 import { shiftsService, ShiftsService } from "../service/shifts.service";
 
 export class ShiftsController {
@@ -67,6 +69,56 @@ export class ShiftsController {
     return res.status(200).json(
       successResponse(req.t?.("shift.closed") || "Shift closed", mapShiftResponse(shift), undefined, req.requestId),
     );
+  };
+
+  // ── Cash adjustments ─────────────────────────────────────────────────────
+
+  addCashAdjustment = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const shiftId = parseShiftIdParam(req.params);
+    const payload = parseCashAdjustmentDto(req.body);
+    const adj = await this.service.addCashAdjustment(auth, shiftId, payload);
+    return res.status(201).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        mapCashAdjustmentResponse(adj),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  listCashAdjustments = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const shiftId = parseShiftIdParam(req.params);
+    const adjs = await this.service.listCashAdjustments(auth, shiftId);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        adjs.map(mapCashAdjustmentResponse),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+}
+
+function mapCashAdjustmentResponse(adj: CashAdjustmentRecord) {
+  return {
+    id:        adj.id,
+    tenantId:  adj.tenantId,
+    shiftId:   adj.shiftId,
+    type:      adj.type,
+    amount:    adj.amount.toString(),
+    reason:    adj.reason ?? null,
+    recordedBy: {
+      id:       adj.user.id,
+      fullName: adj.user.fullName,
+      email:    adj.user.email,
+    },
+    createdAt: adj.createdAt,
   };
 }
 

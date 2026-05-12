@@ -1,4 +1,4 @@
-import { NotificationType, Prisma } from "@prisma/client";
+import { CashAdjustmentType, NotificationType, Prisma } from "@prisma/client";
 import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { NotFoundError } from "../../../../shared/errors/not-found-error";
 import { ConflictError } from "../../../../shared/errors/conflict-error";
@@ -8,8 +8,9 @@ import { logger } from "../../../../core/logger/logger";
 import { OpenShiftDto } from "../dto/open-shift.dto";
 import { CloseShiftDto } from "../dto/close-shift.dto";
 import { QueryShiftsDto } from "../dto/query-shifts.dto";
+import { CreateCashAdjustmentDto } from "../dto/cash-adjustment.dto";
 import { ShiftRecord } from "../mapper/shifts.mapper";
-import { shiftsRepository, ShiftsRepository } from "../repository/shifts.repository";
+import { shiftsRepository, ShiftsRepository, CashAdjustmentRecord } from "../repository/shifts.repository";
 import { prisma } from "../../../../core/db/prisma";
 
 export class ShiftsService {
@@ -135,6 +136,42 @@ export class ShiftsService {
       });
 
     return closed;
+  }
+
+  // ── Cash adjustments ─────────────────────────────────────────────────────
+
+  async addCashAdjustment(
+    auth: TenantAuthContext,
+    shiftId: string,
+    payload: CreateCashAdjustmentDto,
+  ): Promise<CashAdjustmentRecord> {
+    const shift = await this.getShift(auth, shiftId);
+
+    if (shift.status !== "OPEN") {
+      throw new ConflictError(
+        "Cash adjustments can only be added to an open shift",
+        undefined,
+        "shift.not_open",
+      );
+    }
+
+    return this.repository.createCashAdjustment({
+      tenantId: auth.tenantId,
+      shiftId,
+      userId:   auth.userId,
+      type:     payload.type as CashAdjustmentType,
+      amount:   new Prisma.Decimal(payload.amount),
+      reason:   payload.reason ?? null,
+    });
+  }
+
+  async listCashAdjustments(
+    auth: TenantAuthContext,
+    shiftId: string,
+  ): Promise<CashAdjustmentRecord[]> {
+    // Verify the shift belongs to this tenant
+    await this.getShift(auth, shiftId);
+    return this.repository.listCashAdjustments(auth.tenantId, shiftId);
   }
 
   private async assertBranch(tenantId: string, branchId: string): Promise<void> {
