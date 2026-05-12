@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../../shared/middlewares/auth.middleware";
 import { tenantMiddleware } from "../../../../shared/middlewares/tenant.middleware";
+import { permissionMiddleware } from "../../../../shared/middlewares/permission.middleware";
 import { asyncHandler } from "../../../../shared/utils/async-handler";
 import { suppliersController } from "../controller/suppliers.controller";
 
@@ -8,10 +9,10 @@ const router = Router();
 
 router.use(authMiddleware, tenantMiddleware);
 
-router.get("/", asyncHandler(suppliersController.list));
-router.post("/", asyncHandler(suppliersController.create));
-router.get("/:supplierId", asyncHandler(suppliersController.get));
-router.patch("/:supplierId", asyncHandler(suppliersController.update));
-router.delete("/:supplierId", asyncHandler(suppliersController.deactivate));
+router.get("/",              permissionMiddleware(["suppliers:read"]),   asyncHandler(suppliersController.list));
+router.post("/",             permissionMiddleware(["suppliers:create"]), asyncHandler(suppliersController.create));
+router.get("/:supplierId",   permissionMiddleware(["suppliers:read"]),   asyncHandler(suppliersController.get));
+router.patch("/:supplierId", permissionMiddleware(["suppliers:update"]), asyncHandler(suppliersController.update));
+router.delete("/:supplierId",permissionMiddleware(["suppliers:update"]), asyncHandler(suppliersController.deactivate));
 
 export const suppliersRoutes = router;

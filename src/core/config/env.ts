@@ -91,6 +91,13 @@ const envSchema = z.object({
   // Google Gemini — required for real OCR extraction
   GOOGLE_API_KEY: z.string().min(1),
   GEMINI_OCR_MODEL: z.string().min(1).default("gemini-2.5-flash"),
+
+  // ── Twilio — required only when WhatsApp notifications are used ─────────────
+  // TWILIO_WHATSAPP_FROM must include the "whatsapp:" prefix,
+  // e.g. "whatsapp:+14155238886" (sandbox) or "whatsapp:+1XXXXXXXXXX" (production).
+  TWILIO_ACCOUNT_SID:    z.string().trim().optional(),
+  TWILIO_AUTH_TOKEN:     z.string().trim().optional(),
+  TWILIO_WHATSAPP_FROM:  z.string().trim().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

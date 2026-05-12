@@ -9,6 +9,8 @@ import { branchesRepository } from "../../branches/repository/branches.repositor
 import { rolesRepository } from "../../roles/repository/roles.repository";
 import { sendEmail } from "../../../../core/email/email.service";
 import { buildWelcomeUserEmail } from "../../../../core/email/templates/welcome-user.template";
+import { sendWhatsApp, tenantHasWhatsApp } from "../../../../core/whatsapp/whatsapp.service";
+import { buildWelcomeUserWhatsApp } from "../../../../core/whatsapp/whatsapp.templates";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { QueryUsersDto } from "../dto/query-users.dto";
@@ -16,6 +18,44 @@ import { UserRecord } from "../mapper/users.mapper";
 import { usersRepository } from "../repository/users.repository";
 
 export class UsersService {
+  /**
+   * Fire-and-forget: sends welcome email + WhatsApp (if plan allows) to a
+   * newly created user.  Never throws.
+   */
+  private dispatchWelcomeNotifications(
+    tenantId: string,
+    user: { fullName: string; email: string; phone?: string | null; preferredLanguage?: string | null },
+    plainPassword: string,
+  ): void {
+    const lang = (user.preferredLanguage === "ar" ? "ar" : "en") as "en" | "ar";
+
+    // Email — always sent
+    void (async () => {
+      const { subject, html } = buildWelcomeUserEmail({
+        fullName: user.fullName,
+        email:    user.email,
+        password: plainPassword,
+        lang,
+      });
+      await sendEmail({ to: user.email, subject, html });
+    })();
+
+    // WhatsApp — only if tenant plan includes it AND user has a phone
+    if (user.phone) {
+      void (async () => {
+        const allowed = await tenantHasWhatsApp(tenantId);
+        if (!allowed) return;
+        const body = buildWelcomeUserWhatsApp({
+          fullName: user.fullName,
+          email:    user.email,
+          password: plainPassword,
+          lang,
+        });
+        await sendWhatsApp({ to: user.phone!, body });
+      })();
+    }
+  }
+
   /**
    * Validate that the given branchId belongs to the tenant and is active.
    */
@@ -100,28 +140,24 @@ export class UsersService {
       // Reload user so the response includes the freshly assigned role
       const updated = await usersRepository.findById(auth.tenantId, user.id);
       if (updated) {
-        // Fire-and-forget welcome email — never blocks the response
-        const lang = (payload.preferredLanguage === "ar" ? "ar" : "en") as "en" | "ar";
-        const { subject, html } = buildWelcomeUserEmail({
-          fullName: payload.fullName,
-          email: payload.email,
-          password: payload.password,
-          lang,
-        });
-        void sendEmail({ to: payload.email, subject, html });
+        // Fire-and-forget: email + WhatsApp welcome
+        this.dispatchWelcomeNotifications(auth.tenantId, {
+          fullName:          payload.fullName,
+          email:             payload.email,
+          phone:             payload.phone,
+          preferredLanguage: payload.preferredLanguage,
+        }, payload.password);
         return updated;
       }
     }
 
-    // Fire-and-forget welcome email — never blocks the response
-    const lang = (payload.preferredLanguage === "ar" ? "ar" : "en") as "en" | "ar";
-    const { subject, html } = buildWelcomeUserEmail({
-      fullName: payload.fullName,
-      email: payload.email,
-      password: payload.password, // plain-text, shown once before hashing
-      lang,
-    });
-    void sendEmail({ to: payload.email, subject, html });
+    // Fire-and-forget: email + WhatsApp welcome
+    this.dispatchWelcomeNotifications(auth.tenantId, {
+      fullName:          payload.fullName,
+      email:             payload.email,
+      phone:             payload.phone,
+      preferredLanguage: payload.preferredLanguage,
+    }, payload.password);
 
     return user;
   }

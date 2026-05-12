@@ -16,6 +16,9 @@ export const FeatureKey = {
 
   // Offline mode — how many hours the desktop may operate offline before forcing re-auth (default: 24)
   MAX_OFFLINE_HOURS: "max_offline_hours",
+
+  // WhatsApp notifications (plan feature flag — must be enabled in the plan)
+  WHATSAPP_NOTIFICATIONS: "notifications.whatsapp",
 } as const;
 
 export type FeatureKeyValue = (typeof FeatureKey)[keyof typeof FeatureKey];

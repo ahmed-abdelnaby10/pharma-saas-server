@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../../shared/middlewares/auth.middleware";
 import { tenantMiddleware } from "../../../../shared/middlewares/tenant.middleware";
+import { permissionMiddleware } from "../../../../shared/middlewares/permission.middleware";
 import { asyncHandler } from "../../../../shared/utils/async-handler";
 import { branchesController } from "../controller/branches.controller";
 
 const router = Router();
 
-// All branch routes require a valid tenant JWT
 router.use(authMiddleware, tenantMiddleware);
 
-router.get("/", asyncHandler(branchesController.list));
-router.post("/", asyncHandler(branchesController.create));
-router.get("/:branchId", asyncHandler(branchesController.get));
-router.patch("/:branchId", asyncHandler(branchesController.update));
-router.delete("/:branchId", asyncHandler(branchesController.deactivate));
+router.get("/",             permissionMiddleware(["branches:read"]),   asyncHandler(branchesController.list));
+router.post("/",            permissionMiddleware(["branches:create"]), asyncHandler(branchesController.create));
+router.get("/:branchId",    permissionMiddleware(["branches:read"]),   asyncHandler(branchesController.get));
+router.patch("/:branchId",  permissionMiddleware(["branches:update"]), asyncHandler(branchesController.update));
+router.delete("/:branchId", permissionMiddleware(["branches:delete"]), asyncHandler(branchesController.deactivate));
 
 export const branchesRoutes = router;

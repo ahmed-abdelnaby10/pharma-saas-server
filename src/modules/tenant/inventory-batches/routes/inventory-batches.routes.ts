@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../../shared/middlewares/auth.middleware";
 import { tenantMiddleware } from "../../../../shared/middlewares/tenant.middleware";
+import { permissionMiddleware } from "../../../../shared/middlewares/permission.middleware";
 import { asyncHandler } from "../../../../shared/utils/async-handler";
 import { inventoryBatchesController } from "../controller/inventory-batches.controller";
 
@@ -9,10 +10,10 @@ const router = Router({ mergeParams: true });
 
 router.use(authMiddleware, tenantMiddleware);
 
-router.get("/", asyncHandler(inventoryBatchesController.list));
-router.post("/", asyncHandler(inventoryBatchesController.create));
-router.get("/:batchId", asyncHandler(inventoryBatchesController.get));
-router.patch("/:batchId", asyncHandler(inventoryBatchesController.update));
-router.delete("/:batchId", asyncHandler(inventoryBatchesController.deactivate));
+router.get("/",           permissionMiddleware(["inventory:read"]),   asyncHandler(inventoryBatchesController.list));
+router.post("/",          permissionMiddleware(["inventory:create"]), asyncHandler(inventoryBatchesController.create));
+router.get("/:batchId",   permissionMiddleware(["inventory:read"]),   asyncHandler(inventoryBatchesController.get));
+router.patch("/:batchId", permissionMiddleware(["inventory:update"]), asyncHandler(inventoryBatchesController.update));
+router.delete("/:batchId",permissionMiddleware(["inventory:update"]), asyncHandler(inventoryBatchesController.deactivate));
 
 export const inventoryBatchesRoutes = router;
