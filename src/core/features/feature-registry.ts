@@ -43,8 +43,9 @@ export const FEATURE_KEYS = {
   STORAGE_MB:           "storage.mb",
 
   // ── Notifications ─────────────────────────────────────────────────────────
-  NOTIFICATIONS_EMAIL:  "notifications.email",
-  NOTIFICATIONS_SMS:    "notifications.sms",
+  NOTIFICATIONS_EMAIL:     "notifications.email",
+  NOTIFICATIONS_SMS:       "notifications.sms",
+  NOTIFICATIONS_WHATSAPP:  "notifications.whatsapp",
 
   // ── API ───────────────────────────────────────────────────────────────────
   API_ACCESS:           "api.access",
@@ -288,6 +289,17 @@ export const FEATURE_REGISTRY: FeatureMeta[] = [
     labelAr: "إشعارات الرسائل القصيرة",
     descriptionEn: "Send system notifications via SMS",
     descriptionAr: "إرسال إشعارات النظام عبر الرسائل القصيرة",
+    module: "notifications",
+    requiresKeys: [],
+    isActive: true,
+  },
+  {
+    key: FEATURE_KEYS.NOTIFICATIONS_WHATSAPP,
+    type: "boolean",
+    labelEn: "WhatsApp Notifications",
+    labelAr: "إشعارات واتساب",
+    descriptionEn: "Send credential and alert notifications via WhatsApp (powered by Twilio)",
+    descriptionAr: "إرسال إشعارات بيانات الاعتماد والتنبيهات عبر واتساب (مدعوم من Twilio)",
     module: "notifications",
     requiresKeys: [],
     isActive: true,

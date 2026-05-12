@@ -4,6 +4,8 @@ import { TenantAuthContext } from "../../../../shared/types/auth.types";
 import { Translator } from "../../../../shared/types/locale.types";
 import { sendEmail } from "../../../../core/email/email.service";
 import { buildAlertSummaryEmail } from "../../../../core/email/templates/alert-summary.template";
+import { sendWhatsApp, tenantHasWhatsApp } from "../../../../core/whatsapp/whatsapp.service";
+import { buildAlertWhatsApp } from "../../../../core/whatsapp/whatsapp.templates";
 import { settingsRepository } from "../../settings/repository/settings.repository";
 import { notificationsRepository } from "../../notifications/repository/notifications.repository";
 import { QueryLowStockDto, QueryExpiringDto } from "../dto/query-alerts.dto";
@@ -236,14 +238,17 @@ export class AlertsService {
       created++;
     }
 
-    // ── Email summary to tenant owner(s) — fire-and-forget ──────────────────
+    // ── Email + WhatsApp summary to tenant owner(s) — fire-and-forget ────────
     if (created > 0) {
-      void this.sendAlertEmailToOwners(
+      const freshLowStock = lowStockAlerts.filter((a) => !recentLowStockRefs.has(a.inventoryItemId));
+      const freshExpiry   = expiryAlerts.filter((a) => !recentExpiryRefs.has(a.batchId));
+
+      void this.notifyOwners(
         auth.tenantId,
         settings?.tenant.nameEn ?? "",
         settings?.tenant.nameAr ?? "",
-        lowStockAlerts.filter((a) => !recentLowStockRefs.has(a.inventoryItemId)),
-        expiryAlerts.filter((a) => !recentExpiryRefs.has(a.batchId)),
+        freshLowStock,
+        freshExpiry,
       );
     }
 
@@ -251,10 +256,13 @@ export class AlertsService {
   }
 
   /**
-   * Finds all users with the tenant_owner role and sends each of them
-   * a bilingual alert summary email. Fire-and-forget — never throws.
+   * Finds all tenant_owner users and sends each of them:
+   *  1. A bilingual HTML alert summary email (always)
+   *  2. A WhatsApp summary message (if tenant plan has WhatsApp AND owner has a phone)
+   *
+   * Fire-and-forget — never throws.
    */
-  private async sendAlertEmailToOwners(
+  private async notifyOwners(
     tenantId: string,
     pharmacyNameEn: string,
     pharmacyNameAr: string,
@@ -262,18 +270,21 @@ export class AlertsService {
     expiryItems: ExpiryAlert[],
   ): Promise<void> {
     try {
-      const ownerRole = await prisma.role.findFirst({
-        where: { tenantId, code: "tenant_owner", isActive: true },
-        include: {
-          userRoles: {
-            include: {
-              user: {
-                select: { email: true, fullName: true, preferredLanguage: true, isActive: true },
+      const [ownerRole, whatsAppAllowed] = await Promise.all([
+        prisma.role.findFirst({
+          where: { tenantId, code: "tenant_owner", isActive: true },
+          include: {
+            userRoles: {
+              include: {
+                user: {
+                  select: { email: true, fullName: true, phone: true, preferredLanguage: true, isActive: true },
+                },
               },
             },
           },
-        },
-      });
+        }),
+        tenantHasWhatsApp(tenantId),
+      ]);
 
       if (!ownerRole) return;
 
@@ -283,6 +294,8 @@ export class AlertsService {
 
       for (const owner of ownerUsers) {
         const lang = (owner.preferredLanguage ?? "en") as "en" | "ar";
+
+        // ── Email ──────────────────────────────────────────────────────────
         const { subject, html } = buildAlertSummaryEmail({
           pharmacyNameEn,
           pharmacyNameAr,
@@ -291,9 +304,21 @@ export class AlertsService {
           lang,
         });
         await sendEmail({ to: owner.email, subject, html });
+
+        // ── WhatsApp ───────────────────────────────────────────────────────
+        if (whatsAppAllowed && owner.phone) {
+          const pharmacyName = lang === "ar" ? pharmacyNameAr : pharmacyNameEn;
+          const body = buildAlertWhatsApp({
+            pharmacyName,
+            lowStockCount: lowStockItems.length,
+            expiryCount:   expiryItems.length,
+            lang,
+          });
+          await sendWhatsApp({ to: owner.phone, body });
+        }
       }
     } catch {
-      // Never block the caller — email is best-effort
+      // Never block the caller — notifications are best-effort
     }
   }
 }

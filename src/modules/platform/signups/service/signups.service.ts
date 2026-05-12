@@ -133,16 +133,15 @@ export class SignupsService {
       },
     });
 
-    // ── Gap #4: inbox / email notifications (fire-and-forget stubs) ──────────
-    // Email delivery is wired in once the notification service is ready.
-    // Tenant inbox notifications will be created when the first tenant admin
-    // user is registered (no userId exists yet at this stage).
+    // ── Gap #4: welcome email + WhatsApp (fire-and-forget) ───────────────────
     notifySignupApproval({
-      email: request.email,
-      pharmacyNameEn: request.pharmacyNameEn,
-      pharmacyNameAr: request.pharmacyNameAr,
+      fullName:        request.fullName,
+      email:           request.email,
+      phone:           request.phone ?? null,
+      pharmacyNameEn:  request.pharmacyNameEn,
+      pharmacyNameAr:  request.pharmacyNameAr,
       preferredLanguage: request.preferredLanguage,
-      tenantId: tenant.id,
+      tenantId:        tenant.id,
     });
 
     return mapSignupRequestResponse(updated);
