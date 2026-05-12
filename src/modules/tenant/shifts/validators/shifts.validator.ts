@@ -4,6 +4,7 @@ import { ValidationError } from "../../../../shared/errors/validation-error";
 import { OpenShiftDto } from "../dto/open-shift.dto";
 import { CloseShiftDto } from "../dto/close-shift.dto";
 import { QueryShiftsDto } from "../dto/query-shifts.dto";
+import { CreateCashAdjustmentDto } from "../dto/cash-adjustment.dto";
 
 const shiftStatuses = Object.values(ShiftStatus) as [string, ...string[]];
 
@@ -39,9 +40,30 @@ const parse = <T>(schema: z.ZodType<T>, input: unknown): T => {
   return result.data;
 };
 
+// ── Cash adjustment ───────────────────────────────────────────────────────────
+// Accept both lower-case ("cash_in") and upper-case ("CASH_IN") and normalise
+// to the Prisma enum value (CASH_IN / CASH_OUT).
+const cashAdjustmentSchema = z.object({
+  type: z
+    .string()
+    .transform((v) => v.toUpperCase())
+    .pipe(z.enum(["CASH_IN", "CASH_OUT"])),
+  // Accept string or number; validate as a positive decimal
+  amount: z.preprocess(
+    (v) => (typeof v === "number" ? String(v) : v),
+    z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "amount must be a positive number with up to 2 decimal places")
+      .refine((v) => parseFloat(v) > 0, "amount must be greater than 0"),
+  ),
+  reason: z.string().min(1).max(1000).nullable().optional(),
+});
+
 export const parseOpenShiftDto = (b: unknown): OpenShiftDto => parse(openShiftSchema, b);
 export const parseCloseShiftDto = (b: unknown): CloseShiftDto => parse(closeShiftSchema, b);
 export const parseQueryShiftsDto = (q: unknown): QueryShiftsDto =>
   parse(queryShiftsSchema, q) as QueryShiftsDto;
 export const parseShiftIdParam = (p: unknown): string =>
   parse(shiftIdParamSchema, p).shiftId;
+export const parseCashAdjustmentDto = (b: unknown): CreateCashAdjustmentDto =>
+  parse(cashAdjustmentSchema, b) as CreateCashAdjustmentDto;
