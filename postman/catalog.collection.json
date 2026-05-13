@@ -1,19 +1,19 @@
 {
   "info": {
     "name": "Global Catalog",
-    "_postman_id": "catalog-v1",
-    "description": "Platform-managed pharmaceutical product catalog. Platform admins manage items; tenant users read them.",
+    "_postman_id": "catalog-v2",
+    "description": "Platform-managed global catalog. Supports CRUD, crowdsource review (approve/reject), external sync (OpenFDA / Open Beauty Facts / EDA), and tenant suggest flow.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000/api/v1", "type": "string" },
+    { "key": "baseUrl",       "value": "http://localhost:3000/api/v1", "type": "string" },
     { "key": "platformToken", "value": "<replace_with_platform_admin_token>", "type": "string" },
-    { "key": "tenantToken", "value": "<replace_with_tenant_access_token>", "type": "string" },
-    { "key": "itemId", "value": "<replace_with_catalog_item_id>", "type": "string" }
+    { "key": "tenantToken",   "value": "<replace_with_tenant_access_token>",  "type": "string" },
+    { "key": "itemId",        "value": "<replace_with_catalog_item_id>",       "type": "string" }
   ],
   "item": [
     {
-      "name": "Platform Admin",
+      "name": "Platform Admin — CRUD",
       "item": [
         {
           "name": "List Catalog Items",
@@ -21,17 +21,29 @@
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
             "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
-            "description": "List all catalog items. Supports search, category, isActive filters."
+            "description": "All items. Add ?search=, ?category=, ?isActive=, ?status=, ?productType=, ?source= filters."
           }
         },
         {
-          "name": "List — search by name",
+          "name": "List — filter by status PENDING_REVIEW",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/platform/catalog?search=paracetamol",
+              "raw": "{{baseUrl}}/platform/catalog?status=PENDING_REVIEW",
               "host": ["{{baseUrl}}"], "path": ["platform", "catalog"],
-              "query": [{ "key": "search", "value": "paracetamol" }]
+              "query": [{ "key": "status", "value": "PENDING_REVIEW" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        },
+        {
+          "name": "List — filter by productType COSMETIC",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog?productType=COSMETIC",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog"],
+              "query": [{ "key": "productType", "value": "COSMETIC" }]
             },
             "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
           }
@@ -49,6 +61,15 @@
           }
         },
         {
+          "name": "List Pending Items (shortcut)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/pending", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "pending"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "description": "Returns only PENDING_REVIEW items, ordered oldest first."
+          }
+        },
+        {
           "name": "Get Catalog Item",
           "request": {
             "method": "GET",
@@ -57,32 +78,32 @@
           }
         },
         {
-          "name": "Create Catalog Item — tablet",
+          "name": "Create Catalog Item — medicine (tablet)",
           "request": {
             "method": "POST",
             "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
             "header": [
               { "key": "Authorization", "value": "Bearer {{platformToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type",  "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nameEn\": \"Paracetamol 500mg Tablets\",\n  \"nameAr\": \"باراسيتامول 500 مجم أقراص\",\n  \"genericNameEn\": \"Paracetamol\",\n  \"genericNameAr\": \"باراسيتامول\",\n  \"barcode\": \"6281034057042\",\n  \"sku\": \"PCM-500-TAB\",\n  \"category\": \"Analgesics\",\n  \"unitOfMeasure\": \"tablet\",\n  \"dosageForm\": \"tablet\",\n  \"strength\": \"500mg\",\n  \"manufacturer\": \"Gulf Pharma\"\n}"
+              "raw": "{\n  \"nameEn\": \"Paracetamol 500mg Tablets\",\n  \"nameAr\": \"باراسيتامول 500 مجم أقراص\",\n  \"genericNameEn\": \"Paracetamol\",\n  \"genericNameAr\": \"باراسيتامول\",\n  \"barcode\": \"6281034057042\",\n  \"sku\": \"PCM-500-TAB\",\n  \"category\": \"Analgesics\",\n  \"unitOfMeasure\": \"tablet\",\n  \"dosageForm\": \"tablet\",\n  \"strength\": \"500mg\",\n  \"manufacturer\": \"Gulf Pharma\",\n  \"atcCode\": \"N02BE01\",\n  \"requiresPrescription\": false,\n  \"productType\": \"MEDICINE\"\n}"
             }
           }
         },
         {
-          "name": "Create Catalog Item — syrup",
+          "name": "Create Catalog Item — cosmetic",
           "request": {
             "method": "POST",
             "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
             "header": [
               { "key": "Authorization", "value": "Bearer {{platformToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type",  "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nameEn\": \"Amoxicillin 250mg/5ml Syrup\",\n  \"nameAr\": \"أموكسيسيلين 250 مجم/5 مل شراب\",\n  \"genericNameEn\": \"Amoxicillin\",\n  \"genericNameAr\": \"أموكسيسيلين\",\n  \"category\": \"Antibiotics\",\n  \"unitOfMeasure\": \"bottle\",\n  \"dosageForm\": \"syrup\",\n  \"strength\": \"250mg/5ml\"\n}"
+              "raw": "{\n  \"nameEn\": \"Neutrogena Hydro Boost Water Gel\",\n  \"nameAr\": \"نيتروجينا هيدرو بوست جل مائي\",\n  \"barcode\": \"0070501114955\",\n  \"category\": \"Moisturizers\",\n  \"unitOfMeasure\": \"unit\",\n  \"manufacturer\": \"Neutrogena\",\n  \"productType\": \"COSMETIC\",\n  \"requiresPrescription\": false\n}"
             }
           }
         },
@@ -93,11 +114,11 @@
             "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}"] },
             "header": [
               { "key": "Authorization", "value": "Bearer {{platformToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type",  "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"manufacturer\": \"Al Jazeera Pharma\",\n  \"strength\": \"500mg\"\n}"
+              "raw": "{\n  \"manufacturer\": \"Al Jazeera Pharma\",\n  \"description\": \"Widely used analgesic and antipyretic.\",\n  \"requiresPrescription\": false\n}"
             }
           }
         },
@@ -112,14 +133,103 @@
       ]
     },
     {
-      "name": "Tenant (read-only)",
+      "name": "Platform Admin — Crowdsource Review",
       "item": [
         {
-          "name": "List Catalog Items",
+          "name": "Approve Pending Item",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}/approve", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}", "approve"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Sets status → ACTIVE. Body is optional."
+          }
+        },
+        {
+          "name": "Reject Pending Item",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/{{itemId}}/reject", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "{{itemId}}", "reject"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Duplicate entry — already exists under barcode 6281034057042\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Platform Admin — External Sync",
+      "item": [
+        {
+          "name": "Sync from OpenFDA (default 5000 items)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/sync/openfda", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "openfda"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "description": "Syncs medicines from OpenFDA NDC database. Safe to re-run — upserts by sourceId."
+          }
+        },
+        {
+          "name": "Sync from OpenFDA (custom limit)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog/sync/openfda?limit=1000",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "openfda"],
+              "query": [{ "key": "limit", "value": "1000" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }]
+          }
+        },
+        {
+          "name": "Sync from Open Beauty Facts (default 2000 items)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/sync/openbeauty", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "openbeauty"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
+            "description": "Syncs cosmetics from Open Beauty Facts. Safe to re-run."
+          }
+        },
+        {
+          "name": "Sync from EDA CSV",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/sync/eda", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "eda"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filePath\": \"/data/eda/eda_medicines_2025.csv\"\n}"
+            },
+            "description": "Import EDA (Egyptian Drug Authority) CSV. File must already be on the server. CSV must have headers: reg_no, nameAr, nameEn, genericNameAr, genericNameEn, manufacturer, dosageForm, strength, category, requiresPrescription"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant — Browse Catalog",
+      "item": [
+        {
+          "name": "List Catalog Items (ACTIVE + own PENDING)",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/tenant/catalog", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"] },
-            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
+            "description": "Returns ACTIVE items + this tenant's own PENDING_REVIEW items. Never shows other tenants' suggestions or REJECTED items."
           }
         },
         {
@@ -127,12 +237,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/tenant/catalog?search=amox&category=Antibiotics",
+              "raw": "{{baseUrl}}/tenant/catalog?search=paracetamol",
               "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"],
-              "query": [
-                { "key": "search", "value": "amox" },
-                { "key": "category", "value": "Antibiotics" }
-              ]
+              "query": [{ "key": "search", "value": "paracetamol" }]
             },
             "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
           }
@@ -143,6 +250,58 @@
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/tenant/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "{{itemId}}"] },
             "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant — Suggest New Item",
+      "item": [
+        {
+          "name": "Suggest — new medicine (creates PENDING_REVIEW)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/suggest", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "suggest"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Augmentin 625mg Tablets\",\n  \"nameAr\": \"أوجمنتين 625 مجم أقراص\",\n  \"barcode\": \"5000456027782\",\n  \"genericNameEn\": \"Amoxicillin / Clavulanate\",\n  \"genericNameAr\": \"أموكسيسيلين / كلافولانات\",\n  \"dosageForm\": \"tablet\",\n  \"strength\": \"625mg\",\n  \"manufacturer\": \"GSK\",\n  \"requiresPrescription\": true,\n  \"productType\": \"MEDICINE\"\n}"
+            },
+            "description": "Returns 201 if new. Platform admin must approve before visible to all tenants."
+          }
+        },
+        {
+          "name": "Suggest — existing barcode (idempotent, returns 200)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/suggest", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "suggest"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Paracetamol 500mg Tablets\",\n  \"nameAr\": \"باراسيتامول 500 مجم أقراص\",\n  \"barcode\": \"6281034057042\"\n}"
+            },
+            "description": "Barcode already in catalog → returns existing item with HTTP 200."
+          }
+        },
+        {
+          "name": "Suggest — cosmetic product",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/suggest", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "suggest"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nameEn\": \"Vaseline Intensive Care Body Lotion\",\n  \"nameAr\": \"فازلين لوشن مكثف للعناية بالجسم\",\n  \"barcode\": \"0305210076503\",\n  \"manufacturer\": \"Unilever\",\n  \"category\": \"Body Care\",\n  \"productType\": \"COSMETIC\"\n}"
+            }
           }
         }
       ]
