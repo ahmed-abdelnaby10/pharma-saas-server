@@ -22,6 +22,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
     "branches:read", "branches:create", "branches:update",
     "users:read",    "users:create",    "users:update",
     "roles:read",
+    "catalog:read",    "catalog:suggest",
     "inventory:read",   "inventory:create",   "inventory:update",
     "purchasing:read",  "purchasing:create",  "purchasing:update",
     "sales:read",       "sales:create",       "sales:return",
@@ -33,6 +34,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // ── Pharmacist: clinical + dispensing focus ──────────────────────────────────
   [TENANT_ROLES.PHARMACIST]: [
+    "catalog:read",    "catalog:suggest",
     "inventory:read",  "inventory:create",  "inventory:update",
     "purchasing:read", "purchasing:create", "purchasing:update",
     "sales:read",      "sales:create",
@@ -43,6 +45,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // ── Cashier: point-of-sale focus ─────────────────────────────────────────────
   [TENANT_ROLES.CASHIER]: [
+    "catalog:read",
     "sales:read",   "sales:create",
     "shifts:read",  "shifts:manage",
     "inventory:read",
@@ -51,6 +54,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // ── Inventory Clerk: stock and procurement focus ─────────────────────────────
   [TENANT_ROLES.INVENTORY_CLERK]: [
+    "catalog:read",    "catalog:suggest",
     "inventory:read",  "inventory:create",  "inventory:update",
     "purchasing:read", "purchasing:create", "purchasing:update",
     "suppliers:read",  "suppliers:create",  "suppliers:update",

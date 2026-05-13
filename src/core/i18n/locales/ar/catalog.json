@@ -1,9 +1,13 @@
 {
-  "catalog.created": "تم إنشاء عنصر الكتالوج بنجاح",
-  "catalog.updated": "تم تحديث عنصر الكتالوج بنجاح",
-  "catalog.deactivated": "تم تعطيل عنصر الكتالوج بنجاح",
-  "catalog.not_found": "عنصر الكتالوج غير موجود",
+  "catalog.created":        "تم إنشاء عنصر الكتالوج بنجاح",
+  "catalog.updated":        "تم تحديث عنصر الكتالوج بنجاح",
+  "catalog.deactivated":    "تم تعطيل عنصر الكتالوج بنجاح",
+  "catalog.approved":       "تمت الموافقة على عنصر الكتالوج وأصبح نشطًا",
+  "catalog.rejected":       "تم رفض عنصر الكتالوج",
+  "catalog.suggested":      "تم إرسال عنصر الكتالوج للمراجعة",
+  "catalog.already_exists": "عنصر الكتالوج موجود بالفعل",
+  "catalog.not_found":      "عنصر الكتالوج غير موجود",
   "catalog.barcode_conflict": "يوجد عنصر كتالوج بهذا الباركود بالفعل",
-  "catalog.sku_conflict": "يوجد عنصر كتالوج بهذا الرمز (SKU) بالفعل",
+  "catalog.sku_conflict":     "يوجد عنصر كتالوج بهذا الرمز (SKU) بالفعل",
   "catalog.already_inactive": "عنصر الكتالوج غير نشط بالفعل"
 }

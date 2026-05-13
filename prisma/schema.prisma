@@ -220,7 +220,8 @@ model Tenant {
   notifications    Notification[]
   devices          Device[]
   deviceSessions   DeviceSession[]
-  signupRequests   TenantSignupRequest[]
+  signupRequests       TenantSignupRequest[]
+  suggestedCatalogItems CatalogItem[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -489,29 +490,73 @@ model UserRole {
   @@index([roleId])
 }
 
+enum CatalogItemStatus {
+  PENDING_REVIEW // submitted by a tenant, awaiting platform admin review
+  ACTIVE         // verified by platform admin or added directly by platform
+  REJECTED       // rejected by platform admin
+}
+
+enum CatalogProductType {
+  MEDICINE
+  COSMETIC
+  SUPPLEMENT
+  MEDICAL_DEVICE
+  OTHER
+}
+
+enum CatalogSource {
+  MANUAL     // entered manually by platform admin
+  OPENFDA    // synced from OpenFDA NDC database
+  OPENBEAUTY // synced from Open Beauty Facts
+  EDA        // imported from Egyptian Drug Authority CSV
+  TENANT     // suggested by a tenant user
+}
+
 model CatalogItem {
-  id            String   @id @default(cuid())
-  nameEn        String
-  nameAr        String
-  genericNameEn String?
-  genericNameAr String?
-  barcode       String?  @unique
-  sku           String?  @unique
-  category      String?
-  unitOfMeasure String
-  dosageForm    String?
-  strength      String?
-  manufacturer  String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String             @id @default(cuid())
+  nameEn               String
+  nameAr               String
+  genericNameEn        String?
+  genericNameAr        String?
+  barcode              String?            @unique
+  sku                  String?            @unique
+  category             String?
+  unitOfMeasure        String             @default("unit")
+  dosageForm           String?
+  strength             String?
+  manufacturer         String?
+  // enriched fields
+  description          String?
+  scientificName       String?
+  atcCode              String?            // WHO ATC classification code e.g. "N02BE01"
+  requiresPrescription Boolean            @default(false)
+  imageUrl             String?
+  // catalog management
+  status               CatalogItemStatus  @default(ACTIVE)
+  productType          CatalogProductType @default(MEDICINE)
+  isActive             Boolean            @default(true)
+  // external sync tracking
+  source               CatalogSource      @default(MANUAL)
+  sourceId             String?            @unique  // dedup key from external source
+  lastSyncedAt         DateTime?
+  // review/crowdsource tracking
+  submittedByTenantId  String?            // soft ref — tenant that first suggested this item
+  verifiedAt           DateTime?
+  verifiedById         String?            // soft ref to PlatformAdmin.id
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  inventoryItems InventoryItem[]
+  inventoryItems    InventoryItem[]
+  submittedByTenant Tenant?          @relation(fields: [submittedByTenantId], references: [id], onDelete: SetNull)
 
+  @@index([status])
   @@index([isActive])
   @@index([category])
   @@index([barcode])
   @@index([sku])
+  @@index([source])
+  @@index([productType])
+  @@index([submittedByTenantId])
 }
 
 model Supplier {

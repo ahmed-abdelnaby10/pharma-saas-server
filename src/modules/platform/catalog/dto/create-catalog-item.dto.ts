@@ -1,3 +1,10 @@
+export type CatalogProductTypeDto =
+  | "MEDICINE"
+  | "COSMETIC"
+  | "SUPPLEMENT"
+  | "MEDICAL_DEVICE"
+  | "OTHER";
+
 export type CreateCatalogItemDto = {
   nameEn: string;
   nameAr: string;
@@ -10,4 +17,10 @@ export type CreateCatalogItemDto = {
   dosageForm?: string;
   strength?: string;
   manufacturer?: string;
+  description?: string;
+  scientificName?: string;
+  atcCode?: string;
+  requiresPrescription?: boolean;
+  imageUrl?: string;
+  productType?: CatalogProductTypeDto;
 };
