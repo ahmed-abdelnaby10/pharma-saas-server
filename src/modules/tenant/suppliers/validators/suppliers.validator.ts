@@ -41,6 +41,19 @@ const supplierIdParamSchema = z.object({
   supplierId: z.string().cuid("Invalid supplier ID"),
 });
 
+const createPaymentSchema = z.object({
+  amount: z.number().positive("Amount must be positive"),
+  method: z.enum(["CASH", "BANK_TRANSFER", "CHECK", "CARD"]).default("CASH"),
+  reference: z.string().min(1).max(100).optional(),
+  paidAt: z.string().datetime().optional(),   // ISO 8601; defaults to now
+  notes: z.string().max(500).optional(),
+});
+
+const paymentIdParamSchema = z.object({
+  supplierId: z.string().cuid("Invalid supplier ID"),
+  paymentId:  z.string().cuid("Invalid payment ID"),
+});
+
 const parse = <T>(schema: z.ZodType<T>, input: unknown): T => {
   const result = schema.safeParse(input);
   if (!result.success) {
@@ -49,11 +62,9 @@ const parse = <T>(schema: z.ZodType<T>, input: unknown): T => {
   return result.data;
 };
 
-export const parseCreateSupplierDto = (body: unknown) =>
-  parse(createSchema, body);
-export const parseUpdateSupplierDto = (body: unknown) =>
-  parse(updateSchema, body);
-export const parseQuerySuppliersDto = (query: unknown) =>
-  parse(querySchema, query);
-export const parseSupplierIdParam = (params: unknown): string =>
-  parse(supplierIdParamSchema, params).supplierId;
+export const parseCreateSupplierDto    = (body:   unknown) => parse(createSchema,          body);
+export const parseUpdateSupplierDto    = (body:   unknown) => parse(updateSchema,          body);
+export const parseQuerySuppliersDto    = (query:  unknown) => parse(querySchema,           query);
+export const parseSupplierIdParam      = (params: unknown): string => parse(supplierIdParamSchema, params).supplierId;
+export const parseCreatePaymentDto     = (body:   unknown) => parse(createPaymentSchema,   body);
+export const parsePaymentIdParam       = (params: unknown) => parse(paymentIdParamSchema,  params);

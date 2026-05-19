@@ -173,7 +173,7 @@
           "host": ["{{baseUrl}}"],
           "path": ["tenant", "ocr", "documents", "{{documentId}}", "to-purchase-order"]
         },
-        "description": "One-shot: COMPLETED INVOICE → DRAFT purchase order. Each extracted line is auto-resolved to a catalog item (created as PENDING_REVIEW if missing) and a branch InventoryItem (created if missing). Body all optional: branchId (defaults to doc branch), supplierId, defaultSellingPrice (for auto-created inventory items), markOrdered (auto DRAFT→ORDERED). Idempotent — re-running returns the same PO (200, alreadyConverted:true). Returns 201 with { purchaseOrder, resolution[], alreadyConverted }. Finish with POST /tenant/purchasing/orders/:id/receive (batch + expiry)."
+        "description": "One-shot: COMPLETED INVOICE → DRAFT purchase order. Each extracted line is auto-resolved to a catalog item (created as PENDING_REVIEW if missing) and a branch InventoryItem (created if missing). Body all optional: supplierId, defaultSellingPrice (for auto-created inventory items), markOrdered (auto DRAFT→ORDERED). Idempotent — re-running returns the same PO (200, alreadyConverted:true). Returns 201 with { purchaseOrder, resolution[], alreadyConverted }.\n\nresolution[] per line: catalogItemId, catalogStatus, catalogCreated, inventoryItemId, inventoryCreated, quantity, unitCost (discount already applied), discountPercent, batchNumber, expiryDate.\n\nCatalog matching: uses the model-translated nameEn first, then falls back to Arabic description against nameAr. When auto-creating a PENDING_REVIEW stub, nameEn = English translation, nameAr = original Arabic.\n\nFinish with POST /tenant/purchasing/orders/:id/receive — use batchNumber + expiryDate from resolution[] to pre-fill each line."
       }
     },
     {

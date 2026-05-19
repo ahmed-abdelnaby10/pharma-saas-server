@@ -210,19 +210,38 @@ Enqueue an invoice document for async OCR processing. The document transitions `
 
 ```json
 {
-  "invoiceNumber": "INV-001",
-  "invoiceDate": "2026-04-22",
-  "supplierName": "Pharma Supplier Ltd",
-  "supplierTaxId": "300-000-0000",
+  "invoiceNumber": "184836",
+  "invoiceDate": "2025-09-10",
+  "supplierName": "الشمس فارم",
+  "supplierTaxId": "2390900",
   "lineItems": [
-    { "description": "Paracetamol 500mg × 100", "quantity": 10, "unitPrice": 5.0, "total": 50.0 }
+    {
+      "description": "فيسيرالجين اقراص سيديكو س ج",
+      "nameEn": "Viseralgine tablets (Metamizole)",
+      "quantity": 1,
+      "unitPrice": 42.0,
+      "discountPercent": 29,
+      "total": 29.82,
+      "batchNumber": "1024552",
+      "expiryDate": "2027-10-01"
+    }
   ],
-  "subtotal": 50.0,
-  "vatAmount": 7.5,
-  "totalAmount": 57.5,
-  "currency": "SAR",
+  "subtotal": 454.9,
+  "vatAmount": null,
+  "totalAmount": 1322.279,
+  "currency": "EGP",
   "confidence": 0.94
 }
+```
+
+**New line-item fields (Egyptian invoice support):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nameEn` | `string \| null` | Gemini's English / generic drug name translation. Used as the primary catalog-match key so Arabic descriptions map to English catalog entries. |
+| `discountPercent` | `number \| null` | Line discount % from `الخصم` column (e.g. `29` = 29%). Formula: `total = unitPrice × qty × (1 − discount/100)`. |
+| `batchNumber` | `string \| null` | Lot number from `التشغيلة` column. Passed through `resolution[]` to pre-fill the receive step. |
+| `expiryDate` | `string \| null` | Expiry date from `الصلاحية` column (ISO `YYYY-MM-DD`). Passed through `resolution[]` to pre-fill the receive step. |
 ```
 
 ### Extracted Data Shape (on COMPLETED — Prescription)
@@ -339,14 +358,22 @@ Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempot
     "alreadyConverted": false,
     "resolution": [
       {
-        "description": "Panadol Extra 500mg Tablets",
+        "description": "فيسيرالجين اقراص سيديكو س ج",
         "catalogItemId": "...", "catalogStatus": "ACTIVE", "catalogCreated": false,
         "inventoryItemId": "...", "inventoryCreated": true,
-        "quantity": 100, "unitCost": 12.5
+        "quantity": 1, "unitCost": 29.82,
+        "discountPercent": 29,
+        "batchNumber": "1024552",
+        "expiryDate": "2027-10-01"
       }
     ]
   }
 }
+```
+
+**`resolution[]` field notes:**
+- `unitCost` — already has the line discount applied (`unitPrice × (1 − discountPercent/100)`). Pass this directly to the PO line.
+- `batchNumber` + `expiryDate` — extracted directly from the invoice. Use these to pre-fill the `POST /receive` payload, saving manual entry for physical stock receipt.
 ```
 
 **Error `400`** — not an INVOICE, not COMPLETED, or no usable line items.
