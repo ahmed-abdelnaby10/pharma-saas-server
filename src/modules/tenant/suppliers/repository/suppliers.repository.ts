@@ -72,6 +72,46 @@ export class SuppliersRepository {
     });
   }
 
+  /**
+   * Find an existing supplier by name (English or Arabic match) or create a new
+   * one if none exists. Used by the OCR review flow to auto-register a supplier
+   * from invoice extraction data.
+   *
+   * Returns `{ supplier, created }` — `created: false` means the record already
+   * existed and was reused (idempotent).
+   */
+  async findOrCreateByName(
+    tenantId: string,
+    payload: { nameEn: string; nameAr: string; taxId?: string | null },
+  ): Promise<{ supplier: SupplierRecord; created: boolean }> {
+    // Try to find by either name variant (the invoice might have the Arabic name
+    // matching an existing record that was created with an English name as nameEn)
+    const existing = await prisma.supplier.findFirst({
+      where: {
+        tenantId,
+        OR: [
+          { nameEn: { equals: payload.nameEn, mode: "insensitive" } },
+          { nameAr: { equals: payload.nameAr, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (existing) {
+      return { supplier: existing, created: false };
+    }
+
+    const supplier = await prisma.supplier.create({
+      data: {
+        tenantId,
+        nameEn:  payload.nameEn,
+        nameAr:  payload.nameAr,
+        taxId:   payload.taxId ?? undefined,
+      },
+    });
+
+    return { supplier, created: true };
+  }
+
   // ── Financials ────────────────────────────────────────────────────────────────
 
   async getFinancials(tenantId: string, supplierId: string): Promise<SupplierFinancials> {

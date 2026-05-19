@@ -90,7 +90,7 @@ export class OcrController {
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
     const documentId = parseDocumentIdParam(req.params);
     const { correctedData } = parseReviewBody(req.body);
-    const doc = await this.service.reviewDocument(
+    const { doc, autoCreatedSupplier } = await this.service.reviewDocument(
       auth.tenantId,
       auth.userId,
       documentId,
@@ -100,7 +100,10 @@ export class OcrController {
     return res.status(200).json(
       successResponse(
         req.t?.("ocr.reviewed") || "Document reviewed",
-        mapOcrDocumentResponse(doc),
+        {
+          ...mapOcrDocumentResponse(doc),
+          autoCreatedSupplier,   // null for prescriptions; { id, nameEn, nameAr, taxId, created } for invoices
+        },
         undefined,
         req.requestId,
       ),
