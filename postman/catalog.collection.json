@@ -16,12 +16,19 @@
       "name": "Platform Admin — CRUD",
       "item": [
         {
-          "name": "List Catalog Items",
+          "name": "List Catalog Items (paginated)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/platform/catalog", "host": ["{{baseUrl}}"], "path": ["platform", "catalog"] },
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog?page=1&limit=50",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
             "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
-            "description": "All items. Add ?search=, ?category=, ?isActive=, ?status=, ?productType=, ?source= filters."
+            "description": "Paginated. Default page=1, limit=50, max limit=200. Also accepts ?search=, ?category=, ?isActive=, ?status=, ?productType=, ?source=. Pagination returned in response.meta = { page, limit, total, totalPages }."
           }
         },
         {
@@ -61,12 +68,19 @@
           }
         },
         {
-          "name": "List Pending Items (shortcut)",
+          "name": "List Pending Items (paginated)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/platform/catalog/pending", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "pending"] },
+            "url": {
+              "raw": "{{baseUrl}}/platform/catalog/pending?page=1&limit=50",
+              "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "pending"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
             "header": [{ "key": "Authorization", "value": "Bearer {{platformToken}}" }],
-            "description": "Returns only PENDING_REVIEW items, ordered oldest first."
+            "description": "Paginated PENDING_REVIEW items, oldest first. response.meta = { page, limit, total, totalPages }."
           }
         },
         {
@@ -240,12 +254,19 @@
       "name": "Tenant — Browse Catalog",
       "item": [
         {
-          "name": "List Catalog Items (ACTIVE + own PENDING)",
+          "name": "List Catalog Items (ACTIVE + own PENDING, paginated)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/tenant/catalog", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"] },
+            "url": {
+              "raw": "{{baseUrl}}/tenant/catalog?page=1&limit=50",
+              "host": ["{{baseUrl}}"], "path": ["tenant", "catalog"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
             "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }],
-            "description": "Returns ACTIVE items + this tenant's own PENDING_REVIEW items. Never shows other tenants' suggestions or REJECTED items."
+            "description": "Paginated. Returns ACTIVE items + this tenant's own PENDING_REVIEW items. Never shows other tenants' suggestions or REJECTED. response.meta = { page, limit, total, totalPages }."
           }
         },
         {

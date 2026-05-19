@@ -8,5 +8,12 @@
   "ocr.not_pending": "Document must be in PENDING status to start processing",
   "ocr.reviewed": "Document reviewed successfully",
   "ocr.not_completed": "Document must be in COMPLETED status to be reviewed",
-  "ocr.already_reviewed": "Document has already been reviewed"
+  "ocr.already_reviewed": "Document has already been reviewed",
+  "ocr.not_invoice": "Document is not an invoice",
+  "ocr.not_prescription": "Document is not a prescription",
+  "ocr.no_line_items": "Extracted invoice has no usable line items",
+  "ocr.no_medications": "Extracted prescription has no usable medications",
+  "ocr.converted_to_po": "Purchase order created from invoice",
+  "ocr.converted_to_prescription": "Prescription created from document",
+  "ocr.already_converted": "This invoice has already been converted to a purchase order"
 }

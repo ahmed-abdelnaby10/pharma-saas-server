@@ -2,9 +2,19 @@ import { Request, Response } from "express";
 import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
-import { parseQueryOcrDocuments, parseUploadBody, parseDocumentIdParam, parseReviewBody } from "../validators/ocr.validator";
+import {
+  parseQueryOcrDocuments,
+  parseUploadBody,
+  parseDocumentIdParam,
+  parseReviewBody,
+  parseConvertInvoiceBody,
+  parseConvertPrescriptionBody,
+} from "../validators/ocr.validator";
 import { mapOcrDocumentResponse } from "../mapper/ocr.mapper";
 import { ocrService, OcrService } from "../service/ocr.service";
+import { ocrConversionService } from "../service/ocr-conversion.service";
+import { mapPurchaseOrderResponse } from "../../purchasing/mapper/purchasing.mapper";
+import { mapPrescriptionResponse } from "../../prescriptions/mapper/prescriptions.mapper";
 
 export class OcrController {
   constructor(private readonly service: OcrService) {}
@@ -91,6 +101,56 @@ export class OcrController {
       successResponse(
         req.t?.("ocr.reviewed") || "Document reviewed",
         mapOcrDocumentResponse(doc),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  // ── Conversions ──────────────────────────────────────────────────────────
+
+  toPurchaseOrder = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const documentId = parseDocumentIdParam(req.params);
+    const opts = parseConvertInvoiceBody(req.body);
+    const result = await ocrConversionService.convertInvoiceToPurchaseOrder(
+      auth,
+      documentId,
+      opts,
+      req.t!,
+    );
+    return res.status(result.alreadyConverted ? 200 : 201).json(
+      successResponse(
+        result.alreadyConverted
+          ? req.t?.("ocr.already_converted") || "Invoice already converted"
+          : req.t?.("ocr.converted_to_po") || "Purchase order created from invoice",
+        {
+          purchaseOrder:    mapPurchaseOrderResponse(result.purchaseOrder),
+          resolution:       result.resolution,
+          alreadyConverted: result.alreadyConverted,
+        },
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  toPrescription = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const documentId = parseDocumentIdParam(req.params);
+    const opts = parseConvertPrescriptionBody(req.body);
+    const rx = await ocrConversionService.convertOcrToPrescription(
+      auth,
+      documentId,
+      opts,
+      req.t!,
+    );
+    return res.status(201).json(
+      successResponse(
+        req.t?.("ocr.converted_to_prescription") || "Prescription created from document",
+        mapPrescriptionResponse(rx),
         undefined,
         req.requestId,
       ),

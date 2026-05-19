@@ -15,24 +15,35 @@ export class CatalogController {
 
   list = async (req: Request, res: Response) => {
     const query = parseQueryCatalogDto(req.query);
-    const items = await this.service.listItems(query);
+    const result = await this.service.listItems(query);
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",
-        items.map(mapCatalogItemResponse),
-        undefined,
+        result.items.map(mapCatalogItemResponse),
+        {
+          page:       result.page,
+          limit:      result.limit,
+          total:      result.total,
+          totalPages: result.totalPages,
+        },
         req.requestId,
       ),
     );
   };
 
   listPending = async (req: Request, res: Response) => {
-    const items = await this.service.listPendingItems();
+    const query = parseQueryCatalogDto(req.query);
+    const result = await this.service.listPendingItems(query.page, query.limit);
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",
-        items.map(mapCatalogItemResponse),
-        undefined,
+        result.items.map(mapCatalogItemResponse),
+        {
+          page:       result.page,
+          limit:      result.limit,
+          total:      result.total,
+          totalPages: result.totalPages,
+        },
         req.requestId,
       ),
     );

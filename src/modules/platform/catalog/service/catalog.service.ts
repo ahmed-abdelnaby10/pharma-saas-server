@@ -14,12 +14,12 @@ import {
 export class CatalogService {
   constructor(private readonly repository: CatalogRepository) {}
 
-  async listItems(query: QueryCatalogDto): Promise<CatalogItemRecord[]> {
+  async listItems(query: QueryCatalogDto) {
     return this.repository.list(query);
   }
 
-  async listPendingItems(): Promise<CatalogItemRecord[]> {
-    return this.repository.listPending();
+  async listPendingItems(page: number, limit: number) {
+    return this.repository.listPending(page, limit);
   }
 
   async getItem(itemId: string): Promise<CatalogItemRecord> {

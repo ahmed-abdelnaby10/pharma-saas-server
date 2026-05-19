@@ -155,6 +155,46 @@
         },
         "description": "Approve a COMPLETED OCR document with manual corrections. correctedData replaces extractedData in full. reviewedAt and reviewedById are stamped."
       }
+    },
+    {
+      "name": "Convert Invoice → Purchase Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"supplierId\": null,\n  \"defaultSellingPrice\": 25,\n  \"markOrdered\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{documentId}}/to-purchase-order",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{documentId}}", "to-purchase-order"]
+        },
+        "description": "One-shot: COMPLETED INVOICE → DRAFT purchase order. Each extracted line is auto-resolved to a catalog item (created as PENDING_REVIEW if missing) and a branch InventoryItem (created if missing). Body all optional: branchId (defaults to doc branch), supplierId, defaultSellingPrice (for auto-created inventory items), markOrdered (auto DRAFT→ORDERED). Idempotent — re-running returns the same PO (200, alreadyConverted:true). Returns 201 with { purchaseOrder, resolution[], alreadyConverted }. Finish with POST /tenant/purchasing/orders/:id/receive (batch + expiry)."
+      }
+    },
+    {
+      "name": "Convert Prescription → Prescription record",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"patientId\": null\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenant/ocr/documents/{{prescriptionDocumentId}}/to-prescription",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenant", "ocr", "documents", "{{prescriptionDocumentId}}", "to-prescription"]
+        },
+        "description": "One-shot: COMPLETED PRESCRIPTION → PENDING Prescription record, one item per extracted medication. Doctor name/license + prescription date carried over; dosage/frequency/duration/instructions combined into dosageInstructions. Body all optional: branchId (defaults to doc branch), patientId. Returns 201 with the Prescription. Stamps the OCR doc reviewed."
+      }
     }
   ]
 }
