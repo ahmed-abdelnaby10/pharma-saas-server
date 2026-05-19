@@ -98,6 +98,14 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID:    z.string().trim().optional(),
   TWILIO_AUTH_TOKEN:     z.string().trim().optional(),
   TWILIO_WHATSAPP_FROM:  z.string().trim().optional(),
+
+  // ── Barcode lookup ─────────────────────────────────────────────────────────
+  // Optional proxy for GS1 / commercial barcode-lookup API. When set,
+  // BarcodeLookupService issues GET requests to `${GS1_LOOKUP_URL}?gtin=<code>`
+  // expecting JSON with brandName / productDescription / companyName fields.
+  // Leave unset to disable the GS1 provider — OpenFDA + Open Beauty Facts
+  // remain active either way.
+  GS1_LOOKUP_URL:        z.string().trim().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

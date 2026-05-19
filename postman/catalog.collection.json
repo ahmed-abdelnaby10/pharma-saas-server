@@ -203,7 +203,7 @@
           }
         },
         {
-          "name": "Sync from EDA CSV",
+          "name": "Sync Egyptian medicines — Kaggle CSV (PRIMARY)",
           "request": {
             "method": "POST",
             "url": { "raw": "{{baseUrl}}/platform/catalog/sync/eda", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "eda"] },
@@ -213,9 +213,25 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"filePath\": \"/data/eda/eda_medicines_2025.csv\"\n}"
+              "raw": "{\n  \"filePath\": \"/var/data/seed/egypt_pharmacy_medicines.csv\"\n}"
             },
-            "description": "Import EDA (Egyptian Drug Authority) CSV. File must already be on the server. CSV must have headers: reg_no, nameAr, nameEn, genericNameAr, genericNameEn, manufacturer, dosageForm, strength, category, requiresPrescription"
+            "description": "PRIMARY Egyptian bootstrap. Download CSV from kaggle.com/datasets/younaniskander/medicines-from-egyptian-pharmacies (covers BOTH EDA-registered AND imported medicines). Place on server, then point filePath at it. Expected headers: Drug Name, Price, Form, Company, Category, Region. Auto-detected as Kaggle format → tagged source: KAGGLE_PHARMACY."
+          }
+        },
+        {
+          "name": "Sync Egyptian medicines — legacy EDA CSV",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/platform/catalog/sync/eda", "host": ["{{baseUrl}}"], "path": ["platform", "catalog", "sync", "eda"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filePath\": \"/var/data/seed/eda_medicines.csv\"\n}"
+            },
+            "description": "Legacy format — only if you somehow obtain an EDA-format CSV (EDA does not publish bulk exports). Expected headers: reg_no, nameAr, nameEn, genericNameAr, genericNameEn, manufacturer, dosageForm, strength, category, requiresPrescription. Auto-detected as EDA format → tagged source: EDA."
           }
         }
       ]
@@ -250,6 +266,59 @@
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/tenant/catalog/{{itemId}}", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "{{itemId}}"] },
             "header": [{ "key": "Authorization", "value": "Bearer {{tenantToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant — Barcode Lookup",
+      "item": [
+        {
+          "name": "Lookup — existing barcode (origin: existing)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/lookup-barcode", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "lookup-barcode"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barcode\": \"6281034057042\"\n}"
+            },
+            "description": "Barcode already in our catalog → returns 200 with origin: existing and the catalog item."
+          }
+        },
+        {
+          "name": "Lookup — unknown barcode (auto-import from provider)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/lookup-barcode", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "lookup-barcode"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barcode\": \"3600523457854\"\n}"
+            },
+            "description": "Unknown barcode → backend tries OpenFDA → Open Beauty Facts → GS1 (if configured). On hit, creates a PENDING_REVIEW row attributed to this tenant and returns 201 with origin: external_provider."
+          }
+        },
+        {
+          "name": "Lookup — barcode not found anywhere (404)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/tenant/catalog/lookup-barcode", "host": ["{{baseUrl}}"], "path": ["tenant", "catalog", "lookup-barcode"] },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barcode\": \"0000000000000\"\n}"
+            },
+            "description": "No provider has it → 404 with origin: not_found. Frontend should fall back to the manual /suggest form."
           }
         }
       ]
