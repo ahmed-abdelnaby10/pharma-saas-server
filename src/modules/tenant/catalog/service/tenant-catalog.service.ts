@@ -14,8 +14,10 @@ import {
   CatalogRepository,
 } from "../../../platform/catalog/repository/catalog.repository";
 import { CatalogItemRecord } from "../../../platform/catalog/mapper/catalog.mapper";
+import { PaginatedResult } from "../../../platform/catalog/dto/query-catalog.dto";
 import { SuggestCatalogItemDto } from "../dto/suggest-catalog-item.dto";
 import { prisma } from "../../../../core/db/prisma";
+import { Prisma } from "@prisma/client";
 import {
   barcodeLookupService,
   BarcodeLookupService,
@@ -37,41 +39,58 @@ export class TenantCatalogService {
   ) {}
 
   /**
-   * Return all ACTIVE catalog items + the calling tenant's own PENDING_REVIEW items.
-   * Tenants never see other tenants' suggestions, and never see REJECTED items.
+   * Return ACTIVE catalog items + the calling tenant's own PENDING_REVIEW items,
+   * paginated. Tenants never see other tenants' suggestions or REJECTED items.
    */
   async listItems(
     auth: TenantAuthContext,
-    search?: string,
-  ): Promise<CatalogItemRecord[]> {
-    return prisma.catalogItem.findMany({
-      where: {
-        OR: [
-          { status: CatalogItemStatus.ACTIVE },
-          {
-            status:             CatalogItemStatus.PENDING_REVIEW,
-            submittedByTenantId: auth.tenantId,
-          },
-        ],
-        ...(search
-          ? {
-              AND: [
-                {
-                  OR: [
-                    { nameEn:        { contains: search, mode: "insensitive" } },
-                    { nameAr:        { contains: search, mode: "insensitive" } },
-                    { genericNameEn: { contains: search, mode: "insensitive" } },
-                    { genericNameAr: { contains: search, mode: "insensitive" } },
-                    { barcode:       { contains: search, mode: "insensitive" } },
-                    { sku:           { contains: search, mode: "insensitive" } },
-                  ],
-                },
-              ],
-            }
-          : {}),
-      },
-      orderBy: [{ nameEn: "asc" }],
-    });
+    opts: { search?: string; page: number; limit: number },
+  ): Promise<PaginatedResult<CatalogItemRecord>> {
+    const { search, page, limit } = opts;
+
+    const where: Prisma.CatalogItemWhereInput = {
+      OR: [
+        { status: CatalogItemStatus.ACTIVE },
+        {
+          status:              CatalogItemStatus.PENDING_REVIEW,
+          submittedByTenantId: auth.tenantId,
+        },
+      ],
+      ...(search
+        ? {
+            AND: [
+              {
+                OR: [
+                  { nameEn:        { contains: search, mode: "insensitive" } },
+                  { nameAr:        { contains: search, mode: "insensitive" } },
+                  { genericNameEn: { contains: search, mode: "insensitive" } },
+                  { genericNameAr: { contains: search, mode: "insensitive" } },
+                  { barcode:       { contains: search, mode: "insensitive" } },
+                  { sku:           { contains: search, mode: "insensitive" } },
+                ],
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.catalogItem.findMany({
+        where,
+        orderBy: [{ nameEn: "asc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.catalogItem.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
   }
 
   /**

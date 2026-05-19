@@ -3,6 +3,7 @@ import { successResponse } from "../../../../core/http/api-response";
 import { isTenantAuthContext } from "../../../../shared/types/auth.types";
 import { ForbiddenError } from "../../../../shared/errors/forbidden-error";
 import { mapCatalogItemResponse } from "../../../platform/catalog/mapper/catalog.mapper";
+import { parseQueryCatalogDto } from "../../../platform/catalog/validators/catalog.validator";
 import {
   parseSuggestCatalogItemDto,
   parseLookupBarcodeDto,
@@ -16,14 +17,23 @@ export class TenantCatalogController {
     const auth = req.auth!;
     if (!isTenantAuthContext(auth)) throw new ForbiddenError();
 
-    const search = typeof req.query.search === "string" ? req.query.search : undefined;
-    const items  = await this.service.listItems(auth, search);
+    const query = parseQueryCatalogDto(req.query);
+    const result = await this.service.listItems(auth, {
+      search: query.search,
+      page:   query.page,
+      limit:  query.limit,
+    });
 
     return res.status(200).json(
       successResponse(
         req.t?.("common.ok") || "OK",
-        items.map(mapCatalogItemResponse),
-        undefined,
+        result.items.map(mapCatalogItemResponse),
+        {
+          page:       result.page,
+          limit:      result.limit,
+          total:      result.total,
+          totalPages: result.totalPages,
+        },
         req.requestId,
       ),
     );

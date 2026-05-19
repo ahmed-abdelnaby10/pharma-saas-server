@@ -2,7 +2,7 @@ import { CatalogItemStatus, CatalogSource, Prisma } from "@prisma/client";
 import { prisma } from "../../../../core/db/prisma";
 import { CreateCatalogItemDto } from "../dto/create-catalog-item.dto";
 import { UpdateCatalogItemDto } from "../dto/update-catalog-item.dto";
-import { QueryCatalogDto } from "../dto/query-catalog.dto";
+import { QueryCatalogDto, PaginatedResult } from "../dto/query-catalog.dto";
 import { CatalogItemRecord } from "../mapper/catalog.mapper";
 
 // Shape used by the sync service to upsert items from external sources
@@ -46,36 +46,71 @@ export class CatalogRepository {
     return prisma.catalogItem.findUnique({ where: { sourceId } });
   }
 
-  async list(query: QueryCatalogDto): Promise<CatalogItemRecord[]> {
-    return prisma.catalogItem.findMany({
-      where: {
-        ...(query.isActive  !== undefined ? { isActive:    query.isActive    } : {}),
-        ...(query.status    !== undefined ? { status:      query.status      } : {}),
-        ...(query.productType            ? { productType: query.productType  } : {}),
-        ...(query.source                 ? { source:      query.source as CatalogSource } : {}),
-        ...(query.category               ? { category:    query.category     } : {}),
-        ...(query.search
-          ? {
-              OR: [
-                { nameEn:        { contains: query.search, mode: "insensitive" } },
-                { nameAr:        { contains: query.search, mode: "insensitive" } },
-                { genericNameEn: { contains: query.search, mode: "insensitive" } },
-                { genericNameAr: { contains: query.search, mode: "insensitive" } },
-                { barcode:       { contains: query.search, mode: "insensitive" } },
-                { sku:           { contains: query.search, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: [{ nameEn: "asc" }],
-    });
+  async list(query: QueryCatalogDto): Promise<PaginatedResult<CatalogItemRecord>> {
+    const where: Prisma.CatalogItemWhereInput = {
+      ...(query.isActive  !== undefined ? { isActive:    query.isActive    } : {}),
+      ...(query.status    !== undefined ? { status:      query.status      } : {}),
+      ...(query.productType            ? { productType: query.productType  } : {}),
+      ...(query.source                 ? { source:      query.source as CatalogSource } : {}),
+      ...(query.category               ? { category:    query.category     } : {}),
+      ...(query.search
+        ? {
+            OR: [
+              { nameEn:        { contains: query.search, mode: "insensitive" } },
+              { nameAr:        { contains: query.search, mode: "insensitive" } },
+              { genericNameEn: { contains: query.search, mode: "insensitive" } },
+              { genericNameAr: { contains: query.search, mode: "insensitive" } },
+              { barcode:       { contains: query.search, mode: "insensitive" } },
+              { sku:           { contains: query.search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.catalogItem.findMany({
+        where,
+        orderBy: [{ nameEn: "asc" }],
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+      prisma.catalogItem.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.max(1, Math.ceil(total / query.limit)),
+    };
   }
 
-  async listPending(): Promise<CatalogItemRecord[]> {
-    return prisma.catalogItem.findMany({
-      where:   { status: CatalogItemStatus.PENDING_REVIEW },
-      orderBy: [{ createdAt: "asc" }],
-    });
+  async listPending(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResult<CatalogItemRecord>> {
+    const where: Prisma.CatalogItemWhereInput = {
+      status: CatalogItemStatus.PENDING_REVIEW,
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.catalogItem.findMany({
+        where,
+        orderBy: [{ createdAt: "asc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.catalogItem.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
   }
 
   async create(

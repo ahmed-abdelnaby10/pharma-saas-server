@@ -100,18 +100,31 @@ List catalog items with optional filters.
 | status      | enum    | `PENDING_REVIEW \| ACTIVE \| REJECTED`   |
 | productType | enum    | `MEDICINE \| COSMETIC \| ...`            |
 | source      | enum    | `MANUAL \| OPENFDA \| ...`               |
+| page        | number  | 1-based page number (default `1`)        |
+| limit       | number  | Items per page (default `50`, max `200`) |
 
-**Response `200`:** Array ordered by `nameEn asc`
+**Response `200`:** Paginated. Items ordered by `nameEn asc`. Pagination is in `meta`:
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [ /* CatalogItem[] — up to `limit` items */ ],
+  "meta": { "page": 1, "limit": 50, "total": 132480, "totalPages": 2650 }
+}
+```
 
 ---
 
 ### `GET /platform/catalog/pending`
 
-List all `PENDING_REVIEW` items (tenant suggestions awaiting admin action).
+List `PENDING_REVIEW` items (tenant suggestions awaiting admin action), paginated.
 
 **Auth:** Platform admin JWT
 
-**Response `200`:** Array ordered by `createdAt asc`
+**Query params:** `page` (default `1`), `limit` (default `50`, max `200`)
+
+**Response `200`:** Paginated. Items ordered by `createdAt asc`. Same `meta` shape as above.
 
 ---
 
@@ -265,6 +278,10 @@ Never returns REJECTED items or other tenants' suggestions.
 | Param  | Type   | Description                              |
 |--------|--------|------------------------------------------|
 | search | string | Full-text search on name / barcode / sku |
+| page   | number | 1-based page number (default `1`)        |
+| limit  | number | Items per page (default `50`, max `200`) |
+
+**Response `200`:** Paginated, same envelope as the platform list — items in `data`, `{ page, limit, total, totalPages }` in `meta`.
 
 ---
 

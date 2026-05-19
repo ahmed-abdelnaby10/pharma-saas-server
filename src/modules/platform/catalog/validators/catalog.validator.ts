@@ -68,6 +68,21 @@ const querySchema = z.object({
   status:      z.enum(CATALOG_STATUSES).optional(),
   productType: z.enum(PRODUCT_TYPES).optional(),
   source:      z.enum(CATALOG_SOURCES).optional(),
+  page: z
+    .string()
+    .optional()
+    .transform((v) => {
+      const n = v ? parseInt(v, 10) : 1;
+      return Number.isFinite(n) && n >= 1 ? n : 1;
+    }),
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => {
+      const n = v ? parseInt(v, 10) : 50;
+      if (!Number.isFinite(n) || n < 1) return 50;
+      return Math.min(n, 200); // hard cap
+    }),
 });
 
 const itemIdParamSchema = z.object({

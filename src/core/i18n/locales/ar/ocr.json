@@ -8,5 +8,12 @@
   "ocr.not_pending": "يجب أن يكون المستند في حالة PENDING لبدء المعالجة",
   "ocr.reviewed": "تمت مراجعة المستند بنجاح",
   "ocr.not_completed": "يجب أن يكون المستند في حالة COMPLETED ليتم مراجعته",
-  "ocr.already_reviewed": "تمت مراجعة هذا المستند مسبقاً"
+  "ocr.already_reviewed": "تمت مراجعة هذا المستند مسبقاً",
+  "ocr.not_invoice": "المستند ليس فاتورة",
+  "ocr.not_prescription": "المستند ليس روشتة",
+  "ocr.no_line_items": "الفاتورة المستخرجة لا تحتوي على بنود صالحة",
+  "ocr.no_medications": "الروشتة المستخرجة لا تحتوي على أدوية صالحة",
+  "ocr.converted_to_po": "تم إنشاء أمر شراء من الفاتورة",
+  "ocr.converted_to_prescription": "تم إنشاء روشتة من المستند",
+  "ocr.already_converted": "تم تحويل هذه الفاتورة إلى أمر شراء مسبقاً"
 }

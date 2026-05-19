@@ -307,6 +307,70 @@ Mark an OCR-completed document as reviewed by the current user. Optionally provi
 
 ---
 
+### `POST /tenant/ocr/documents/:documentId/to-purchase-order`
+
+One-shot bridge: turn a **COMPLETED INVOICE** document into a **DRAFT purchase order**, auto-resolving every extracted line into a catalog item and a branch inventory item so the user doesn't retype the invoice.
+
+**Per line item the service:**
+1. Matches the OCR `description` against the catalog (ACTIVE globally, or this tenant's own PENDING_REVIEW) by name / generic name.
+2. If no match → creates a `PENDING_REVIEW` catalog item (crowdsource flow) attributed to the tenant.
+3. Finds the branch `InventoryItem` for that catalog item, or creates one.
+4. Merges duplicate descriptions (same resolved inventory item) so the PO has no duplicate lines.
+
+Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempotency), adds one line per merged item, optionally transitions it to `ORDERED`, and stamps the OCR document as reviewed.
+
+**Idempotent:** calling it again for the same document returns the existing PO (`200`, `alreadyConverted: true`) instead of creating a duplicate.
+
+**Body (all optional):**
+| Field               | Type    | Description                                                       |
+|---------------------|---------|-------------------------------------------------------------------|
+| branchId            | cuid    | Target branch. Defaults to the OCR document's branch.             |
+| supplierId          | cuid \| null | Link the PO to a known supplier.                             |
+| defaultSellingPrice | number  | `sellingPrice` applied to any `InventoryItem` created on the fly. |
+| markOrdered         | boolean | If `true`, transitions the PO `DRAFT → ORDERED` automatically.    |
+
+**Response `201`** (or `200` if already converted):
+```json
+{
+  "success": true,
+  "message": "Purchase order created from invoice",
+  "data": {
+    "purchaseOrder": { "id": "...", "status": "DRAFT", "items": [ ... ] },
+    "alreadyConverted": false,
+    "resolution": [
+      {
+        "description": "Panadol Extra 500mg Tablets",
+        "catalogItemId": "...", "catalogStatus": "ACTIVE", "catalogCreated": false,
+        "inventoryItemId": "...", "inventoryCreated": true,
+        "quantity": 100, "unitCost": 12.5
+      }
+    ]
+  }
+}
+```
+
+**Error `400`** — not an INVOICE, not COMPLETED, or no usable line items.
+
+**Next step:** the PO is `DRAFT` (or `ORDERED` if `markOrdered`). The user still completes receiving via `POST /tenant/purchasing/orders/:id/receive` with batch numbers + expiry dates (OCR cannot extract those reliably).
+
+---
+
+### `POST /tenant/ocr/documents/:documentId/to-prescription`
+
+One-shot bridge: turn a **COMPLETED PRESCRIPTION** document into a **PENDING Prescription** record, one item per extracted medication. Doctor name/license and prescription date are carried over; each medication's dosage/frequency/duration/instructions are combined into `dosageInstructions`.
+
+**Body (all optional):**
+| Field     | Type | Description                                       |
+|-----------|------|---------------------------------------------------|
+| branchId  | cuid | Target branch. Defaults to the OCR doc's branch.  |
+| patientId | cuid | Link the prescription to an existing patient.     |
+
+**Response `201`:** the created `Prescription` with items (`status: PENDING`). The OCR document is stamped reviewed.
+
+**Error `400`** — not a PRESCRIPTION, not COMPLETED, or no usable medications.
+
+---
+
 ## Permissions
 
 All endpoints require a valid tenant JWT. `tenantId` is always taken from the token — never from the request body.
@@ -322,6 +386,8 @@ All endpoints require a valid tenant JWT. `tenantId` is always taken from the to
 - File path stored as a relative path (relative to `process.cwd()`).
 - `POST /:documentId/process` enqueues a BullMQ job on the `ocr` queue. The worker transitions status `PENDING → PROCESSING → COMPLETED / FAILED`, calls the Anthropic Claude Vision extractor, and writes `extractedData`.
 - `POST /:documentId/review` stamps `reviewedAt` + `reviewedById` on the document. Optionally overwrites `extractedData` if `correctedData` is provided.
+- `POST /:documentId/to-purchase-order` may create catalog items (`PENDING_REVIEW`), inventory items, and a DRAFT/ORDERED purchase order; stamps the document reviewed. Idempotent via PO `externalId = ocr:<documentId>`.
+- `POST /:documentId/to-prescription` creates a PENDING prescription with items; stamps the document reviewed.
 
 ## Worker Behaviour
 
