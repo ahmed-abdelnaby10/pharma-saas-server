@@ -35,3 +35,21 @@ export const parseSuggestCatalogItemDto = (body: unknown) => {
   }
   return result.data;
 };
+
+// ── Lookup barcode ───────────────────────────────────────────────────────────
+
+const lookupBarcodeSchema = z.object({
+  // Accept digits-only barcodes 8-14 chars (EAN-8, UPC-A, EAN-13, GTIN-14)
+  barcode: z
+    .string()
+    .trim()
+    .regex(/^\d{8,14}$/, "barcode must be 8-14 digits"),
+});
+
+export const parseLookupBarcodeDto = (body: unknown) => {
+  const result = lookupBarcodeSchema.safeParse(body);
+  if (!result.success) {
+    throw new ValidationError("Validation failed", result.error.flatten().fieldErrors);
+  }
+  return result.data;
+};

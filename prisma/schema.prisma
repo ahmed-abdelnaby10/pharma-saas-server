@@ -505,11 +505,12 @@ enum CatalogProductType {
 }
 
 enum CatalogSource {
-  MANUAL     // entered manually by platform admin
-  OPENFDA    // synced from OpenFDA NDC database
-  OPENBEAUTY // synced from Open Beauty Facts
-  EDA        // imported from Egyptian Drug Authority CSV
-  TENANT     // suggested by a tenant user
+  MANUAL          // entered manually by platform admin
+  OPENFDA         // synced from OpenFDA NDC database
+  OPENBEAUTY      // synced from Open Beauty Facts
+  EDA             // imported from Egyptian Drug Authority CSV (registered drugs only)
+  KAGGLE_PHARMACY // imported from Kaggle "Medicines from Egyptian Pharmacies" CSV (market-actual data, includes imported drugs)
+  TENANT          // suggested by a tenant user
 }
 
 model CatalogItem {

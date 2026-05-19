@@ -132,60 +132,103 @@ function mapOpenBeautyResult(p: any): UpsertCatalogItemPayload | null {
   };
 }
 
-// ── EDA CSV ───────────────────────────────────────────────────────────────────
-// Expected CSV columns (Arabic headers + English):
-//   reg_no, nameAr, nameEn, genericNameAr, genericNameEn,
-//   manufacturer, dosageForm, strength, category, requiresPrescription
+// ── Egyptian Pharmacy CSV (Kaggle-format) ────────────────────────────────────
+// Primary Egyptian bootstrap source. Use the Kaggle dataset
+// "Medicines from Egyptian Pharmacies" (younaniskander) — it's scraped from
+// real pharmacy sales so it covers both EDA-registered AND imported drugs
+// that the official EDA registry doesn't list.
+//
+// Expected CSV columns (headers from the Kaggle dataset, case-insensitive
+// thanks to the normalization below):
+//   Drug Name, Price, Form, Company, Category, Region, Date, Time
+//
+// The legacy `reg_no, nameEn, nameAr, ...` EDA-style schema is also still
+// accepted by the same endpoint — we auto-detect by checking which columns
+// are present on the first row.
 
-type EdaRow = {
-  reg_no:               string;
-  nameAr:               string;
-  nameEn:               string;
-  genericNameAr?:       string;
-  genericNameEn?:       string;
-  manufacturer?:        string;
-  dosageForm?:          string;
-  strength?:            string;
-  category?:            string;
-  requiresPrescription?: string;
-};
+type RawCsvRow = Record<string, string | undefined>;
 
-async function parseEdaCsv(filePath: string): Promise<EdaRow[]> {
+async function parseCatalogCsv(filePath: string): Promise<RawCsvRow[]> {
   return new Promise((resolve, reject) => {
-    const rows: EdaRow[] = [];
+    const rows: RawCsvRow[] = [];
     createReadStream(filePath)
       .pipe(
         parseCsv({
-          columns:          true,
+          columns:          (header: string[]) =>
+            // normalize headers: lowercase + spaces → underscores
+            header.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_")),
           skip_empty_lines: true,
           trim:             true,
           bom:              true,
         }),
       )
-      .on("data", (row: EdaRow) => rows.push(row))
+      .on("data", (row: RawCsvRow) => rows.push(row))
       .on("end",  () => resolve(rows))
       .on("error", reject);
   });
 }
 
-function mapEdaRow(row: EdaRow): UpsertCatalogItemPayload | null {
-  if (!row.reg_no || !row.nameEn) return null;
+/**
+ * Map a row from the Kaggle "Medicines from Egyptian Pharmacies" CSV.
+ * Columns (after header normalization): drug_name, price, form, company,
+ * category, region, date, time.
+ *
+ * The CSV may legitimately contain duplicate rows (same drug across multiple
+ * sales). We dedup by `drug_name + form + company` and route them all to the
+ * same sourceId so upsert collapses duplicates.
+ */
+function mapKagglePharmacyRow(row: RawCsvRow): UpsertCatalogItemPayload | null {
+  const drugName = row.drug_name?.trim();
+  if (!drugName) return null;
 
-  const requiresPrescription =
-    row.requiresPrescription?.trim().toLowerCase() === "yes" ||
-    row.requiresPrescription?.trim() === "1";
+  const form         = row.form?.trim()    || null;
+  const company      = row.company?.trim() || null;
+  const category     = row.category?.trim()|| null;
+
+  // Build a stable dedup key: drug_name + form + company (lowercased)
+  const dedupKey = [drugName, form ?? "", company ?? ""]
+    .join("|")
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 
   return {
-    sourceId:             `eda:${row.reg_no.trim()}`,
+    sourceId:             `kaggle_pharmacy:${dedupKey}`,
+    source:               "KAGGLE_PHARMACY",
+    nameEn:               drugName,
+    nameAr:               drugName, // no Arabic in this dataset — crowdsource fills later
+    manufacturer:         company,
+    dosageForm:           form,
+    category,
+    unitOfMeasure:        "unit",
+    productType:          "MEDICINE",
+    requiresPrescription: false, // unknown — defaults false
+    isActive:             true,
+  };
+}
+
+/**
+ * Legacy EDA-format mapper. Kept for backward compatibility with any
+ * EDA-style CSV that genuinely has reg_no + nameAr/nameEn columns.
+ */
+function mapEdaRow(row: RawCsvRow): UpsertCatalogItemPayload | null {
+  const regNo = row.reg_no?.trim();
+  const nameEn = row.nameen?.trim() || row.name_en?.trim();
+  if (!regNo || !nameEn) return null;
+
+  const flag = row.requiresprescription?.trim() ?? row.requires_prescription?.trim();
+  const requiresPrescription = flag?.toLowerCase() === "yes" || flag === "1";
+
+  return {
+    sourceId:             `eda:${regNo}`,
     source:               "EDA",
-    nameEn:               row.nameEn.trim(),
-    nameAr:               row.nameAr?.trim() || row.nameEn.trim(),
-    genericNameEn:        row.genericNameEn?.trim() || null,
-    genericNameAr:        row.genericNameAr?.trim() || null,
+    nameEn,
+    nameAr:               row.namear?.trim() || row.name_ar?.trim() || nameEn,
+    genericNameEn:        row.genericnameen?.trim() || row.generic_name_en?.trim() || null,
+    genericNameAr:        row.genericnamear?.trim() || row.generic_name_ar?.trim() || null,
     manufacturer:         row.manufacturer?.trim() || null,
-    dosageForm:           row.dosageForm?.trim() || null,
-    strength:             row.strength?.trim() || null,
-    category:             row.category?.trim() || null,
+    dosageForm:           row.dosageform?.trim()   || row.dosage_form?.trim() || null,
+    strength:             row.strength?.trim()     || null,
+    category:             row.category?.trim()     || null,
     requiresPrescription,
     unitOfMeasure:        "unit",
     productType:          "MEDICINE",
@@ -302,32 +345,64 @@ export class CatalogSyncService {
   }
 
   /**
-   * Import medicines from an EDA-format CSV file.
-   * @param filePath  Absolute path to the CSV (uploaded or placed on server)
+   * Import Egyptian medicines from a CSV file on the server.
+   *
+   * Auto-detects the format by inspecting the first row's column names:
+   *
+   * - **Kaggle "Medicines from Egyptian Pharmacies"** (primary path) — recognised
+   *   by the presence of a `drug_name` column. Covers BOTH EDA-registered AND
+   *   imported drugs because it's scraped from real pharmacy stock.
+   * - **EDA-style** (legacy) — recognised by a `reg_no` column. Use only if you
+   *   somehow obtain an official EDA-format CSV (the EDA does not publish one).
+   *
+   * @param filePath  Absolute path to the CSV file on the server
    */
   async syncFromEDA(filePath: string): Promise<SyncResult> {
     const result: SyncResult = { added: 0, updated: 0, skipped: 0, errors: 0, total: 0 };
 
-    logger.info("catalog-sync: starting EDA sync", { filePath });
+    logger.info("catalog-sync: starting Egyptian CSV sync", { filePath });
 
-    let rows: EdaRow[];
+    let rows: RawCsvRow[];
     try {
-      rows = await parseEdaCsv(filePath);
+      rows = await parseCatalogCsv(filePath);
     } catch (err) {
-      logger.error("catalog-sync: EDA CSV parse error", { filePath, error: String(err) });
+      logger.error("catalog-sync: CSV parse error", { filePath, error: String(err) });
       throw err; // surface this — bad file path is a caller error
     }
+
+    if (rows.length === 0) {
+      logger.warn("catalog-sync: CSV file is empty", { filePath });
+      return result;
+    }
+
+    // Detect format from the first row's headers
+    const firstRow = rows[0];
+    const isKaggleFormat = "drug_name" in firstRow;
+    const isEdaFormat    = "reg_no"    in firstRow;
+    const mapRow         = isKaggleFormat ? mapKagglePharmacyRow : mapEdaRow;
+    const formatLabel    = isKaggleFormat ? "kaggle_pharmacy" : "eda";
+
+    if (!isKaggleFormat && !isEdaFormat) {
+      const headers = Object.keys(firstRow).join(", ");
+      throw new Error(
+        `Unrecognised CSV format. Expected either a 'drug_name' column ` +
+        `(Kaggle dataset) or a 'reg_no' column (EDA dataset). Found: ${headers}`,
+      );
+    }
+
+    logger.info("catalog-sync: detected CSV format", { format: formatLabel, rowCount: rows.length });
 
     for (const row of rows) {
       result.total++;
       try {
-        const payload = mapEdaRow(row);
+        const payload = mapRow(row);
         if (!payload) { result.skipped++; continue; }
         const { wasCreated } = await this.repository.upsertFromSource(payload);
         wasCreated ? result.added++ : result.updated++;
       } catch (err) {
-        logger.warn("catalog-sync: EDA row error", {
-          reg_no: row.reg_no,
+        logger.warn("catalog-sync: row error", {
+          format: formatLabel,
+          row,
           error: String(err),
         });
         result.errors++;
@@ -335,7 +410,7 @@ export class CatalogSyncService {
       }
     }
 
-    logger.info("catalog-sync: EDA sync complete", result);
+    logger.info("catalog-sync: Egyptian CSV sync complete", { format: formatLabel, ...result });
     return result;
   }
 }

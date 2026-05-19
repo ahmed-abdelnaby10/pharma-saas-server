@@ -203,19 +203,51 @@ Free, no API key. Covers ~2.5M cosmetic products worldwide.
 
 ---
 
-### `POST /platform/catalog/sync/eda`
+### `POST /platform/catalog/sync/eda` — Egyptian medicines CSV
 
-Import from an EDA (Egyptian Drug Authority) CSV file already on the server.
+Import Egyptian medicines from a CSV file on the server. The endpoint name is `eda` for backward compatibility, but it now **auto-detects the CSV format** and accepts either:
+
+1. **Kaggle "Medicines from Egyptian Pharmacies"** (recommended primary source). This dataset is scraped from real Egyptian pharmacy sales, so it covers **both EDA-registered AND imported medicines** — solving the gap where official EDA registry misses imported drugs.
+2. **Legacy EDA-format CSV** (only if you somehow obtain one — the EDA does not publish official bulk exports).
 
 **Body:**
 | Field    | Type   | Required | Description                                 |
 |----------|--------|----------|---------------------------------------------|
 | filePath | string | Yes      | Absolute path to the CSV file on the server |
 
-**CSV columns expected (header row required):**  
+**Auto-detection rules:**
+- Presence of a `Drug Name` column → Kaggle format → tagged `source: KAGGLE_PHARMACY`
+- Presence of a `reg_no` column → EDA format → tagged `source: EDA`
+- Neither → request fails with an explanatory error
+
+#### Kaggle "Medicines from Egyptian Pharmacies" columns
+
+Download from: [kaggle.com/datasets/younaniskander/medicines-from-egyptian-pharmacies](https://www.kaggle.com/datasets/younaniskander/medicines-from-egyptian-pharmacies)
+
+Expected headers (header row required, column order doesn't matter, headers are case-insensitive):
+`Drug Name`, `Price`, `Form`, `Company`, `Category`, `Region`, `Date`, `Time`
+
+Mapping:
+| CSV column | CatalogItem field          |
+|------------|----------------------------|
+| Drug Name  | nameEn (also nameAr)       |
+| Form       | dosageForm                 |
+| Company    | manufacturer               |
+| Category   | category                   |
+| Price      | ignored (per-tenant pricing) |
+
+**Dedup key:** `drug_name + form + company` (case-insensitive). Re-running the sync upserts duplicates.
+
+**Gaps:** No `barcode`, no Arabic name, no `genericName`. These are filled later by:
+- The OpenFDA sync (matches generic_name → adds barcode + atcCode)
+- The tenant `POST /tenant/catalog/suggest` crowdsource flow (adds barcodes from real scans)
+
+#### Legacy EDA-format columns
+
+Expected headers:
 `reg_no`, `nameAr`, `nameEn`, `genericNameAr`, `genericNameEn`, `manufacturer`, `dosageForm`, `strength`, `category`, `requiresPrescription`
 
-**Source:** `EDA` · **ProductType:** `MEDICINE`
+**Source:** `KAGGLE_PHARMACY` or `EDA` (auto-tagged) · **ProductType:** `MEDICINE`
 
 ---
 
@@ -242,6 +274,56 @@ Get a single active catalog item.
 
 **Auth:** Tenant JWT  
 **Permission:** `catalog:read`
+
+---
+
+### `POST /tenant/catalog/lookup-barcode`
+
+POS / receiving-side barcode lookup. Designed for the cashier-scan flow.
+
+**Auth:** Tenant JWT  
+**Permission:** `catalog:suggest`
+
+**Body:**
+| Field   | Type   | Required | Rules            |
+|---------|--------|----------|------------------|
+| barcode | string | Yes      | 8–14 digits only |
+
+**Behaviour (lookup chain):**
+
+1. **Local DB hit** — if the barcode is already in our catalog, return it as-is.
+2. **External provider hit** — try in order:
+   - **OpenFDA NDC** (best for US-registered medicines)
+   - **Open Beauty Facts** (best for cosmetics)
+   - **GS1 / commercial proxy** (only if `GS1_LOOKUP_URL` env var is set — see Configuration below)
+   
+   On the first hit, auto-create a `PENDING_REVIEW` catalog item populated with the provider's name / manufacturer / category / image / etc., attribute it to the calling tenant, and return it.
+3. **Nothing found** — return `404` with `{ origin: "not_found" }` so the frontend can fall back to the manual `POST /tenant/catalog/suggest` form.
+
+**Response shape:**
+
+```json
+{
+  "data": {
+    "origin":   "existing" | "external_provider" | "not_found",
+    "provider": "openfda" | "openbeauty" | "gs1" | null,
+    "item":     <CatalogItem | null>
+  }
+}
+```
+
+**Status codes:**
+- `200` — already existed in our catalog (`origin: existing`)
+- `201` — newly imported from an external provider (`origin: external_provider`)
+- `404` — no match found anywhere
+
+**Configuration:**
+
+| Env var          | Default | Effect                                                            |
+|------------------|---------|-------------------------------------------------------------------|
+| `GS1_LOOKUP_URL` | unset   | When set, BarcodeLookupService issues GET to `${url}?gtin=<barcode>` and expects a JSON body with `brandName`, `companyName`, `productDescription`, `gpcCategoryDescription`. Point this at GS1 GEPIR, Barcode Lookup API, or your own proxy. |
+
+The official "Verified by GS1" public web form (`gs1.org/services/verified-by-gs1/results`) has anti-bot/captcha protection and is **not** suitable for direct server-side calls. Use a paid API or your own proxy via `GS1_LOOKUP_URL`.
 
 ---
 
@@ -308,6 +390,20 @@ Platform admin reviews
 - Approve/reject do not currently notify the submitting tenant (future work).
 
 ---
+
+## Bootstrap Workflow for Egyptian Pharmacies
+
+The Egyptian Drug Authority (EDA) does **not** publish a public bulk export and its registry only covers officially registered drugs — many imported medicines sold in real Egyptian pharmacies are missing from it. The recommended bootstrap is:
+
+1. **Download** the Kaggle dataset (free, Kaggle account required):  
+   [Medicines from Egyptian Pharmacies](https://www.kaggle.com/datasets/younaniskander/medicines-from-egyptian-pharmacies)
+2. **Place** the CSV somewhere on your server, e.g. `/var/data/seed/egypt_pharmacy_medicines.csv`
+3. **Call** `POST /platform/catalog/sync/eda` with `{"filePath": "/var/data/seed/egypt_pharmacy_medicines.csv"}`
+4. **Run OpenFDA sync** (`POST /platform/catalog/sync/openfda?limit=5000`) — wherever generic names match it enriches the Kaggle rows with barcodes and ATC codes.
+5. **Run Open Beauty Facts sync** for cosmetics: `POST /platform/catalog/sync/openbeauty?limit=2000`
+6. **Tenants take it from there** — every time they scan a barcode that's missing, `POST /tenant/catalog/suggest` adds it. Platform admins approve via `POST /platform/catalog/:itemId/approve`.
+
+> **Licensing note:** Verify the Kaggle dataset's licence and the underlying source's ToS before production / commercial use. For prototyping and self-hosted deployments it is fine.
 
 ## Related Modules
 

@@ -31,6 +31,15 @@ router.post(
   asyncHandler(tenantCatalogController.suggest),
 );
 
+// Barcode lookup — checks our catalog first, then external providers
+// (OpenFDA → Open Beauty Facts → GS1). Auto-creates a PENDING_REVIEW row
+// when an external provider returns data.
+router.post(
+  "/lookup-barcode",
+  permissionMiddleware(["catalog:suggest"]),
+  asyncHandler(tenantCatalogController.lookupBarcode),
+);
+
 // Read a specific item (reuse platform controller — globally visible)
 router.get(
   "/:itemId",
