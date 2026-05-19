@@ -316,10 +316,24 @@ Mark an OCR-completed document as reviewed by the current user. Optionally provi
     "reviewedAt": "2026-04-22T12:00:00.000Z",
     "reviewedById": "clx...",
     "extractedData": { ... },
-    ...
+    "autoCreatedSupplier": {
+      "id": "clx...",
+      "nameEn": "الشمس فارم",
+      "nameAr": "الشمس فارم",
+      "taxId": "2390900",
+      "created": true
+    }
   }
 }
 ```
+
+**`autoCreatedSupplier` field:**
+- Present only when `documentType === INVOICE` and `extractedData.supplierName` is non-empty.
+- `null` for prescription documents or when no supplier name was extracted.
+- `created: true` — a new supplier record was inserted.
+- `created: false` — a supplier with a matching name already existed; the existing record is returned so the frontend can link it.
+- Supplier creation is **best-effort**: if it fails (e.g. DB error), the review still succeeds and `autoCreatedSupplier` is `null`.
+- `nameEn` and `nameAr` are both set to the raw OCR value as a placeholder. Edit via `PATCH /tenant/suppliers/:id` to add a proper English name.
 
 **Error `400`** — document is not in COMPLETED status.  
 **Error `409`** — document has already been reviewed.
