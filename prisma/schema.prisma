@@ -68,6 +68,8 @@ enum PaymentMethod {
   CASH
   CARD
   INSURANCE
+  BANK_TRANSFER
+  CHECK
 }
 
 enum OcrDocumentType {
@@ -222,6 +224,7 @@ model Tenant {
   deviceSessions   DeviceSession[]
   signupRequests       TenantSignupRequest[]
   suggestedCatalogItems CatalogItem[]
+  supplierPayments      SupplierPayment[]
 
   @@index([status])
   @@index([trialEndsAt])
@@ -422,8 +425,9 @@ model TenantUser {
   shiftCashAdjustments ShiftCashAdjustment[]
   ocrDocuments         OcrDocument[]
   supportTickets       SupportTicket[]
-  notifications  Notification[]
-  deviceSessions DeviceSession[]
+  notifications        Notification[]
+  deviceSessions       DeviceSession[]
+  supplierPayments     SupplierPayment[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -574,13 +578,36 @@ model Supplier {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   batches        InventoryBatch[]
   purchaseOrders PurchaseOrder[]
+  payments       SupplierPayment[]
 
   @@unique([tenantId, nameEn])
   @@unique([tenantId, nameAr])
   @@index([tenantId, isActive])
+}
+
+model SupplierPayment {
+  id          String        @id @default(cuid())
+  tenantId    String
+  supplierId  String
+  amount      Decimal       @db.Decimal(12, 2)
+  method      PaymentMethod @default(CASH)
+  reference   String?       // cheque number, bank transfer ref, etc.
+  paidAt      DateTime      @default(now())
+  notes       String?
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier  Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  createdBy TenantUser @relation(fields: [createdById], references: [id])
+
+  @@index([tenantId, supplierId])
+  @@index([supplierId])
+  @@index([paidAt])
 }
 
 model InventoryItem {

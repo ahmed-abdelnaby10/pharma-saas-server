@@ -44,7 +44,12 @@ export interface InvoiceLineResolution {
   inventoryItemId:  string;
   inventoryCreated: boolean;
   quantity:         number;
-  unitCost:         number | null;
+  unitCost:         number | null;  // already has discount applied
+  discountPercent:  number | null;
+  /** Batch number extracted from invoice — use to pre-fill the receive step. */
+  batchNumber:      string | null;
+  /** Expiry date extracted from invoice — use to pre-fill the receive step. */
+  expiryDate:       string | null;
 }
 
 export interface ConvertInvoiceResult {
@@ -106,10 +111,43 @@ export class OcrConversionService {
       const description = (line.description ?? "").trim();
       if (!description) continue;
 
-      const quantity = line.quantity > 0 ? line.quantity : 1;
-      const unitCost = line.unitPrice > 0 ? line.unitPrice : null;
+      // English name from model translation (may be null for old extractions)
+      const nameEn = (line.nameEn ?? "").trim() || null;
 
-      // 1. Catalog: match by name (ACTIVE globally, or this tenant's own PENDING)
+      const quantity = line.quantity > 0 ? line.quantity : 1;
+
+      // Apply line-level discount to unitPrice if present
+      const discountPercent = line.discountPercent != null && line.discountPercent > 0
+        ? line.discountPercent
+        : null;
+      const rawUnitPrice = line.unitPrice > 0 ? line.unitPrice : null;
+      const unitCost = rawUnitPrice != null && discountPercent != null
+        ? parseFloat((rawUnitPrice * (1 - discountPercent / 100)).toFixed(4))
+        : rawUnitPrice;
+
+      // Batch / expiry passed through to resolution for the receive step
+      const batchNumber = (line.batchNumber ?? "").trim() || null;
+      const expiryDate  = (line.expiryDate  ?? "").trim() || null;
+
+      // 1. Catalog: match by name.
+      //    Priority: English name (translated by model) → Arabic description.
+      //    This handles Egyptian invoices where nameEn in catalog is English
+      //    but the OCR description is Arabic.
+      const nameOrConditions: object[] = [];
+      if (nameEn) {
+        nameOrConditions.push(
+          { nameEn:        { equals: nameEn,      mode: "insensitive" as const } },
+          { nameEn:        { contains: nameEn,    mode: "insensitive" as const } },
+          { genericNameEn: { contains: nameEn,    mode: "insensitive" as const } },
+        );
+      }
+      // Always also try matching the raw Arabic description against nameAr
+      nameOrConditions.push(
+        { nameAr:        { equals: description,   mode: "insensitive" as const } },
+        { nameAr:        { contains: description, mode: "insensitive" as const } },
+        { nameEn:        { equals: description,   mode: "insensitive" as const } },
+      );
+
       const existingCatalog = await prisma.catalogItem.findFirst({
         where: {
           OR: [
@@ -119,16 +157,7 @@ export class OcrConversionService {
               submittedByTenantId: auth.tenantId,
             },
           ],
-          AND: [
-            {
-              OR: [
-                { nameEn:        { equals: description, mode: "insensitive" } },
-                { nameAr:        { equals: description, mode: "insensitive" } },
-                { nameEn:        { contains: description, mode: "insensitive" } },
-                { genericNameEn: { contains: description, mode: "insensitive" } },
-              ],
-            },
-          ],
+          AND: [{ OR: nameOrConditions }],
         },
         orderBy: [{ status: "asc" }, { nameEn: "asc" }],
       });
@@ -141,8 +170,11 @@ export class OcrConversionService {
         catalogItemId = existingCatalog.id;
         catalogStatus = existingCatalog.status;
       } else {
+        // Auto-create a PENDING_REVIEW catalog stub.
+        // nameEn  = English translation from model (or Arabic description as fallback)
+        // nameAr  = Arabic description as printed on the invoice
         const { record } = await catalogRepository.suggestFromTenant({
-          nameEn:              description,
+          nameEn:              nameEn ?? description,
           nameAr:              description,
           productType:         "MEDICINE",
           submittedByTenantId: auth.tenantId,
@@ -174,6 +206,9 @@ export class OcrConversionService {
       if (prev) {
         prev.quantity += quantity;
         if (prev.unitCost == null && unitCost != null) prev.unitCost = unitCost;
+        // Keep earliest expiry when merging duplicate lines
+        if (!prev.expiryDate && expiryDate) prev.expiryDate = expiryDate;
+        if (!prev.batchNumber && batchNumber) prev.batchNumber = batchNumber;
       } else {
         merged.set(inv.id, {
           description,
@@ -184,6 +219,9 @@ export class OcrConversionService {
           inventoryCreated,
           quantity,
           unitCost,
+          discountPercent,
+          batchNumber,
+          expiryDate,
         });
       }
     }

@@ -10,9 +10,13 @@ import { logger } from "../../../../core/logger/logger";
 
 const LineItemSchema = z.object({
   description: z.string(),
+  nameEn: z.string().nullable().optional(),
   quantity: z.number(),
   unitPrice: z.number(),
+  discountPercent: z.number().min(0).max(100).nullable().optional(),
   total: z.number(),
+  batchNumber: z.string().nullable().optional(),
+  expiryDate: z.string().nullable().optional(),
 });
 
 const InvoiceExtractionSchema = z.object({
@@ -42,10 +46,14 @@ const INVOICE_RESPONSE_SCHEMA = {
       items: {
         type: Type.OBJECT,
         properties: {
-          description: { type: Type.STRING },
+          description: { type: Type.STRING, description: "Full product name as printed on the invoice (preserve original language)" },
+          nameEn: { type: Type.STRING, nullable: true, description: "English or international generic drug name — translate from Arabic if needed, or null if unknown" },
           quantity: { type: Type.NUMBER },
-          unitPrice: { type: Type.NUMBER },
-          total: { type: Type.NUMBER },
+          unitPrice: { type: Type.NUMBER, description: "Unit price before any discount" },
+          discountPercent: { type: Type.NUMBER, nullable: true, description: "Line discount as a percentage 0–100 (e.g. column 'الخصم' value 29 means 29%). Null when absent." },
+          total: { type: Type.NUMBER, description: "Final line total after discount" },
+          batchNumber: { type: Type.STRING, nullable: true, description: "Batch / lot number from 'التشغيلة' column, or null" },
+          expiryDate: { type: Type.STRING, nullable: true, description: "Expiry date from 'الصلاحية' column as ISO YYYY-MM-DD, or null" },
         },
         required: ["description", "quantity", "unitPrice", "total"],
       },
@@ -75,16 +83,23 @@ const INVOICE_RESPONSE_SCHEMA = {
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-const INVOICE_SYSTEM_PROMPT = `You are a pharmacy invoice OCR specialist.
+const INVOICE_SYSTEM_PROMPT = `You are a pharmacy invoice OCR specialist with expertise in Egyptian and Arabic pharmaceutical invoices.
 Extract structured data from the provided invoice document (image or PDF).
 
 Rules:
 - Extract ALL line items you can find; do not summarise or merge rows.
 - Dates must be returned as ISO 8601 (YYYY-MM-DD). If the year is ambiguous use the most plausible one.
 - Monetary values must be plain numbers (no currency symbols, no commas).
-- currency: return the ISO 4217 code (e.g. SAR, USD, EUR). Default to SAR if unclear.
+- currency: return the ISO 4217 code (e.g. EGP, SAR, USD). Default to EGP for Egyptian invoices, SAR if unclear.
 - If a field is not present or illegible, return null.
-- confidence: a float from 0 (nothing readable) to 1 (perfect clarity). Be honest.`;
+- confidence: a float from 0 (nothing readable) to 1 (perfect clarity). Be honest.
+
+Per line item:
+- description: copy the product name exactly as printed (Arabic or English).
+- nameEn: provide the international English or generic drug name. If the description is Arabic, translate or identify the well-known English/generic equivalent (e.g. "فيسيرالجين اقراص سيديكو" → "Viseralgine tablets" or its generic "Metamizole"). If unknown, return null.
+- discountPercent: if the invoice has a discount column (الخصم), extract the numeric value as a percentage (e.g. 29 = 29%). The formula is: total = unitPrice × quantity × (1 - discountPercent/100). Return null if no discount column.
+- batchNumber: extract the batch/lot number from the التشغيلة column. Return null if absent or "NULL".
+- expiryDate: extract the expiry date from الصلاحية column and convert to ISO YYYY-MM-DD. Return null if absent.`;
 
 // ── Extractor ─────────────────────────────────────────────────────────────────
 

@@ -4,5 +4,8 @@
   "supplier.deactivated": "Supplier deactivated successfully",
   "supplier.not_found": "Supplier not found",
   "supplier.name_conflict": "A supplier with this name already exists",
-  "supplier.already_inactive": "Supplier is already inactive"
+  "supplier.already_inactive": "Supplier is already inactive",
+  "supplier.payment_recorded": "Payment recorded successfully",
+  "supplier.payment_voided": "Payment voided successfully",
+  "supplier.payment_not_found": "Payment not found"
 }

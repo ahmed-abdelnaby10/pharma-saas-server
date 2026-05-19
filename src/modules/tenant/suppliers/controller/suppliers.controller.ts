@@ -7,12 +7,16 @@ import {
   parseUpdateSupplierDto,
   parseQuerySuppliersDto,
   parseSupplierIdParam,
+  parseCreatePaymentDto,
+  parsePaymentIdParam,
 } from "../validators/suppliers.validator";
-import { mapSupplierResponse } from "../mapper/suppliers.mapper";
+import { mapSupplierResponse, mapPaymentResponse } from "../mapper/suppliers.mapper";
 import { suppliersService, SuppliersService } from "../service/suppliers.service";
 
 export class SuppliersController {
   constructor(private readonly service: SuppliersService) {}
+
+  // ── Supplier CRUD ────────────────────────────────────────────────────────────
 
   list = async (req: Request, res: Response) => {
     const auth = req.auth!;
@@ -62,6 +66,61 @@ export class SuppliersController {
     const supplier = await this.service.deactivateSupplier(auth, supplierId);
     return res.status(200).json(
       successResponse(req.t?.("supplier.deactivated") || "Supplier deactivated", mapSupplierResponse(supplier), undefined, req.requestId),
+    );
+  };
+
+  // ── Financials ────────────────────────────────────────────────────────────────
+
+  getFinancials = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const supplierId = parseSupplierIdParam(req.params);
+    const financials = await this.service.getFinancials(auth, supplierId);
+    return res.status(200).json(
+      successResponse(req.t?.("common.ok") || "OK", financials, undefined, req.requestId),
+    );
+  };
+
+  // ── Payments ─────────────────────────────────────────────────────────────────
+
+  listPayments = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const supplierId = parseSupplierIdParam(req.params);
+    const payments = await this.service.listPayments(auth, supplierId);
+    return res.status(200).json(
+      successResponse(
+        req.t?.("common.ok") || "OK",
+        payments.map(mapPaymentResponse),
+        { count: payments.length },
+        req.requestId,
+      ),
+    );
+  };
+
+  addPayment = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const supplierId = parseSupplierIdParam(req.params);
+    const payload = parseCreatePaymentDto(req.body);
+    const payment = await this.service.addPayment(auth, supplierId, payload);
+    return res.status(201).json(
+      successResponse(
+        req.t?.("supplier.payment_recorded") || "Payment recorded",
+        mapPaymentResponse(payment),
+        undefined,
+        req.requestId,
+      ),
+    );
+  };
+
+  deletePayment = async (req: Request, res: Response) => {
+    const auth = req.auth!;
+    if (!isTenantAuthContext(auth)) throw new ForbiddenError();
+    const { supplierId, paymentId } = parsePaymentIdParam(req.params);
+    await this.service.deletePayment(auth, supplierId, paymentId);
+    return res.status(200).json(
+      successResponse(req.t?.("supplier.payment_voided") || "Payment voided", null, undefined, req.requestId),
     );
   };
 }
