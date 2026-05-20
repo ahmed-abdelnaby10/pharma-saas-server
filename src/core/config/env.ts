@@ -91,6 +91,8 @@ const envSchema = z.object({
   // Google Gemini — required for real OCR extraction
   GOOGLE_API_KEY: z.string().min(1),
   GEMINI_OCR_MODEL: z.string().min(1).default("gemini-2.5-flash"),
+  /** Fallback model used when the primary model returns HTTP 503 (overloaded). */
+  GEMINI_OCR_FALLBACK_MODEL: z.string().min(1).default("gemini-2.0-flash"),
 
   // ── Twilio — required only when WhatsApp notifications are used ─────────────
   // TWILIO_WHATSAPP_FROM must include the "whatsapp:" prefix,
