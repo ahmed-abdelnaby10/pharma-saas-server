@@ -34,22 +34,33 @@ export interface ConvertInvoiceOptions {
   supplierId?: string | null;   // optional — link to a known supplier
   defaultSellingPrice?: number; // applied when an InventoryItem must be created
   markOrdered?: boolean;        // if true, transition DRAFT → ORDERED automatically
+  /**
+   * When true, the service transitions the PO to ORDERED and immediately
+   * calls receiveOrder for every line using batch/expiry data from the OCR
+   * extraction.  Inventory quantityOnHand is updated and the PO ends as
+   * RECEIVED (or PARTIALLY_RECEIVED if some lines had zero quantity).
+   * Items with no extracted batchNumber get a generated fallback;
+   * items with no extracted expiryDate get a 2-year-from-today fallback.
+   * Implies markOrdered.
+   */
+  autoReceive?: boolean;
 }
 
 export interface InvoiceLineResolution {
-  description:      string;
-  catalogItemId:    string;
-  catalogStatus:    CatalogItemStatus;
-  catalogCreated:   boolean;
-  inventoryItemId:  string;
-  inventoryCreated: boolean;
-  quantity:         number;
-  unitCost:         number | null;  // already has discount applied
-  discountPercent:  number | null;
+  description:       string;
+  catalogItemId:     string;
+  catalogStatus:     CatalogItemStatus;
+  catalogCreated:    boolean;
+  inventoryItemId:   string;
+  inventoryCreated:  boolean;
+  quantity:          number;
+  unitCost:          number | null;  // already has discount applied
+  originalUnitPrice: number | null;  // raw price before discount
+  discountPercent:   number | null;
   /** Batch number extracted from invoice — use to pre-fill the receive step. */
-  batchNumber:      string | null;
+  batchNumber:       string | null;
   /** Expiry date extracted from invoice — use to pre-fill the receive step. */
-  expiryDate:       string | null;
+  expiryDate:        string | null;
 }
 
 export interface ConvertInvoiceResult {
@@ -215,10 +226,11 @@ export class OcrConversionService {
           catalogItemId,
           catalogStatus,
           catalogCreated,
-          inventoryItemId: inv.id,
+          inventoryItemId:  inv.id,
           inventoryCreated,
           quantity,
           unitCost,
+          originalUnitPrice: rawUnitPrice,
           discountPercent,
           batchNumber,
           expiryDate,
@@ -244,14 +256,60 @@ export class OcrConversionService {
     // Add each merged line
     for (const r of resolution) {
       await purchasingService.addItem(auth, order.id, {
-        inventoryItemId: r.inventoryItemId,
-        quantityOrdered: r.quantity,
-        unitCost:        r.unitCost,
+        inventoryItemId:  r.inventoryItemId,
+        quantityOrdered:  r.quantity,
+        unitCost:          r.unitCost,
+        originalUnitPrice: r.originalUnitPrice ?? null,
+        discountPercent:   r.discountPercent   ?? null,
+        batchNumber:       r.batchNumber       ?? null,
+        expiryDate:        r.expiryDate        ?? null,
       });
     }
 
-    if (opts.markOrdered) {
+    // Transition to ORDERED when explicitly requested or when autoReceive implies it
+    if (opts.markOrdered || opts.autoReceive) {
       await purchasingService.updateOrder(auth, order.id, { status: "ORDERED" });
+    }
+
+    // ── Auto-receive ──────────────────────────────────────────────────────────
+    // Build a receive payload from the OCR extraction data so the user
+    // doesn't have to go through a separate receive step.
+    if (opts.autoReceive) {
+      // Reload to get the real PO item IDs that were just persisted
+      const orderedPo = await purchasingService.getOrder(auth, order.id);
+
+      const twoYearsFromNow = new Date(
+        Date.now() + 2 * 365 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      const receiveLines = resolution
+        .map((r, idx) => {
+          const poItem = orderedPo.items.find(
+            (i) => i.inventoryItemId === r.inventoryItemId,
+          );
+          if (!poItem) return null;
+
+          // Use extracted batch/expiry; generate safe fallbacks when absent
+          const batchNumber =
+            r.batchNumber ??
+            `OCR-${documentId.slice(-6).toUpperCase()}${idx > 0 ? `-${idx}` : ""}`;
+          const expiryDate = r.expiryDate ?? twoYearsFromNow;
+
+          return {
+            purchaseOrderItemId: poItem.id,
+            quantityReceived:    r.quantity,
+            batchNumber,
+            expiryDate,
+            unitCost: r.unitCost ?? undefined,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (receiveLines.length > 0) {
+        await purchasingService.receiveOrder(auth, order.id, {
+          items: receiveLines,
+        });
+      }
     }
 
     // Close the audit loop on the OCR document (no data correction)

@@ -720,14 +720,22 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id               String   @id @default(cuid())
-  purchaseOrderId  String
-  inventoryItemId  String
-  quantityOrdered  Decimal  @db.Decimal(12, 3)
-  quantityReceived Decimal  @default(0) @db.Decimal(12, 3)
-  unitCost         Decimal? @db.Decimal(12, 2)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(cuid())
+  purchaseOrderId   String
+  inventoryItemId   String
+  quantityOrdered   Decimal  @db.Decimal(12, 3)
+  quantityReceived  Decimal  @default(0) @db.Decimal(12, 3)
+  unitCost          Decimal? @db.Decimal(12, 2)
+  /// Unit price before any discount (from invoice); null when not from OCR
+  originalUnitPrice Decimal? @db.Decimal(12, 2)
+  /// Line-level discount percentage 0–100 (from invoice الخصم column); null when absent
+  discountPercent   Decimal? @db.Decimal(5, 2)
+  /// Batch/lot number from invoice التشغيلة column
+  batchNumber       String?
+  /// Expiry date from invoice الصلاحية column
+  expiryDate        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
