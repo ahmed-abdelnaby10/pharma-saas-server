@@ -112,40 +112,49 @@ Rules:
 export class GeminiPrescriptionExtractor implements PrescriptionExtractor {
   private client: GoogleGenAI;
   private model: string;
+  private fallbackModel: string;
 
   constructor() {
-    this.client = new GoogleGenAI({ apiKey: env.GOOGLE_API_KEY });
-    this.model = env.GEMINI_OCR_MODEL;
+    this.client        = new GoogleGenAI({ apiKey: env.GOOGLE_API_KEY });
+    this.model         = env.GEMINI_OCR_MODEL;
+    this.fallbackModel = env.GEMINI_OCR_FALLBACK_MODEL;
   }
 
-  async extract(
-    absoluteFilePath: string,
-    mimeType: string,
-  ): Promise<PrescriptionExtractedData> {
+  // Public entry — tries primary model, falls back to fallbackModel on 503
+  async extract(absoluteFilePath: string, mimeType: string): Promise<PrescriptionExtractedData> {
     const fileBuffer = fs.readFileSync(absoluteFilePath);
     const base64Data = fileBuffer.toString("base64");
 
-    logger.info("GeminiPrescriptionExtractor: calling Gemini Vision", {
-      model: this.model,
-      mimeType,
-      fileSizeBytes: fileBuffer.length,
-    });
+    try {
+      return await this.callModel(this.model, base64Data, mimeType, fileBuffer.length);
+    } catch (err) {
+      if (this.is503(err) && this.fallbackModel !== this.model) {
+        logger.warn("GeminiPrescriptionExtractor: primary model overloaded — falling back", {
+          primaryModel:  this.model,
+          fallbackModel: this.fallbackModel,
+        });
+        return await this.callModel(this.fallbackModel, base64Data, mimeType, fileBuffer.length);
+      }
+      throw err;
+    }
+  }
+
+  private async callModel(
+    model: string,
+    base64Data: string,
+    mimeType: string,
+    fileSizeBytes: number,
+  ): Promise<PrescriptionExtractedData> {
+    logger.info("GeminiPrescriptionExtractor: calling Gemini Vision", { model, mimeType, fileSizeBytes });
 
     const response = await this.client.models.generateContent({
-      model: this.model,
+      model,
       contents: [
         {
           role: "user",
           parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: base64Data,
-              },
-            },
-            {
-              text: "Extract the prescription data from this document and return it as structured JSON.",
-            },
+            { inlineData: { mimeType, data: base64Data } },
+            { text: "Extract the prescription data from this document and return it as structured JSON." },
           ],
         },
       ],
@@ -157,20 +166,29 @@ export class GeminiPrescriptionExtractor implements PrescriptionExtractor {
     });
 
     const rawText = response.text;
-    if (!rawText) {
-      throw new Error("GeminiPrescriptionExtractor: empty response from Gemini");
-    }
+    if (!rawText) throw new Error("GeminiPrescriptionExtractor: empty response from Gemini");
 
     // Zod validation as safety net in case Gemini deviates from schema
     const parsed = PrescriptionExtractionSchema.parse(JSON.parse(rawText));
 
     logger.info("GeminiPrescriptionExtractor: extraction complete", {
-      patientName: parsed.patientName,
+      model,
+      patientName:     parsed.patientName,
       medicationCount: parsed.medications.length,
-      confidence: parsed.confidence,
+      confidence:      parsed.confidence,
     });
 
     return parsed;
+  }
+
+  /** Returns true when the Gemini API signals the model is overloaded (HTTP 503). */
+  private is503(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    return (
+      err.message.includes('"code":503') ||
+      err.message.includes("UNAVAILABLE") ||
+      err.message.includes("503")
+    );
   }
 }
 

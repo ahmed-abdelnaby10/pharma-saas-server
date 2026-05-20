@@ -19,8 +19,11 @@ export interface OcrJobData {
 export const ocrQueue = new Queue<OcrJobData>(OCR_QUEUE_NAME, {
   connection: bullmqConnection,
   defaultJobOptions: {
-    attempts: 2,
-    backoff: { type: "exponential", delay: 5_000 },
+    // 4 total attempts with exponential backoff: 0s → 15s → 30s → 60s
+    // The extractor itself falls back to gemini-2.0-flash on 503 within attempt 1,
+    // so BullMQ retries are a last-resort safety net for genuine transient failures.
+    attempts: 4,
+    backoff: { type: "exponential", delay: 15_000 },
     removeOnComplete: { count: 100 },
     removeOnFail: { count: 50 },
   },
