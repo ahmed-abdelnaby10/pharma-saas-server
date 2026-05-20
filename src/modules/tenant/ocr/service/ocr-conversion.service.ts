@@ -103,14 +103,20 @@ export class OcrConversionService {
     const branchId = opts.branchId ?? doc.branchId;
     const externalId = `ocr:${documentId}`;
 
-    // Idempotency: if a PO already exists for this OCR doc, return it untouched.
+    // Idempotency: if a PO already exists for this OCR doc, return it — unless
+    // it is an empty shell (items failed to add on a previous attempt), in which
+    // case delete it and re-run so this call succeeds cleanly.
     const existingPo = await prisma.purchaseOrder.findFirst({
       where: { tenantId: auth.tenantId, externalId },
-      select: { id: true },
+      include: { items: { select: { id: true } } },
     });
     if (existingPo) {
-      const po = await purchasingService.getOrder(auth, existingPo.id);
-      return { purchaseOrder: po, resolution: [], alreadyConverted: true };
+      if (existingPo.items.length > 0) {
+        const po = await purchasingService.getOrder(auth, existingPo.id);
+        return { purchaseOrder: po, resolution: [], alreadyConverted: true };
+      }
+      // Empty shell from a previously failed attempt — discard and re-run
+      await prisma.purchaseOrder.delete({ where: { id: existingPo.id } });
     }
 
     // Resolve each line → catalog item → inventory item.
@@ -245,10 +251,32 @@ export class OcrConversionService {
       );
     }
 
+    // Resolve supplier: use explicitly-passed supplierId first; if omitted,
+    // try to match the invoice's supplierName against existing tenant suppliers
+    // (the /review endpoint already creates the supplier, so this usually finds it).
+    let resolvedSupplierId: string | null = opts.supplierId !== undefined
+      ? (opts.supplierId ?? null)
+      : null;
+
+    if (opts.supplierId === undefined && data.supplierName) {
+      const supplierName = data.supplierName.trim();
+      const found = await prisma.supplier.findFirst({
+        where: {
+          tenantId: auth.tenantId,
+          OR: [
+            { nameEn: { equals: supplierName, mode: "insensitive" } },
+            { nameAr: { equals: supplierName, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (found) resolvedSupplierId = found.id;
+    }
+
     // Create the DRAFT purchase order (externalId gives data-level idempotency)
     const order = await purchasingService.createOrder(auth, {
       branchId,
-      supplierId: opts.supplierId ?? null,
+      supplierId: resolvedSupplierId,
       notes: `Created from OCR invoice ${data.invoiceNumber ?? doc.fileName}`,
       externalId,
     });
