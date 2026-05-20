@@ -342,25 +342,28 @@ Mark an OCR-completed document as reviewed by the current user. Optionally provi
 
 ### `POST /tenant/ocr/documents/:documentId/to-purchase-order`
 
-One-shot bridge: turn a **COMPLETED INVOICE** document into a **DRAFT purchase order**, auto-resolving every extracted line into a catalog item and a branch inventory item so the user doesn't retype the invoice.
+One-shot bridge: turn a **COMPLETED INVOICE** document into a purchase order and — optionally — immediately receive all stock into inventory.
 
 **Per line item the service:**
-1. Matches the OCR `description` against the catalog (ACTIVE globally, or this tenant's own PENDING_REVIEW) by name / generic name.
+1. Matches the OCR `description` + `nameEn` (English translation) against the catalog (ACTIVE globally, or this tenant's own PENDING_REVIEW).
 2. If no match → creates a `PENDING_REVIEW` catalog item (crowdsource flow) attributed to the tenant.
 3. Finds the branch `InventoryItem` for that catalog item, or creates one.
 4. Merges duplicate descriptions (same resolved inventory item) so the PO has no duplicate lines.
 
-Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempotency), adds one line per merged item, optionally transitions it to `ORDERED`, and stamps the OCR document as reviewed.
+Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempotency), adds one line per merged item with all OCR pricing fields (`unitCost`, `originalUnitPrice`, `discountPercent`, `batchNumber`, `expiryDate`), and stamps the OCR document as reviewed.
 
 **Idempotent:** calling it again for the same document returns the existing PO (`200`, `alreadyConverted: true`) instead of creating a duplicate.
 
 **Body (all optional):**
-| Field               | Type    | Description                                                       |
-|---------------------|---------|-------------------------------------------------------------------|
-| branchId            | cuid    | Target branch. Defaults to the OCR document's branch.             |
-| supplierId          | cuid \| null | Link the PO to a known supplier.                             |
-| defaultSellingPrice | number  | `sellingPrice` applied to any `InventoryItem` created on the fly. |
-| markOrdered         | boolean | If `true`, transitions the PO `DRAFT → ORDERED` automatically.    |
+| Field               | Type         | Description |
+|---------------------|--------------|-------------|
+| `branchId`          | cuid         | Target branch. Defaults to the OCR document's branch. |
+| `supplierId`        | cuid \| null | Link the PO to a known supplier. |
+| `defaultSellingPrice` | number     | `sellingPrice` set on any `InventoryItem` created on the fly (the price you charge patients — separate from the purchase cost). Omit to leave it `null` and set later. |
+| `markOrdered`       | boolean      | Transition the PO `DRAFT → ORDERED`. |
+| `autoReceive`       | boolean      | **Recommended for the standard OCR intake flow.** Transitions to `ORDERED` then immediately receives every line using the batch/expiry data from the OCR extraction. Inventory `quantityOnHand` is updated and the PO ends as `RECEIVED`. Items whose batch or expiry was not extracted get safe fallbacks (generated batch key; expiry 2 years from today). Implies `markOrdered`. |
+
+**Typical UX call:** `{ "autoReceive": true, "supplierId": "<id>" }`
 
 **Response `201`** (or `200` if already converted):
 ```json
@@ -368,14 +371,35 @@ Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempot
   "success": true,
   "message": "Purchase order created from invoice",
   "data": {
-    "purchaseOrder": { "id": "...", "status": "DRAFT", "items": [ ... ] },
+    "purchaseOrder": {
+      "id": "...",
+      "status": "RECEIVED",
+      "subtotalBeforeDiscount": "42.0000",
+      "totalDiscount": "12.1800",
+      "subtotal": "29.8200",
+      "items": [
+        {
+          "quantityOrdered": "1.000",
+          "quantityReceived": "1.000",
+          "unitCost": "29.82",
+          "originalUnitPrice": "42.00",
+          "discountPercent": "29",
+          "lineTotal": "29.8200",
+          "lineTotalBeforeDiscount": "42.0000",
+          "batchNumber": "1024552",
+          "expiryDate": "2027-10-01T00:00:00.000Z"
+        }
+      ]
+    },
     "alreadyConverted": false,
     "resolution": [
       {
         "description": "فيسيرالجين اقراص سيديكو س ج",
         "catalogItemId": "...", "catalogStatus": "ACTIVE", "catalogCreated": false,
         "inventoryItemId": "...", "inventoryCreated": true,
-        "quantity": 1, "unitCost": 29.82,
+        "quantity": 1,
+        "unitCost": 29.82,
+        "originalUnitPrice": 42.0,
         "discountPercent": 29,
         "batchNumber": "1024552",
         "expiryDate": "2027-10-01"
@@ -386,9 +410,10 @@ Then creates a DRAFT PO with `externalId = ocr:<documentId>` (data-level idempot
 ```
 
 **`resolution[]` field notes:**
-- `unitCost` — already has the line discount applied (`unitPrice × (1 − discountPercent/100)`). Pass this directly to the PO line.
-- `batchNumber` + `expiryDate` — extracted directly from the invoice. Use these to pre-fill the `POST /receive` payload, saving manual entry for physical stock receipt.
-```
+- `unitCost` — price after discount (`unitPrice × (1 − discountPercent/100)`).
+- `originalUnitPrice` — raw price before discount as printed on the invoice.
+- `discountPercent` — percentage (e.g. `29` = 29%).
+- `batchNumber` + `expiryDate` — from OCR; used automatically when `autoReceive: true`.
 
 **Error `400`** — not an INVOICE, not COMPLETED, or no usable line items.
 

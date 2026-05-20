@@ -27,6 +27,14 @@ const convertInvoiceSchema = z.object({
   supplierId:          z.string().cuid().nullable().optional(),
   defaultSellingPrice: z.number().positive().optional(),
   markOrdered:         z.boolean().optional(),
+  /**
+   * When true the service creates the PO, transitions it to ORDERED, and
+   * immediately receives every line using the batch/expiry data already
+   * extracted by OCR.  Inventory quantities are updated in the same
+   * transaction — no separate receive call needed.
+   * Items whose batch or expiry was not extracted get safe fallbacks.
+   */
+  autoReceive:         z.boolean().optional(),
 });
 
 const convertPrescriptionSchema = z.object({

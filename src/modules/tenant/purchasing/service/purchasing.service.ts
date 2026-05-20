@@ -196,9 +196,13 @@ export class PurchasingService {
     }
 
     return this.repository.addItem(orderId, {
-      inventoryItemId: payload.inventoryItemId,
-      quantityOrdered: new Prisma.Decimal(payload.quantityOrdered),
-      unitCost: payload.unitCost != null ? new Prisma.Decimal(payload.unitCost) : null,
+      inventoryItemId:  payload.inventoryItemId,
+      quantityOrdered:  new Prisma.Decimal(payload.quantityOrdered),
+      unitCost:          payload.unitCost          != null ? new Prisma.Decimal(payload.unitCost)          : null,
+      originalUnitPrice: payload.originalUnitPrice != null ? new Prisma.Decimal(payload.originalUnitPrice) : null,
+      discountPercent:   payload.discountPercent   != null ? new Prisma.Decimal(payload.discountPercent)   : null,
+      batchNumber:       payload.batchNumber       ?? null,
+      expiryDate:        payload.expiryDate        ? new Date(payload.expiryDate) : null,
     });
   }
 

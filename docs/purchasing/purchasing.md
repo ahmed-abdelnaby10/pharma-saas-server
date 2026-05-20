@@ -92,9 +92,20 @@ Retrieve a single purchase order with all line items.
         },
         "quantityOrdered": "100.000",
         "quantityReceived": "0.000",
-        "unitCost": "3.50"
+        "unitCost": "29.82",
+        "originalUnitPrice": "42.00",
+        "discountPercent": "29",
+        "lineTotal": "29.8200",
+        "lineTotalBeforeDiscount": "42.0000",
+        "batchNumber": "1024552",
+        "expiryDate": "2027-10-01T00:00:00.000Z",
+        "createdAt": "2026-04-19T00:00:00.000Z",
+        "updatedAt": "2026-04-19T00:00:00.000Z"
       }
     ],
+    "subtotalBeforeDiscount": "42.0000",
+    "totalDiscount": "12.1800",
+    "subtotal": "29.8200",
     "createdAt": "2026-04-19T00:00:00.000Z",
     "updatedAt": "2026-04-19T00:00:00.000Z"
   }

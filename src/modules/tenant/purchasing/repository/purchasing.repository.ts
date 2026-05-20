@@ -105,14 +105,22 @@ export class PurchasingRepository {
       inventoryItemId: string;
       quantityOrdered: Prisma.Decimal;
       unitCost?: Prisma.Decimal | null;
+      originalUnitPrice?: Prisma.Decimal | null;
+      discountPercent?: Prisma.Decimal | null;
+      batchNumber?: string | null;
+      expiryDate?: Date | null;
     },
   ): Promise<PurchaseOrderWithRelations> {
     await prisma.purchaseOrderItem.create({
       data: {
-        purchaseOrderId: orderId,
-        inventoryItemId: data.inventoryItemId,
-        quantityOrdered: data.quantityOrdered,
-        ...(data.unitCost != null ? { unitCost: data.unitCost } : {}),
+        purchaseOrderId:  orderId,
+        inventoryItemId:  data.inventoryItemId,
+        quantityOrdered:  data.quantityOrdered,
+        ...(data.unitCost          != null ? { unitCost:          data.unitCost          } : {}),
+        ...(data.originalUnitPrice != null ? { originalUnitPrice: data.originalUnitPrice } : {}),
+        ...(data.discountPercent   != null ? { discountPercent:   data.discountPercent   } : {}),
+        ...(data.batchNumber       != null ? { batchNumber:       data.batchNumber       } : {}),
+        ...(data.expiryDate        != null ? { expiryDate:        data.expiryDate        } : {}),
       },
     });
     return prisma.purchaseOrder.findUniqueOrThrow({
